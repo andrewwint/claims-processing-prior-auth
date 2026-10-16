@@ -1,0 +1,108 @@
+{
+  "AgentGatewayRole": {
+    "inline_policies": {
+      "AgentGatewayRoleDefaultPolicyF7260339": {
+        "Statement": [
+          {
+            "Action": [
+              "bedrock-agentcore:AuthorizeAction",
+              "bedrock-agentcore:PartiallyAuthorizeActions",
+              "bedrock-agentcore:GetPolicyEngine"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              "<agent-gateway-arn>",
+              "<arn><policy-engine-id>"
+            ]
+          },
+          {
+            "Action": "lambda:InvokeFunction",
+            "Effect": "Allow",
+            "Resource": [
+              "<arn>",
+              "<arn>*"
+            ]
+          },
+          {
+            "Action": "lambda:InvokeFunction",
+            "Effect": "Allow",
+            "Resource": [
+              "<arn>",
+              "<arn>*"
+            ]
+          }
+        ],
+        "Version": "2012-10-17"
+      }
+    },
+    "trust": {
+      "Statement": [
+        {
+          "Action": "sts:AssumeRole",
+          "Condition": {
+            "ArnLike": {
+              "aws:SourceArn": "<agent-gateway-arn>"
+            },
+            "StringEquals": {
+              "aws:SourceAccount": "<account-id>"
+            }
+          },
+          "Effect": "Allow",
+          "Principal": {
+            "Service": "bedrock-agentcore.amazonaws.com"
+          }
+        }
+      ],
+      "Version": "2012-10-17"
+    }
+  },
+  "ReviewerGatewayRole": {
+    "inline_policies": {
+      "ReviewerGatewayRoleDefaultPolicyDD4C96AB": {
+        "Statement": [
+          {
+            "Action": [
+              "bedrock-agentcore:AuthorizeAction",
+              "bedrock-agentcore:PartiallyAuthorizeActions",
+              "bedrock-agentcore:GetPolicyEngine"
+            ],
+            "Effect": "Allow",
+            "Resource": [
+              "<reviewer-gateway-arn>",
+              "<arn><policy-engine-id>"
+            ]
+          },
+          {
+            "Action": "lambda:InvokeFunction",
+            "Effect": "Allow",
+            "Resource": [
+              "<arn>",
+              "<arn>*"
+            ]
+          }
+        ],
+        "Version": "2012-10-17"
+      }
+    },
+    "trust": {
+      "Statement": [
+        {
+          "Action": "sts:AssumeRole",
+          "Condition": {
+            "ArnLike": {
+              "aws:SourceArn": "<reviewer-gateway-arn>"
+            },
+            "StringEquals": {
+              "aws:SourceAccount": "<account-id>"
+            }
+          },
+          "Effect": "Allow",
+          "Principal": {
+            "Service": "bedrock-agentcore.amazonaws.com"
+          }
+        }
+      ],
+      "Version": "2012-10-17"
+    }
+  }
+}

@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest==9.1.1"]
+dev = ["pytest==9.1.1", "pycognito==2024.5.1"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

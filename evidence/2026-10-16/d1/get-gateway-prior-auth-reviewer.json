@@ -1,0 +1,46 @@
+{
+  "authorizerConfiguration": {
+    "customJWTAuthorizer": {
+      "allowedClients": [
+        "<clinician-client-id>"
+      ],
+      "customClaims": [
+        {
+          "authorizingClaimMatchValue": {
+            "claimMatchOperator": "CONTAINS",
+            "claimMatchValue": {
+              "matchValueString": "clinician"
+            }
+          },
+          "inboundTokenClaimName": "cognito:groups",
+          "inboundTokenClaimValueType": "STRING_ARRAY"
+        }
+      ],
+      "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>/.well-known/openid-configuration"
+    }
+  },
+  "authorizerType": "CUSTOM_JWT",
+  "gatewayArn": "<reviewer-gateway-arn>",
+  "name": "prior-auth-reviewer",
+  "policyEngineConfiguration": {
+    "arn": "<arn><policy-engine-id>",
+    "mode": "ENFORCE"
+  },
+  "protocolType": "MCP",
+  "roleArn": "<arn>",
+  "status": "READY",
+  "targets": [
+    {
+      "credentialProviderConfigurations": [
+        {
+          "credentialProviderType": "GATEWAY_IAM_ROLE"
+        }
+      ],
+      "name": "ReviewerTools",
+      "status": "READY",
+      "tools": [
+        "record_adverse_determination"
+      ]
+    }
+  ]
+}

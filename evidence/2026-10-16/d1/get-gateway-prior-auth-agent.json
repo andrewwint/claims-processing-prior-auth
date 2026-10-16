@@ -1,0 +1,52 @@
+{
+  "authorizerConfiguration": {
+    "customJWTAuthorizer": {
+      "allowedClients": [
+        "<agent-client-id>"
+      ],
+      "allowedScopes": [
+        "prior-auth/tools"
+      ],
+      "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>/.well-known/openid-configuration"
+    }
+  },
+  "authorizerType": "CUSTOM_JWT",
+  "gatewayArn": "<agent-gateway-arn>",
+  "name": "prior-auth-agent",
+  "policyEngineConfiguration": {
+    "arn": "<arn><policy-engine-id>",
+    "mode": "ENFORCE"
+  },
+  "protocolType": "MCP",
+  "roleArn": "<arn>",
+  "status": "READY",
+  "targets": [
+    {
+      "credentialProviderConfigurations": [
+        {
+          "credentialProviderType": "GATEWAY_IAM_ROLE"
+        }
+      ],
+      "name": "ApprovalService",
+      "status": "READY",
+      "tools": [
+        "record_approval"
+      ]
+    },
+    {
+      "credentialProviderConfigurations": [
+        {
+          "credentialProviderType": "GATEWAY_IAM_ROLE"
+        }
+      ],
+      "name": "AgentTools",
+      "status": "READY",
+      "tools": [
+        "check_eligibility",
+        "fetch_policy_criteria",
+        "extract_clinical_evidence",
+        "route_to_reviewer"
+      ]
+    }
+  ]
+}
