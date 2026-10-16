@@ -210,3 +210,15 @@ def test_only_decide_calls_the_ending_tools():
 def test_session_ids_meet_the_runtime_minimum():
     assert len(session_id_for("")) >= 33 and len(session_id_for("SYN-CASE-CLEAN-1")) <= 256
     assert session_id_for("A") == session_id_for("A") != session_id_for("B")
+
+
+# G10: the Strands agent's tool list is exactly the three gathering tools
+def test_strands_agent_gets_exactly_the_three_gathering_tools():
+    from types import SimpleNamespace
+
+    from prior_auth.agent.strands_agent import gathering_tools
+    listed = [SimpleNamespace(tool_name=n) for n in (
+        "AgentTools___check_eligibility", "AgentTools___fetch_policy_criteria", "AgentTools___extract_clinical_evidence",
+        "AgentTools___route_to_reviewer", "ApprovalService___record_approval", "AgentTools___check_eligibility_v2")]
+    assert sorted(t.tool_name for t in gathering_tools(listed)) == [
+        "AgentTools___check_eligibility", "AgentTools___extract_clinical_evidence", "AgentTools___fetch_policy_criteria"]
