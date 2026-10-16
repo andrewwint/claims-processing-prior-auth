@@ -1,0 +1,14 @@
+{
+  "_about": "Reviewed exceptions to security controls. Each entry names the control, the exact text it matches, where that text appears, and why the control's purpose does not apply there. tests/test_control_exceptions.py fails on any occurrence not listed here and on any stale entry.",
+  "exceptions": [
+    {
+      "control": "aws-core secret-safety hook (blocks commands that fetch Secrets Manager values)",
+      "match": "secretsmanager:GetSecretValue",
+      "file": "infra/runtime_stack.py",
+      "kind": "IAM permission grant in infrastructure code; not a fetch",
+      "justification": "The runtime role lets AgentCore Identity use the OAuth2 provider's vault-managed secret on the runtime's behalf to mint the agent's M2M gateway token; the runtime never reads or handles the secret value.",
+      "reviewed_by": "PM, 2026-10-16",
+      "approved_by": "Andrew Wint, 2026-10-16"
+    }
+  ]
+}
