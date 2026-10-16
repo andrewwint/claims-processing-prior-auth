@@ -222,3 +222,9 @@ def test_strands_agent_gets_exactly_the_three_gathering_tools():
         "AgentTools___route_to_reviewer", "ApprovalService___record_approval", "AgentTools___check_eligibility_v2")]
     assert sorted(t.tool_name for t in gathering_tools(listed)) == [
         "AgentTools___check_eligibility", "AgentTools___extract_clinical_evidence", "AgentTools___fetch_policy_criteria"]
+
+
+def test_runtime_telemetry_env_carries_both_content_settings():
+    from prior_auth.agent.telemetry import RUNTIME_TELEMETRY_ENV
+    assert RUNTIME_TELEMETRY_ENV["OTEL_SEMCONV_STABILITY_OPT_IN"] == "gen_ai_unredacted_attributes="
+    assert RUNTIME_TELEMETRY_ENV["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] == "false"

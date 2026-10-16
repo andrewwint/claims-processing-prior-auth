@@ -132,7 +132,7 @@ The eligibility row and the last two extraction-adjacent rows (throttling and un
 - **Metadata service v2.** `scripts/require_mmdsv2.py` runs after every deploy.
 - **Telemetry (PM, 2026-10-16).**
   - **Strands:** content redaction is on from the first invocation (`OTEL_SEMCONV_STABILITY_OPT_IN`, Strands ≥ 1.47). It covers prompts, completions and system instructions. Tool inputs and outputs are checked separately, because chart text arrives as tool results.
-  - **ADOT and botocore auto-instrumentation** may attach request content: the runtime's default ADOT configuration, the GenAI content-extraction setting, and the botocore Bedrock extension. Task 5.0 records what each one attaches, and disables any content capture it finds, before the first deploy.
+  - **ADOT and botocore** (measured by task 0.2): ADOT defaults botocore's Bedrock content capture to on, which emits content as log records. The runtime sets `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=false`. Both settings live in `prior_auth.agent.telemetry.RUNTIME_TELEMETRY_ENV`, and the runtime stack must use that constant.
   - **Runtime `APPLICATION_LOGS`** are not enabled; they include the request payload.
   - **The proof** stays the canary scan with its positive control (`evidence-record-and-trace`).
 - **Network.** Public network mode behind the JWT authorizer. VPC mode is not used: its network interfaces can remain for hours after deletion, which conflicts with same-day verified teardown. The README notes production uses VPC mode.

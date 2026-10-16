@@ -1,0 +1,126 @@
+{
+  "case": "SYN-CASE-CLEAN-1",
+  "date": "2026-10-16",
+  "configs": {
+    "control_adot_defaults": {
+      "env": {
+        "AGENT_OBSERVABILITY_ENABLED": "true"
+      },
+      "citations": 3,
+      "span_count": 20,
+      "log_record_count": 11,
+      "canary_hits": {
+        "CANARY-9013E4704861": 6,
+        "CANARY-FD48346D8FB7": 6,
+        "CANARY-37B5CFC8AE3D": 6
+      },
+      "chart_phrase_hits": {
+        "visits over seven weeks": 6,
+        "nerve root compression": 19,
+        "Oswestry Disability Index": 19
+      },
+      "content_attribute_names": [
+        "gen_ai.tool.call.id",
+        "gen_ai.usage.completion_tokens",
+        "gen_ai.usage.prompt_tokens"
+      ],
+      "leaking_spans": {
+        "strands span 'execute_tool AgentTools___extract_clinical_evidence' (events)": 1,
+        "strands span 'execute_tool AgentTools___fetch_policy_criteria' (events)": 1,
+        "strands span 'execute_event_loop_cycle' (events)": 2,
+        "strands span 'chat' (events)": 1,
+        "strands span 'execute_tool ExtractionOutput' (events)": 1,
+        "strands span 'invoke_agent Strands Agents' (events)": 1
+      },
+      "leaking_log_records": {
+        "gen_ai.tool.message": 2,
+        "gen_ai.user.message": 1,
+        "gen_ai.choice": 1
+      }
+    },
+    "botocore_capture_off_only": {
+      "env": {
+        "AGENT_OBSERVABILITY_ENABLED": "true",
+        "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "false"
+      },
+      "citations": 3,
+      "span_count": 20,
+      "log_record_count": 11,
+      "canary_hits": {
+        "CANARY-9013E4704861": 4,
+        "CANARY-FD48346D8FB7": 4,
+        "CANARY-37B5CFC8AE3D": 4
+      },
+      "chart_phrase_hits": {
+        "visits over seven weeks": 4,
+        "nerve root compression": 14,
+        "Oswestry Disability Index": 14
+      },
+      "content_attribute_names": [
+        "gen_ai.tool.call.id",
+        "gen_ai.usage.completion_tokens",
+        "gen_ai.usage.prompt_tokens"
+      ],
+      "leaking_spans": {
+        "strands span 'execute_tool AgentTools___extract_clinical_evidence' (events)": 1,
+        "strands span 'execute_tool AgentTools___fetch_policy_criteria' (events)": 1,
+        "strands span 'execute_event_loop_cycle' (events)": 2,
+        "strands span 'chat' (events)": 1,
+        "strands span 'execute_tool ExtractionOutput' (events)": 1,
+        "strands span 'invoke_agent Strands Agents' (events)": 1
+      },
+      "leaking_log_records": {}
+    },
+    "strands_redaction_only": {
+      "env": {
+        "AGENT_OBSERVABILITY_ENABLED": "true",
+        "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_unredacted_attributes="
+      },
+      "citations": 3,
+      "span_count": 20,
+      "log_record_count": 11,
+      "canary_hits": {
+        "CANARY-9013E4704861": 2,
+        "CANARY-FD48346D8FB7": 2,
+        "CANARY-37B5CFC8AE3D": 2
+      },
+      "chart_phrase_hits": {
+        "visits over seven weeks": 2,
+        "nerve root compression": 5,
+        "Oswestry Disability Index": 5
+      },
+      "content_attribute_names": [
+        "gen_ai.tool.call.id",
+        "gen_ai.usage.completion_tokens",
+        "gen_ai.usage.prompt_tokens"
+      ],
+      "leaking_spans": {},
+      "leaking_log_records": {
+        "gen_ai.tool.message": 2,
+        "gen_ai.user.message": 1,
+        "gen_ai.choice": 1
+      }
+    },
+    "runtime_settings": {
+      "env": {
+        "AGENT_OBSERVABILITY_ENABLED": "true",
+        "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "false",
+        "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_unredacted_attributes="
+      },
+      "citations": 3,
+      "span_count": 20,
+      "log_record_count": 11,
+      "canary_hits": {},
+      "chart_phrase_hits": {},
+      "content_attribute_names": [
+        "gen_ai.tool.call.id",
+        "gen_ai.usage.completion_tokens",
+        "gen_ai.usage.prompt_tokens"
+      ],
+      "leaking_spans": {},
+      "leaking_log_records": {}
+    }
+  },
+  "positive_control_found_content": true,
+  "runtime_settings_clean": true
+}

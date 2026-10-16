@@ -54,6 +54,10 @@ If a newer document disagrees with these notes, the newer document wins. Update 
 ## Observability
 
 - **Default content capture.** With the AWS Distro for OpenTelemetry (ADOT), Strands agent spans include prompts, completions, and tool inputs and outputs by default.
+- **Measured content sources (telemetry check, 2026-10-16; `evidence/2026-10-16/telemetry-check.json`).** With a chart canary reaching the model through a tool result, and spans **and** log records captured:
+  - **Strands** puts prompts, tool results and completions in span events on its tool, event-loop, model ("chat") and agent spans. Removed by `OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_unredacted_attributes=` (Strands ≥ 1.47 redacts both attributes and events).
+  - **ADOT** sets `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` by `setdefault` when `AGENT_OBSERVABILITY_ENABLED` is on, which AgentCore Runtime sets. The botocore Bedrock extension then emits `gen_ai.user.message`, `gen_ai.tool.message` and `gen_ai.choice` **log records** with content, shipped over OTLP. An explicit `false` overrides the default.
+  - Either setting alone still leaks. Both together: zero canaries in spans and logs. A spans-only check misses the botocore leak.
 - **ADOT GenAI content.** ADOT ≥ 0.18 has `AWS_GENAI_CONTENT_EXTRACTION_OPT_OUT` ("keeps model payloads and tool request/response data on spans" when true). The runtime sets default ADOT environment variables, and `DISABLE_ADOT_OBSERVABILITY=true` unsets them. Which instrumentations attach content in this build is recorded by the telemetry check (case-packet task 5.0) before the first deploy. (Docs: add observability, read 2026-10-16.)
 - **Gateway telemetry** (observed and from the docs, 2026-10-16):
   - Gateway **spans** carry operational attributes only: operation, gateway, tool name, latency, status and error code. No bodies.

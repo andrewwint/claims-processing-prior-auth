@@ -5,7 +5,7 @@ Delivers demo **beats 2 and 3**: a clean case approved by `decide()`, and a one-
 ## 0. Before any invocation
 
 - [x] 0.1 Model access recorded: Nova Pro (runtime default, us-east-1) and Sonnet 4.6 (opt-in). `evidence/2026-10-16/model-access-extraction.json`.
-- [ ] 0.2 Telemetry check. Run the agent locally with the runtime's ADOT configuration, botocore instrumentation and Strands telemetry against a fake model and gateway. Record which attributes carry content, disable each one, and re-run until a planted canary appears nowhere. Record the settings in the contract notes.
+- [x] 0.2 Telemetry check (done 2026-10-16: `scripts/telemetry_check.py`, `evidence/2026-10-16/telemetry-check.json`; positive control 18 canary hits, runtime settings zero, in spans and logs). Run the agent locally with the runtime's ADOT configuration, botocore instrumentation and Strands telemetry against a fake model and gateway. Record which attributes carry content, disable each one, and re-run until a planted canary appears nowhere. Record the settings in the contract notes.
 
 ## 1. Synthetic data, generated here
 
