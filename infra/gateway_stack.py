@@ -1,8 +1,9 @@
-"""Stack A (approval gate D1): identity, the tool Lambdas, and two gateways.
+"""Stack A (approval gate D1): identity, the policy engine, the tool Lambdas, and two gateways.
 
-- Agent gateway: five tools; admits the agent app client only.
-- Reviewer gateway: the denial tool; admits the clinician app client only.
-Both Lambda targets authenticate with the gateway's own IAM role.
+- Agent gateway: five tools on two targets (four case tools; the approval
+  service, with its own Lambda and role); admits the agent app client only.
+- Reviewer gateway: the denial tool; admits the clinician group on the clinician client only.
+Every Lambda target authenticates with its gateway's own IAM role.
 """
 
 from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack, aws_bedrockagentcore as agentcore
@@ -10,7 +11,8 @@ from aws_cdk import aws_iam as iam, aws_lambda as lambda_, aws_logs as logs
 from constructs import Construct
 
 from infra.identity import RESOURCE_SERVER, SCOPE, Identity
-from tools.schemas import AGENT_TARGET, AGENT_TOOLS, REVIEWER_TARGET, REVIEWER_TOOLS
+from tools.schemas import (APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
+                           REVIEWER_TOOLS)
 
 ASSET_EXCLUDE = ["*", ".*", "**/.*", "!tools", "!tools/**", "!checks", "!checks/**", "**/__pycache__", "**/.*"]
 
@@ -53,16 +55,20 @@ class GatewayStack(Stack):
         # Attached in ENFORCE mode from the first deploy. With no policies yet,
         # every tool call is denied by default until the policy stack (D2) lands.
         self.engine = agentcore.CfnPolicyEngine(self, "PolicyEngine", name="prior_auth_engine")
+        self.functions: dict[str, lambda_.Function] = {}
         self.agent_gateway = self._gateway(
             "Agent", name="prior-auth-agent", allowed_client=self.identity.agent_client.user_pool_client_id,
-            target=AGENT_TARGET, tools=AGENT_TOOLS, handler="tools.agent_tools.handler",
-            function_name="prior-auth-agent-tools",
+            targets=[
+                ("AgentTools", CASE_TARGET, CASE_TOOLS, "tools.agent_tools.handler", "prior-auth-agent-tools"),
+                ("ApprovalService", APPROVAL_TARGET, APPROVAL_TOOLS, "tools.approval_service.handler",
+                 "prior-auth-approval-service"),
+            ],
             allowed_scopes=[f"{RESOURCE_SERVER}/{SCOPE}"],
         )
         self.reviewer_gateway = self._gateway(
             "Reviewer", name="prior-auth-reviewer", allowed_client=self.identity.clinician_client.user_pool_client_id,
-            target=REVIEWER_TARGET, tools=REVIEWER_TOOLS, handler="tools.reviewer_tools.handler",
-            function_name="prior-auth-reviewer-tools",
+            targets=[("ReviewerTools", REVIEWER_TARGET, REVIEWER_TOOLS, "tools.reviewer_tools.handler",
+                      "prior-auth-reviewer-tools")],
             custom_claims=[CLINICIAN_GROUP_CLAIM],
         )
         for key, value in {
@@ -84,18 +90,22 @@ class GatewayStack(Stack):
         exact = self.gateway_ids.get(name)
         return f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{exact or name + '-*'}"
 
-    def _gateway(self, prefix, *, name, allowed_client, target, tools, handler, function_name,
-                 allowed_scopes=None, custom_claims=None):
+    def _function(self, construct_id: str, handler: str, function_name: str) -> lambda_.Function:
         log_group = logs.LogGroup(
-            self, f"{prefix}ToolsLogs", log_group_name=f"/aws/lambda/{function_name}",
+            self, f"{construct_id}Logs", log_group_name=f"/aws/lambda/{function_name}",
             retention=logs.RetentionDays.ONE_WEEK, removal_policy=RemovalPolicy.DESTROY,
         )
         fn = lambda_.Function(
-            self, f"{prefix}Tools", function_name=function_name,
+            self, construct_id, function_name=function_name,
             runtime=lambda_.Runtime.PYTHON_3_13, architecture=lambda_.Architecture.ARM_64,
             handler=handler, code=lambda_.Code.from_asset(".", exclude=ASSET_EXCLUDE),
             timeout=Duration.seconds(15), memory_size=256, log_group=log_group,
         )
+        self.functions[function_name] = fn
+        return fn
+
+    def _gateway(self, prefix, *, name, allowed_client, targets, allowed_scopes=None, custom_claims=None):
+        """targets: (construct id, target name, tools, handler, function name) per Lambda target."""
         role = iam.Role(
             self, f"{prefix}GatewayRole",
             assumed_by=iam.ServicePrincipal(
@@ -107,7 +117,6 @@ class GatewayStack(Stack):
                 },
             ),
         )
-        fn.grant_invoke(role)
         role.add_to_policy(iam.PolicyStatement(
             actions=["bedrock-agentcore:AuthorizeAction", "bedrock-agentcore:PartiallyAuthorizeActions",
                      "bedrock-agentcore:GetPolicyEngine"],
@@ -128,8 +137,15 @@ class GatewayStack(Stack):
             ),
         )
         gateway.node.add_dependency(role)
+        for construct_id, target, tools, handler, function_name in targets:
+            fn = self._function(construct_id, handler, function_name)
+            fn.grant_invoke(role)
+            self._target(construct_id, gateway, target, tools, fn)
+        return gateway
+
+    def _target(self, construct_id, gateway, target, tools, fn):
         agentcore.CfnGatewayTarget(
-            self, f"{prefix}Target", name=target, gateway_identifier=gateway.attr_gateway_identifier,
+            self, f"{construct_id}Target", name=target, gateway_identifier=gateway.attr_gateway_identifier,
             target_configuration=agentcore.CfnGatewayTarget.TargetConfigurationProperty(
                 mcp=agentcore.CfnGatewayTarget.McpTargetConfigurationProperty(
                     lambda_=agentcore.CfnGatewayTarget.McpLambdaTargetConfigurationProperty(
@@ -146,4 +162,3 @@ class GatewayStack(Stack):
                 )
             ],
         )
-        return gateway

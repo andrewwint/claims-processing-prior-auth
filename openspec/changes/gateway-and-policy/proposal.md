@@ -21,7 +21,9 @@ The agent may submit an approval, but only by naming a stored packet. The approv
   - **Clinician:** a separate app client used by synthetic clinician users in the `clinician` group.
   - **Tenants:** synthetic users in the groups `tenant-a` and `tenant-b`.
 - **Agent gateway** (MCP, `CUSTOM_JWT`; allowed clients: the agent app client):
-  - One Lambda target exposing exactly five tools: `check_eligibility`, `fetch_policy_criteria`, `extract_clinical_evidence`, `record_approval` and `route_to_reviewer`.
+  - Exactly five tools on two Lambda targets:
+    - `AgentTools`: `check_eligibility`, `fetch_policy_criteria`, `extract_clinical_evidence` and `route_to_reviewer`.
+    - `ApprovalService`: `record_approval`, with its own Lambda and role (Andrew's decision, 2026-10-16), so that only it and the reviewer service may later write decision records.
   - `record_approval` takes `packet_id` and `packet_hash`, both required strings. It takes no booleans.
   - The approval Lambda:
     - loads the stored packet (a synthetic fixture in this change)
@@ -32,7 +34,7 @@ The agent may submit an approval, but only by naming a stored packet. The approv
 - **Reviewer gateway** (MCP, `CUSTOM_JWT`; allowed clients: the clinician app client only): one Lambda target exposing `record_adverse_determination`.
 - **Policy engine:** one engine attached to both gateways in `ENFORCE` mode. Policies are validated in the default mode, and any automated-reasoning finding is recorded rather than bypassed. Every permit names its principal explicitly.
   - `permit`: the agent principal may call the four non-approval tools on the agent gateway.
-  - `permit`: the agent principal may call `record_approval` on the agent gateway when `packet_id` and `packet_hash` are both present.
+  - `permit`: the agent principal may call `ApprovalService___record_approval` on the agent gateway when `packet_id` and `packet_hash` are both present.
   - `permit`: the clinician group may call `record_adverse_determination` on the reviewer gateway.
   - `forbid`: `record_adverse_determination` on the reviewer gateway, unless the principal is in the clinician group.
   - `forbid`: `record_adverse_determination` on the reviewer gateway when the principal is the agent identity. This is the article's snippet, and B5 must match it by copy.

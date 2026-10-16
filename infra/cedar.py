@@ -4,7 +4,7 @@ The agent-principal forbid is formatted exactly like the article's snippet:
 B5 compares the redacted deployed text with it character for character.
 """
 
-from tools.schemas import AGENT_TARGET, AGENT_TOOLS, REVIEWER_TARGET
+from tools.schemas import APPROVAL_TARGET, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET
 
 DELIMITER = "___"
 GROUP_CLAIM = "cognito:groups"
@@ -68,11 +68,11 @@ def permit_clinician_denial(reviewer_arn: str, clinician_test: str) -> str:
     )
 
 
-CASE_TOOLS = [t["name"] for t in AGENT_TOOLS if t["name"] != "record_approval"]
+CASE_TOOL_NAMES = [t["name"] for t in CASE_TOOLS]
 
 
 def permit_agent_case_tools(agent_sub: str, agent_arn: str) -> str:
-    actions = ", ".join(action(AGENT_TARGET, t) for t in CASE_TOOLS)
+    actions = ", ".join(action(CASE_TARGET, t) for t in CASE_TOOL_NAMES)
     return (
         "permit(\n"
         f"  principal == {oauth_user(agent_sub)},\n"
@@ -86,7 +86,7 @@ def permit_agent_record_approval(agent_sub: str, agent_arn: str) -> str:
     return (
         "permit(\n"
         f"  principal == {oauth_user(agent_sub)},\n"
-        f"  action == {action(AGENT_TARGET, 'record_approval')},\n"
+        f"  action == {action(APPROVAL_TARGET, 'record_approval')},\n"
         f"  resource == {gateway(agent_arn)}\n"
         ") when { context.input has packet_id && context.input has packet_hash };"
     )

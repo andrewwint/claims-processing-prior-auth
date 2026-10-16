@@ -17,19 +17,19 @@ Answering that means keeping a full record without putting chart text in logs. T
     - its hash goes on the agent's final span
   - **Decision record** (`decisions/<case_id>.json`):
     - holds the reviewer identity, the decision, the reason, and `recommendation_record_hash`
-    - is written by the reviewer service
+    - is written by the reviewer service for clinician decisions, or by the approval service for auto-approvals
     - its hash goes on the reviewer call's span
   - **The chain:** decision → recommendation → trace.
 - **Evidence store.** One S3 bucket with Object Lock in governance mode, versioning, and a default retention of 1 day. Records are encrypted under **one** customer-managed KMS key.
 - **Prefix-scoped writes, enforced by the bucket policy:**
   - The agent runtime and tool roles may write only `recommendations/`.
-  - Only the reviewer service may write `decisions/`.
+  - Only the reviewer service, and the approval service for auto-approvals, may write `decisions/`.
   - No project role may overwrite or delete a record.
   - Only the teardown role may use `s3:BypassGovernanceRetention`. The bucket policy denies it to every other principal, including account administrators.
 - **One canonical-JSON hash function.** The writer, the trace and the verifier all use it. The verifier recomputes the hash from the stored S3 object.
 - **Server-generated timestamps.**
   - `received_at` is the time S3 assigns to the intake request record.
-  - `decided_at` is set by the reviewer service's clock.
+  - `decided_at` is set by the clock of the service that writes the decision record.
   - No timestamp is ever taken from the model or from the packet.
 - **Decision records before the workbench exists.** `scripts/clinician_decide.py` signs in as a synthetic clinician, with the password from Secrets Manager. It then calls the reviewer gateway, so the reviewer service writes a real decision record through the real path.
 - **Trace attributes.** Case ID, step, model ID, token counts, latency, stop reason, the SHA-256 of each content item, and the record hashes. No content.
@@ -68,4 +68,4 @@ None.
   - **one** customer-managed KMS key. Its deletion is scheduled with the 7-day minimum, and the verifier accepts `PendingDeletion`.
   - a teardown role `prior-auth-teardown`
 - **Depends on** `case-packet-and-failure-routing`.
-- **Open question (needs PM and Andrew, see the design):** the writer of decision records for auto-approved cases.
+- **Decided (Andrew, 2026-10-16):** auto-approval decision records are written by the approval service, which has its own Lambda and role (design D2).

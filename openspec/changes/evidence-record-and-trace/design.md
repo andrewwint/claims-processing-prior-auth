@@ -16,7 +16,7 @@
 - **Coverage.** L3 covers both records' fields. L6 covers every link.
 - **Reviewer identity.** It comes from the reviewer service's caller context. Gateway does not pass the caller's identity to Lambda targets (see `gateway-and-policy` contract notes). So in this change the reviewer identity is the clinician username, supplied by `scripts/clinician_decide.py` as a tool argument. The record labels it `reviewer_identity_source: "tool-argument"`, and the README's threat model states the limit. The workbench change may replace it with a verified token claim.
 
-### D2. Open question: who writes the decision record for an auto-approved case
+### D2. Who writes the decision record for an auto-approved case (decided: Andrew, 2026-10-16)
 
 The PM's rule is that the agent and tool roles may write only `recommendations/`, and only the reviewer service may write `decisions/`. Today `record_approval` runs inside the agent's tools Lambda, under a tool role. That leaves an auto-approved case without a permitted writer for its decision record.
 
@@ -27,7 +27,10 @@ The PM's rule is that the agent and tool roles may write only `recommendations/`
   - It must land before D1, or as a D1 update.
 - **Alternative.** Auto-approvals write no decision record: the approval service's result is folded into the recommendation record. The decision chain then exists only for clinician decisions.
 
-L8 holds under either option. Neither is applied until the PM and Andrew choose.
+**Decision: split.** `record_approval` is its own target (`ApprovalService`), with its own Lambda (`prior-auth-approval-service`) and role. This was applied in `gateway-and-policy` before D1.
+- The approval service role writes `decisions/` for auto-approvals, with `reviewer_identity: "approval-service"`.
+- The reviewer service role writes `decisions/` for clinician decisions.
+- The agent runtime and the case-tool Lambda write only `recommendations/`.
 
 ### D3. Write-once storage and prefix-scoped writes
 
@@ -35,7 +38,7 @@ L8 holds under either option. Neither is applied until the PM and Andrew choose.
   - Governance mode, versioning on, and a default retention of **1 day**. The value is recorded from `get-object-lock-configuration`.
   - One day lets the stack be torn down the next day, or the same day through the teardown role's governance bypass.
 - **Bucket policy** (explicit denies, which apply to every principal in the account):
-  - Deny `s3:PutObject` on `decisions/*` unless the principal is the reviewer service role (or the approval service role, under D2's proposal).
+  - Deny `s3:PutObject` on `decisions/*` unless the principal is the reviewer service role or the approval service role.
   - Deny `s3:PutObject` on `recommendations/*` unless the principal is the agent runtime role.
   - Deny `s3:BypassGovernanceRetention`, `s3:PutObjectRetention` and `s3:DeleteObjectVersion` unless the principal is `prior-auth-teardown`.
   - Deny any `PutObject` that names a KMS key other than the project key.

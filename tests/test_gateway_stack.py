@@ -61,8 +61,34 @@ def _tools(target):
     return [t["Name"] for t in target["TargetConfiguration"]["Mcp"]["Lambda"]["ToolSchema"]["InlinePayload"]]
 
 
-def test_agent_target_registers_exactly_five_tools(template):
-    assert _tools(_one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="AgentTools")) == FIVE
+def _gateway_logical_id(template, name):
+    return next(k for k, r in template.find_resources("AWS::BedrockAgentCore::Gateway").items()
+                if r["Properties"]["Name"] == name)
+
+
+def _targets_of(template, gateway_name):
+    gid = _gateway_logical_id(template, gateway_name)
+    return [r["Properties"] for r in template.find_resources("AWS::BedrockAgentCore::GatewayTarget").values()
+            if r["Properties"]["GatewayIdentifier"] == {"Fn::GetAtt": [gid, "GatewayIdentifier"]}]
+
+
+def test_agent_gateway_registers_exactly_five_tools_on_two_targets(template):
+    targets = _targets_of(template, "prior-auth-agent")
+    assert sorted(t["Name"] for t in targets) == ["AgentTools", "ApprovalService"]
+    assert sorted(n for t in targets for n in _tools(t)) == sorted(FIVE)
+    assert _tools(_one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="ApprovalService")) == ["record_approval"]
+
+
+def test_reviewer_gateway_has_only_the_denial_target(template):
+    assert [t["Name"] for t in _targets_of(template, "prior-auth-reviewer")] == ["ReviewerTools"]
+
+
+def test_approval_service_has_its_own_function_and_role(template):
+    fns = {r["Properties"]["FunctionName"]: r["Properties"] for r in template.find_resources("AWS::Lambda::Function").values()}
+    assert set(fns) == {"prior-auth-agent-tools", "prior-auth-approval-service", "prior-auth-reviewer-tools"}
+    assert fns["prior-auth-approval-service"]["Handler"] == "tools.approval_service.handler"
+    roles = {json.dumps(f["Role"]) for f in fns.values()}
+    assert len(roles) == 3
 
 
 def test_reviewer_target_is_named_for_the_article_snippet(template):
@@ -70,7 +96,7 @@ def test_reviewer_target_is_named_for_the_article_snippet(template):
 
 
 def test_record_approval_schema_has_no_booleans(template):
-    payload = _one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="AgentTools")["TargetConfiguration"]["Mcp"]["Lambda"]["ToolSchema"]["InlinePayload"]
+    payload = _one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="ApprovalService")["TargetConfiguration"]["Mcp"]["Lambda"]["ToolSchema"]["InlinePayload"]
     approval = next(t for t in payload if t["Name"] == "record_approval")["InputSchema"]
     assert {k: v["Type"] for k, v in approval["Properties"].items()} == {"packet_id": "string", "packet_hash": "string"}
     assert "boolean" not in json.dumps(payload)
@@ -78,7 +104,7 @@ def test_record_approval_schema_has_no_booleans(template):
 
 def test_every_target_uses_the_gateway_role_and_holds_no_secret(template):
     targets = template.find_resources("AWS::BedrockAgentCore::GatewayTarget").values()
-    assert len(targets) == 2
+    assert len(targets) == 3
     for t in targets:
         assert t["Properties"]["CredentialProviderConfigurations"] == [{"CredentialProviderType": "GATEWAY_IAM_ROLE"}]
 
@@ -86,7 +112,8 @@ def test_every_target_uses_the_gateway_role_and_holds_no_secret(template):
 def test_lambda_log_groups_are_explicit_and_destroyed(template):
     groups = template.find_resources("AWS::Logs::LogGroup")
     names = sorted(g["Properties"]["LogGroupName"] for g in groups.values())
-    assert names == ["/aws/lambda/prior-auth-agent-tools", "/aws/lambda/prior-auth-reviewer-tools"]
+    assert names == ["/aws/lambda/prior-auth-agent-tools", "/aws/lambda/prior-auth-approval-service",
+                     "/aws/lambda/prior-auth-reviewer-tools"]
     assert all(g["DeletionPolicy"] == "Delete" for g in groups.values())
 
 

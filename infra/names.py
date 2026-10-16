@@ -9,7 +9,7 @@ BUDGET_NAMES = ("prior-auth-agentcore-account", "prior-auth-agentcore-project")
 SECRET_PREFIX = "prior-auth/"
 PROJECT_TAG = ("project", "prior-auth-agentcore")
 # Every name this project creates. Teardown deletes only these, never by pattern.
-LAMBDA_FUNCTIONS = ("prior-auth-agent-tools", "prior-auth-reviewer-tools")
+LAMBDA_FUNCTIONS = ("prior-auth-agent-tools", "prior-auth-approval-service", "prior-auth-reviewer-tools")
 LOG_GROUPS = tuple(f"/aws/lambda/{f}" for f in LAMBDA_FUNCTIONS)
 USER_POOLS = ("prior-auth-users",)
 GATEWAYS = ("prior-auth-agent", "prior-auth-reviewer")

@@ -105,3 +105,8 @@ def test_agent_sub_cannot_inject_cedar(sub):
 def test_each_policy_is_a_single_statement():
     for s in P.values():
         assert s.count(";") == 1 and s.rstrip().endswith(";")
+
+
+def test_record_approval_permit_names_the_approval_service_action():
+    s = P["prior_auth_permit_agent_record_approval"]
+    assert 'action == AgentCore::Action::"ApprovalService___record_approval"' in s

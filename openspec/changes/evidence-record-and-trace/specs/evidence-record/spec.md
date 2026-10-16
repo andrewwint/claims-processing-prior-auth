@@ -39,7 +39,7 @@ The writer, the trace, and the verifier SHALL use the same canonical-JSON hash f
 - **THEN** the hash equals the one the writer computed
 
 ### Requirement: The agent cannot write or rewrite decision records
-The agent runtime and tool roles SHALL be able to write only under `recommendations/`. Only the reviewer service SHALL write under `decisions/`.
+The agent runtime and case-tool roles SHALL be able to write only under `recommendations/`. Only the reviewer service and the approval service SHALL write under `decisions/`.
 
 #### Scenario: Agent writes a decision
 - **WHEN** the agent role attempts to write under `decisions/`

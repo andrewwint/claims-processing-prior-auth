@@ -4,8 +4,9 @@ from types import SimpleNamespace
 import pytest
 
 import checks
-from tools import agent_tools, approval, reviewer_tools
-from tools.schemas import AGENT_TARGET, AGENT_TOOLS, REVIEWER_TARGET, REVIEWER_TOOLS
+from tools import agent_tools, approval, approval_service, reviewer_tools
+from tools.schemas import (AGENT_TOOLS, APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
+                           REVIEWER_TOOLS, TOOL_TARGETS)
 
 FIVE = {"check_eligibility", "fetch_policy_criteria", "extract_clinical_evidence", "record_approval", "route_to_reviewer"}
 TRUSTED, PACKETS = approval.load_fixtures()
@@ -17,7 +18,25 @@ def ctx(target, tool):
 
 
 def call(tool, event):
-    return agent_tools.handler(event, ctx(AGENT_TARGET, tool))
+    """Route a call the way the agent gateway does: by the tool's target."""
+    if TOOL_TARGETS[tool] == APPROVAL_TARGET:
+        return approval_service.handler(event, ctx(APPROVAL_TARGET, tool))
+    return agent_tools.handler(event, ctx(CASE_TARGET, tool))
+
+
+def test_agent_gateway_tools_split_across_two_targets():
+    assert [t["name"] for t in APPROVAL_TOOLS] == ["record_approval"]
+    assert {t["name"] for t in CASE_TOOLS} == FIVE - {"record_approval"}
+    assert APPROVAL_TARGET == "ApprovalService" and CASE_TARGET == "AgentTools"
+
+
+def test_case_tools_lambda_cannot_run_record_approval():
+    out = agent_tools.handler({"packet_id": "SYN-PKT-PASS", "packet_hash": "x"}, ctx(CASE_TARGET, "record_approval"))
+    assert out == {"error": "unknown tool: record_approval"}
+
+
+def test_approval_service_runs_only_record_approval():
+    assert "error" in approval_service.handler({}, ctx(APPROVAL_TARGET, "check_eligibility"))
 
 
 # B1, B2: schemas
@@ -129,7 +148,8 @@ def test_stubs_answer_each_other_tool():
 
 
 def test_unknown_tool_is_an_error():
-    assert "error" in call("record_adverse_determination", {})
+    assert "error" in agent_tools.handler({}, ctx(CASE_TARGET, "record_adverse_determination"))
+    assert "error" in approval_service.handler({}, ctx(APPROVAL_TARGET, "record_adverse_determination"))
 
 
 def test_reviewer_tool_records_with_reason_and_refuses_without():
