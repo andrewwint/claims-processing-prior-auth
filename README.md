@@ -6,7 +6,26 @@ An agent on Amazon Bedrock AgentCore assembles a prior-authorization case: it ga
 
 The agent's gateway has no tool for an adverse determination. That tool lives on a separate reviewer gateway, which admits clinicians only and where a Cedar policy forbids the action for the agent's identity. The agent may submit an approval, but the approval service records it only after re-running every check on the stored packet itself.
 
-> **Status: planning.** The work is planned as OpenSpec changes in `openspec/changes/`. Every claim the article makes is tracked in `openspec/claims-ledger.md`, together with the evidence that proves it.
+## Start here
+
+If you have ten minutes, read in this order:
+
+1. **The article:** [docs/article-draft.md](docs/article-draft.md). It makes the claims; this repository backs them.
+2. **The demo:** six beats, run with `python -m scripts.demo <beat>`.
+
+   | Beat | What it shows | Status |
+   |---|---|---|
+   | 1 | Both gateways side by side: the agent's five case-building tools and no denial tool; the reviewer gateway's clinician-only tools | Live (adding `record_clinician_approval`) |
+   | 2 | The Strands agent (three gathering tools, Nova Pro) builds a cited packet; `decide()` approves | In progress |
+   | 3 | One note removed: routed to the reviewer, gap marked | In progress |
+   | 4 | The agent refused at the reviewer gateway, first by the authorizer, then by Cedar | **Proven** |
+   | 5 | A clinician succeeds with the same tool; the decision record chains to the recommendation | In progress |
+   | 6 | A trace with no chart text (canary scan with a positive control); the harness report | Scan in progress; harness after Monday |
+
+3. **The claims ledger:** [openspec/claims-ledger.md](openspec/claims-ledger.md). One row per article claim, with the evidence that proves it and its status.
+4. **The evidence:** [evidence/](evidence/). Redacted records from deployed runs: gateway configuration, policy text, live allowed and denied calls, and validation findings.
+
+**Status:** the gateways and Cedar policies are deployed and proven (beats 1 and 4). Beats 2, 3 and 5 are being built. The article is published only after every ledger row is green.
 
 ## What this repository demonstrates
 
@@ -38,6 +57,10 @@ The agent's gateway has no tool for an adverse determination. That tool lives on
 ## Principles
 
 See [docs/principles.md](docs/principles.md).
+
+## Why there is no Knowledge Base
+
+A decision gate needs a verified criterion, not a retrieved one. Payer criteria are compiled and verified upstream, once. Each criterion carries its policy version, its source location and an evidence rule. At decision time the agent looks them up by exact match on (payer, CPT). Retrieval over a vector store is the right tool for open-ended questions; here it would add a step that can return the wrong criterion.
 
 ## Production notes
 

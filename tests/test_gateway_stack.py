@@ -253,3 +253,23 @@ def test_b4_test_config_admits_agent_and_drops_claim_check_only_when_flagged():
 def test_normal_config_is_clinician_only(template):
     jwt = _one(template, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-reviewer")["AuthorizerConfiguration"]["CustomJWTAuthorizer"]
     assert jwt["AllowedClients"] == [_client_ref(template, "prior-auth-clinician")] and jwt["CustomClaims"]
+
+
+# F4: operator alarm, no SNS
+def test_operator_alarm_on_model_access_denied(template):
+    alarm = _one(template, "AWS::CloudWatch::Alarm", AlarmName="prior-auth-model-access-denied")
+    assert alarm["Namespace"] == "PriorAuth/Operator" and alarm["MetricName"] == "ModelAccessDenied"
+    assert alarm["Threshold"] == 1 and "AlarmActions" not in alarm
+
+
+def test_emit_model_access_denied_writes_the_alarm_metric():
+    from prior_auth.agent.operator import emit_model_access_denied
+    sent = []
+
+    class CW:
+        def put_metric_data(self, **kw):
+            sent.append(kw)
+
+    emit_model_access_denied(CW(), "amazon.nova-pro-v1:0")
+    assert sent[0]["Namespace"] == "PriorAuth/Operator"
+    assert sent[0]["MetricData"][0]["MetricName"] == "ModelAccessDenied"

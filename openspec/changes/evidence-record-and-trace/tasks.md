@@ -9,7 +9,7 @@ Delivers the record chain behind **beats 2, 3 and 5**, and **beat 6**: a trace w
   - the decision record from the reviewer Lambda, carrying `recommendation_record_hash`, with the reviewer identity labeled "as asserted by the clinician app"
 - [ ] 1.4 `scripts/verify_chain.py`: decision → recommendation → trace, with each hash recomputed from S3. Unit tests for a broken link. A recorded run (L6).
 - [ ] 1.5 Recorded: one failed overwrite by the agent role (L4), and one failed write to `decisions/` by the agent role (L8).
-- [ ] 1.6 Trace path. Diagnose why `aws/spans` has received no spans since July, though Transaction Search is ACTIVE. Time-boxed to 1 hour; if it isn't fixed, flag beat 6 to the PM.
+- [ ] 1.6 Trace path. Diagnose why `aws/spans` has received no spans since July, though Transaction Search is ACTIVE. Time-boxed to 1 hour. If it is still empty, the scan's span source is X-Ray traces (`BatchGetTraces`), and the evidence records which path was used (PM, 2026-10-16).
 - [ ] 1.7 Canary scan with positive control: a canary planted in a span and a log line is found, then the clean run scans empty. Scope: runtime logs, spans, and every tool Lambda log group. Both reports committed (L2).
 - [ ] 1.8 Timestamps are server-generated. The L7 test covers the 7-day and 72-hour windows.
 

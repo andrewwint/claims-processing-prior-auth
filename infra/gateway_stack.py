@@ -7,10 +7,12 @@ Every Lambda target authenticates with its gateway's own IAM role.
 """
 
 from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack, aws_bedrockagentcore as agentcore
-from aws_cdk import aws_cognito as cognito, aws_iam as iam, aws_lambda as lambda_, aws_logs as logs
+from aws_cdk import aws_cloudwatch as cloudwatch, aws_cognito as cognito, aws_iam as iam, aws_lambda as lambda_
+from aws_cdk import aws_logs as logs
 from constructs import Construct
 
 from infra.identity import RESOURCE_SERVER, SCOPE, Identity
+from prior_auth.agent import operator
 from prior_auth.handlers.schemas import (APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
                            REVIEWER_TOOLS)
 
@@ -86,6 +88,15 @@ class GatewayStack(Stack):
             custom_claims=None if b4_layer2_test else [CLINICIAN_GROUP_CLAIM],
         )
         self._traces_only()
+        # F4: the operator alert. No SNS (PM, 2026-10-16); the alarm state change is the evidence.
+        cloudwatch.Alarm(
+            self, "ModelAccessDeniedAlarm", alarm_name="prior-auth-model-access-denied",
+            metric=cloudwatch.Metric(namespace=operator.NAMESPACE, metric_name=operator.METRIC,
+                                     statistic="Sum", period=Duration.minutes(1)),
+            threshold=1, evaluation_periods=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+        )
         for key, value in {
             "UserPoolId": self.identity.pool.user_pool_id,
             "AgentClientId": self.identity.agent_client.user_pool_client_id,
