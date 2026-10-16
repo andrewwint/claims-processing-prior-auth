@@ -40,6 +40,14 @@
       "value": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>"
     },
     "other_claims": [],
+    "pa_role": {
+      "type": "str",
+      "value": "clinician"
+    },
+    "pa_tenant": {
+      "type": "str",
+      "value": "tenant-a"
+    },
     "scope": {
       "type": "str",
       "value": "aws.cognito.signin.user.admin"
@@ -74,6 +82,14 @@
       "value": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>"
     },
     "other_claims": [],
+    "pa_role": {
+      "type": "str",
+      "value": "none"
+    },
+    "pa_tenant": {
+      "type": "str",
+      "value": "tenant-a"
+    },
     "scope": {
       "type": "str",
       "value": "aws.cognito.signin.user.admin"

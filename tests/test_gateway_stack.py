@@ -85,10 +85,11 @@ def test_reviewer_gateway_has_only_the_denial_target(template):
 
 def test_approval_service_has_its_own_function_and_role(template):
     fns = {r["Properties"]["FunctionName"]: r["Properties"] for r in template.find_resources("AWS::Lambda::Function").values()}
-    assert set(fns) == {"prior-auth-agent-tools", "prior-auth-approval-service", "prior-auth-reviewer-tools"}
+    assert set(fns) == {"prior-auth-agent-tools", "prior-auth-approval-service", "prior-auth-reviewer-tools",
+                        "prior-auth-pre-token"}
     assert fns["prior-auth-approval-service"]["Handler"] == "tools.approval_service.handler"
     roles = {json.dumps(f["Role"]) for f in fns.values()}
-    assert len(roles) == 3
+    assert len(roles) == 4
 
 
 def test_reviewer_target_is_named_for_the_article_snippet(template):
@@ -113,7 +114,7 @@ def test_lambda_log_groups_are_explicit_and_destroyed(template):
     groups = template.find_resources("AWS::Logs::LogGroup")
     names = sorted(g["Properties"]["LogGroupName"] for g in groups.values())
     assert names == ["/aws/lambda/prior-auth-agent-tools", "/aws/lambda/prior-auth-approval-service",
-                     "/aws/lambda/prior-auth-reviewer-tools"]
+                     "/aws/lambda/prior-auth-pre-token", "/aws/lambda/prior-auth-reviewer-tools"]
     assert all(g["DeletionPolicy"] == "Delete" for g in groups.values())
 
 
@@ -153,9 +154,9 @@ def test_lambda_asset_contains_only_the_tools_package(tmp_path):
 def test_reviewer_gateway_requires_the_clinician_group_claim(template):
     jwt = _one(template, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-reviewer")["AuthorizerConfiguration"]["CustomJWTAuthorizer"]
     assert jwt["CustomClaims"] == [{
-        "InboundTokenClaimName": "cognito:groups",
-        "InboundTokenClaimValueType": "STRING_ARRAY",
-        "AuthorizingClaimMatchValue": {"ClaimMatchOperator": "CONTAINS", "ClaimMatchValue": {"MatchValueString": "clinician"}},
+        "InboundTokenClaimName": "pa_role",
+        "InboundTokenClaimValueType": "STRING",
+        "AuthorizingClaimMatchValue": {"ClaimMatchOperator": "EQUALS", "ClaimMatchValue": {"MatchValueString": "clinician"}},
     }]
 
 
@@ -216,3 +217,11 @@ def test_second_pass_binds_roles_to_exact_gateways():
     text = json.dumps(t.to_json())
     assert "gateway/prior-auth-agent-abc123" in text and "gateway/prior-auth-reviewer-def456" in text
     assert "gateway/prior-auth-agent-*" not in text and "gateway/prior-auth-reviewer-*" not in text
+
+
+
+def test_pool_runs_the_pre_token_trigger_v2(template):
+    pool = _one(template, "AWS::Cognito::UserPool", UserPoolName="prior-auth-users")
+    cfg = pool["LambdaConfig"]["PreTokenGenerationConfig"]
+    assert cfg["LambdaVersion"] == "V2_0"
+    assert pool["UserPoolTier"] == "ESSENTIALS"

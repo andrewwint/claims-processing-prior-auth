@@ -76,7 +76,7 @@ def smoke(session, out, named) -> None:
         print(k, _summary(v))
 
 
-SHAPE_KEYS = ("sub", "client_id", "token_use", "scope", "cognito:groups", "username", "iss", "aud")
+SHAPE_KEYS = ("sub", "client_id", "token_use", "scope", "cognito:groups", "pa_role", "pa_tenant", "username", "iss", "aud")
 
 
 def _shape(c: dict) -> dict:

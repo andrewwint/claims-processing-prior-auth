@@ -7,13 +7,13 @@ B5 compares the redacted deployed text with it character for character.
 from tools.schemas import APPROVAL_TARGET, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET
 
 DELIMITER = "___"
-GROUP_CLAIM = "cognito:groups"
-CLINICIAN_GROUP = "clinician"
-# How the group claim appears as a principal tag is recorded from a real token
-# (task 3.2), then chosen here. Free-text Cedar is never accepted.
+ROLE_CLAIM = "pa_role"
+CLINICIAN_ROLE = "clinician"
+# Observed live: Cedar sees the cognito:groups array as one String tag, so the
+# set test failed validation. A pre-token trigger restates membership as the
+# scalar claim pa_role, compared exactly. Free-text Cedar is never accepted.
 CLINICIAN_TESTS = {
-    "set": f'principal.hasTag("{GROUP_CLAIM}") && principal.getTag("{GROUP_CLAIM}").contains("{CLINICIAN_GROUP}")',
-    "string": f'principal.hasTag("{GROUP_CLAIM}") && principal.getTag("{GROUP_CLAIM}") == "{CLINICIAN_GROUP}"',
+    "pa_role": f'principal.hasTag("{ROLE_CLAIM}") && principal.getTag("{ROLE_CLAIM}") == "{CLINICIAN_ROLE}"',
 }
 
 

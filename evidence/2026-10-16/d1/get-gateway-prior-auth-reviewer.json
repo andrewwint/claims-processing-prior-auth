@@ -7,13 +7,13 @@
       "customClaims": [
         {
           "authorizingClaimMatchValue": {
-            "claimMatchOperator": "CONTAINS",
+            "claimMatchOperator": "EQUALS",
             "claimMatchValue": {
               "matchValueString": "clinician"
             }
           },
-          "inboundTokenClaimName": "cognito:groups",
-          "inboundTokenClaimValueType": "STRING_ARRAY"
+          "inboundTokenClaimName": "pa_role",
+          "inboundTokenClaimValueType": "STRING"
         }
       ],
       "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>/.well-known/openid-configuration"

@@ -1,0 +1,131 @@
+{
+  "finding": "Automated reasoning flags the explicit agent forbid (the article's snippet) as Overly Restrictive: it denies every request for that principal, action and resource. That is its intent.",
+  "policy_events": [
+    {
+      "reason": null,
+      "resource": "priorauthforbidnoncliniciandenial",
+      "status": "DELETE_COMPLETE"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitcliniciandenial",
+      "status": "DELETE_COMPLETE"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitagentrecordapproval",
+      "status": "DELETE_COMPLETE"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitagentcasetools",
+      "status": "DELETE_COMPLETE"
+    },
+    {
+      "reason": null,
+      "resource": "<client-id>",
+      "status": "DELETE_COMPLETE"
+    },
+    {
+      "reason": null,
+      "resource": "<client-id>",
+      "status": "DELETE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitcliniciandenial",
+      "status": "DELETE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitagentrecordapproval",
+      "status": "DELETE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitagentcasetools",
+      "status": "DELETE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthforbidnoncliniciandenial",
+      "status": "DELETE_IN_PROGRESS"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitcliniciandenial",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitagentrecordapproval",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthforbidnoncliniciandenial",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitagentcasetools",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource handler returned message: \"Overly Restrictive: Policy Engine will deny every request for the specified principal (AgentCore::OAuthUser), action (ReviewerTools___record_adverse_determination) and resource (<reviewer-gateway-arn>) combination if the policy is added or updated\" (RequestToken: <uuid>, HandlerErrorCode: NotStabilized)",
+      "resource": "<client-id>",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation Initiated",
+      "resource": "priorauthpermitagentrecordapproval",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": "Resource creation Initiated",
+      "resource": "priorauthpermitagentcasetools",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": "Resource creation Initiated",
+      "resource": "priorauthpermitcliniciandenial",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": "Resource creation Initiated",
+      "resource": "priorauthforbidnoncliniciandenial",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": "Resource creation Initiated",
+      "resource": "<client-id>",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "<client-id>",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitagentcasetools",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitcliniciandenial",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthforbidnoncliniciandenial",
+      "status": "CREATE_IN_PROGRESS"
+    },
+    {
+      "reason": null,
+      "resource": "priorauthpermitagentrecordapproval",
+      "status": "CREATE_IN_PROGRESS"
+    }
+  ],
+  "validation_mode": "default (FAIL_ON_ANY_FINDINGS), unchanged"
+}

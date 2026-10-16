@@ -23,6 +23,8 @@ class Identity(Construct):
             self_sign_up_enabled=False,
             sign_in_aliases=cognito.SignInAliases(username=True),
             password_policy=cognito.PasswordPolicy(min_length=16),
+            # Essentials: needed for access-token customization (pre-token trigger V2_0).
+            feature_plan=cognito.FeaturePlan.ESSENTIALS,
             removal_policy=RemovalPolicy.DESTROY,
         )
         # The prefix is a deploy-time value kept out of the repository, so the

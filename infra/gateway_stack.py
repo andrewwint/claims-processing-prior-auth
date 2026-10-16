@@ -7,7 +7,7 @@ Every Lambda target authenticates with its gateway's own IAM role.
 """
 
 from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack, aws_bedrockagentcore as agentcore
-from aws_cdk import aws_iam as iam, aws_lambda as lambda_, aws_logs as logs
+from aws_cdk import aws_cognito as cognito, aws_iam as iam, aws_lambda as lambda_, aws_logs as logs
 from constructs import Construct
 
 from infra.identity import RESOURCE_SERVER, SCOPE, Identity
@@ -17,12 +17,13 @@ from tools.schemas import (APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TO
 ASSET_EXCLUDE = ["*", ".*", "**/.*", "!tools", "!tools/**", "!checks", "!checks/**", "**/__pycache__", "**/.*"]
 
 
-# Layer 1 on the reviewer gateway: the clinician client AND membership of the clinician group.
+# Layer 1 on the reviewer gateway: the clinician client AND pa_role == "clinician",
+# the scalar claim the pre-token trigger derives from group membership.
 CLINICIAN_GROUP_CLAIM = agentcore.CfnGateway.CustomClaimValidationTypeProperty(
-    inbound_token_claim_name="cognito:groups",
-    inbound_token_claim_value_type="STRING_ARRAY",
+    inbound_token_claim_name="pa_role",
+    inbound_token_claim_value_type="STRING",
     authorizing_claim_match_value=agentcore.CfnGateway.AuthorizingClaimMatchValueTypeProperty(
-        claim_match_operator="CONTAINS",
+        claim_match_operator="EQUALS",
         claim_match_value=agentcore.CfnGateway.ClaimMatchValueTypeProperty(match_value_string="clinician"),
     ),
 )
@@ -51,11 +52,16 @@ class GatewayStack(Stack):
         # First pass: roles are bound to the gateway name prefix. Second pass (after
         # D1 records the real IDs): bound to the exact gateway.
         self.gateway_ids = gateway_ids or {}
+        self.functions: dict[str, lambda_.Function] = {}
         self.identity = Identity(self, "Identity", domain_prefix=domain_prefix)
+        self.identity.pool.add_trigger(
+            cognito.UserPoolOperation.PRE_TOKEN_GENERATION_CONFIG,
+            self._function("PreToken", "tools.pre_token.handler", "prior-auth-pre-token"),
+            cognito.LambdaVersion.V2_0,
+        )
         # Attached in ENFORCE mode from the first deploy. With no policies yet,
         # every tool call is denied by default until the policy stack (D2) lands.
         self.engine = agentcore.CfnPolicyEngine(self, "PolicyEngine", name="prior_auth_engine")
-        self.functions: dict[str, lambda_.Function] = {}
         self.agent_gateway = self._gateway(
             "Agent", name="prior-auth-agent", allowed_client=self.identity.agent_client.user_pool_client_id,
             targets=[

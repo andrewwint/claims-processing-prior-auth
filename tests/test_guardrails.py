@@ -162,7 +162,7 @@ def test_store_agent_secret_never_prints_and_tags_the_secret(capsys):
 def test_teardown_deletes_only_exact_log_group_names():
     from infra.names import LOG_GROUPS
     assert LOG_GROUPS == ("/aws/lambda/prior-auth-agent-tools", "/aws/lambda/prior-auth-approval-service",
-                          "/aws/lambda/prior-auth-reviewer-tools")
+                          "/aws/lambda/prior-auth-reviewer-tools", "/aws/lambda/prior-auth-pre-token")
     import inspect
     from scripts import teardown
     src = inspect.getsource(teardown)
