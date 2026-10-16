@@ -29,7 +29,7 @@
 
   Done when unit tests with CDK assertions pass, including one asserting `AllowAdminCreateUserOnly = true`.
 - [x] 2.2 `src/prior_auth/handlers/agent_tools.py`: one Lambda handler that dispatches the five tools by name. Four of them return synthetic stub results. Done when unit tests pass for each tool.
-- [x] 2.3 Approval service in `src/prior_auth/handlers/agent_tools.py`:
+- [x] 2.3 Approval service (now its own target and Lambda, `src/prior_auth/handlers/approval_service.py`):
   - `record_approval(packet_id, packet_hash)` loads the packet from a bundled synthetic fixture (one passing packet, one failing packet)
   - it verifies the SHA-256 of the canonical JSON and re-runs the checks
   - it refuses with a reason on any failure
@@ -46,7 +46,7 @@
 
 ## 3. Gateways and policy (deploy, with approval)
 
-- [ ] 3.1 Gateway stack:
+- [x] 3.1 Gateway stack:
   - The agent gateway: MCP, `CUSTOM_JWT`, `allowedClients` set to the agent client.
   - The reviewer gateway: MCP, `CUSTOM_JWT`, `allowedClients` set to the clinician client only.
   - Lambda targets with `GATEWAY_IAM_ROLE`, and explicit log groups. The reviewer target is named `ReviewerTools`, so the deployed action name matches the article (B5).
@@ -54,22 +54,22 @@
 
   A CDK assertions test checks it. **Deploy with approval**, then wait for `READY`.
 - [ ] 3.1a After D1, activate the `project` cost-allocation tag once billing has seen it (`ce update-cost-allocation-tags-status`), and record the activation. Until then, the account-wide budget is the alert of record.
-- [ ] 3.1b Copy the agent client secret into Secrets Manager (`scripts/store_agent_secret.py`). Create the synthetic users (`scripts/create_users.py`).
-- [ ] 3.1d Second pass: redeploy the gateway stack with `-c agent_gateway_id=… -c reviewer_gateway_id=…` from the D1 outputs, so each role's trust and policy-evaluation permissions name its exact gateway (X8).
-- [ ] 3.1c Smoke test the fail-closed state: with the engine attached and no policies, a clinician's `tools/list` and `tools/call` are denied. Record the result.
-- [ ] 3.2 Get one real token for each client.
+- [x] 3.1b Copy the agent client secret into Secrets Manager (`scripts/store_agent_secret.py`). Create the synthetic users (`scripts/create_users.py`).
+- [x] 3.1d Second pass: redeploy the gateway stack with `-c agent_gateway_id=… -c reviewer_gateway_id=…` from the D1 outputs, so each role's trust and policy-evaluation permissions name its exact gateway (X8).
+- [x] 3.1c Smoke test the fail-closed state: with the engine attached and no policies, a clinician's `tools/list` and `tools/call` are denied. Record the result.
+- [x] 3.2 Get one real token for each client.
   - Record the agent token's `sub` and `client_id` format, and the clinician token's group claim.
   - Record how `cognito:groups` appears as a principal tag (`set` or `string`). Pass that shape to D2 as `-c clinician_tag_shape=…`. The Cedar expression is built in code; free text is never accepted.
   - Write the principal values used by the policies from these records.
   - Stop for a decision if the agent cannot be named as a principal.
-- [ ] 3.3 Policy stack: one engine attached to both gateways in `ENFORCE` mode, plus the five policies in proposal.md. Every permit names its principal.
+- [x] 3.3 Policy stack (done 2026-10-16: four policies after the agent forbid was merged into one; three validation findings recorded): one engine attached to both gateways in `ENFORCE` mode, plus the policies in proposal.md. Every permit names its principal.
   - Validation runs in the default mode. Any automated-reasoning finding is saved to `evidence/`, and work stops for a decision. The mode is never changed to get past it.
   - **Deploy with approval**, then wait for `ACTIVE`.
-- [ ] 3.4 Record the account's current Transaction Search state and indexing percentage to `evidence/`. Then enable Transaction Search and gateway tracing, so policy decisions appear as spans. **Approval gate D3.**
+- [x] 3.4 Record the account's current Transaction Search state and indexing percentage to `evidence/`. Then enable Transaction Search and gateway tracing, so policy decisions appear as spans. **Approval gate D3.**
 
 ## 4. Evidence
 
-- [ ] 4.1 `scripts/capture_evidence.py` writes:
+- [x] 4.1 Evidence capture (implemented as `scripts/record_d1.py`, outputs in `evidence/2026-10-16/d1/`) writes:
   - target listings and credential types
   - the app clients (no secrets)
   - `tools/list` per identity
@@ -77,7 +77,7 @@
   - `get-gateway`, failing unless the mode is `ENFORCE` and the reviewer gateway allows the clinician client only
 
   Done when the evidence directory exists (B1, B2, B3, A2, A3, A4).
-- [ ] 4.2 Recorded calls:
+- [x] 4.2 Recorded calls:
   - **B4, layer 1:** the agent calls `record_adverse_determination` on the reviewer gateway with its own token and is rejected by the inbound authorizer.
   - **B4, layer 2:** in a test configuration, add the agent client to the reviewer gateway's `allowedClients` and drop the group-claim check, then repeat the call and record the policy denial. The agent token carries no clinician group, so both layer-1 checks must be relaxed for the call to reach Cedar. Then revert. Capture `get-gateway` before, during and after. Done only when the final state allows the clinician client only.
   - **B6:**
@@ -87,12 +87,12 @@
   - **B8, first half:** a clinician calls `record_adverse_determination` and is allowed.
 
   Done when each response, span and metric datapoint is saved.
-- [ ] 4.3 B5: copy the deployed forbid text for the agent principal into the article snippet, with no retyping. Confirm the underscore count in the action name from the deployed `tools/list` names. Done when a test that compares the committed snippet with the deployed policy text passes.
+- [x] 4.3 B5: copy the deployed forbid text for the agent principal into the article snippet, with no retyping. Confirm the underscore count in the action name from the deployed `tools/list` names. Done when a test that compares the committed snippet with the deployed policy text passes.
 - [ ] 4.4 A4: record listings showing separate agent and clinician app clients, every target using `GATEWAY_IAM_ROLE`, and no secret values in tool or target configuration. Done when a test that fails on any secret-like value in the captured configuration passes.
 - [ ] 4.5 Model allow-list (M9). Done when:
   - a code test shows an unlisted model is rejected
   - the IAM policy lists exactly the allow-listed model ARNs in us-east-1
-- [ ] 4.6 Redaction: replace ARNs, account IDs and Cognito client IDs with placeholders before committing, and never change action names. Done when:
+- [x] 4.6 Redaction: replace ARNs, account IDs and Cognito client IDs with placeholders before committing, and never change action names. Done when:
   - a test fails on any 12-digit account ID, ARN or raw client ID in `evidence/`
   - a test confirms the redacted policy text keeps the exact action string (B5)
 
@@ -103,3 +103,10 @@
 ## Workflow follow-up
 
 - Update `openspec/claims-ledger.md` with the evidence paths and statuses for B1–B6, B8 (partial), A2, A3, A4 and M9.
+
+## 6. Demo beats 1 and 4 (PM, 2026-10-16)
+
+Delivers demo **beats 1 and 4**. Beat 4 is already proven (task 4.2 and the D4 evidence); beat 1 needs the tasks below.
+
+- [ ] 6.1 Add `record_clinician_approval` to the reviewer target, next to `record_adverse_determination`, with a Cedar permit for clinicians only. **Deploy with approval.**
+- [ ] 6.2 Record both gateways' `tools/list` side by side: the agent gateway's five case-building tools with no denial tool, and the reviewer gateway's two clinician tools. Shown by `python -m scripts.demo 1`.

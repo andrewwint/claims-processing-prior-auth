@@ -7,7 +7,7 @@ Usage: python -m scripts.demo <1-6>
 3  One-note-removed counterfactual: routed to the reviewer, gap marked.
 4  The agent refused at the reviewer gateway (authorizer, then Cedar).
 5  The clinician succeeds with the same tool (workbench).
-6  A trace with no chart text, and the one-page harness report.
+6  A trace with no chart text (canary scan with a positive control).
 Beats 4 and 5 are shown back to back.
 """
 
@@ -56,7 +56,7 @@ BEATS = {
     "3": not_built(3, "case-packet-and-failure-routing"),
     "4": beat4,
     "5": not_built(5, "clinician-workbench"),
-    "6": not_built(6, "evidence-record-and-trace / evaluation-harness"),
+    "6": not_built(6, "evidence-record-and-trace"),
 }
 
 

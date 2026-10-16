@@ -91,7 +91,7 @@ This replaces any global "empty output" rule.
 | Extraction | valid output with zero findings for a criterion | that criterion is "Not found"; the case continues and ends routed, with the gap |
 | Extraction | no text, malformed output, or truncated (`stopReason: max_tokens`) | routed, "extraction failed", with the stop reason (F1, F2) |
 | Extraction | throttled or timed out after retries | routed, "extraction failed", with the error class |
-| Extraction | access denied | `operator_alert`: metric, alarm, SNS (F4) |
+| Extraction | access denied | `operator_alert`: metric and CloudWatch alarm (F4) |
 | Model summary | empty or failed | the packet stays valid, the summary is marked "missing", and the decision is unaffected |
 | Any step | unexpected exception | routed, "needs review", naming the step |
 
@@ -139,17 +139,13 @@ Citation accuracy is not support. A quote can sit exactly on its cited line and 
 
 A finding counts only if it passes source match, same patient, and its criterion's rule. One cited line may support only one criterion. A criterion with no compiled rule is never Met. The rules are deliberately narrow: a true finding phrased differently routes to a reviewer, which costs time, not safety.
 
-### D9. Operator alerts
+### D9. Operator alert
 
-- **Path.** Access denied emits a custom metric. A CloudWatch alarm notifies the SNS topic `prior-auth-operator-alerts`.
-- **Subscription.** The email subscription must be confirmed before the alarm test. The recorded `ListSubscriptionsByTopic` must show a confirmed ARN, not `PendingConfirmation`.
-- **Teardown** deletes the topic and its subscriptions, and the verifier checks that both are gone.
+- **Path.** Access denied emits `PriorAuth/Operator` `ModelAccessDenied` (`src/prior_auth/agent/operator.py`). The CloudWatch alarm `prior-auth-model-access-denied`, already deployed, goes into ALARM. There is no SNS topic (PM, 2026-10-16); the recorded alarm state change is the evidence.
 
 ### D10. Mutation testing
 
-- **Tool.** `mutmut` runs over `src/prior_auth/checks/`, the approval service and `src/prior_auth/agent/session.py` plus the pipeline wrapper.
-- **Report.** It lists every surviving mutant with a disposition: a test is added, or the mutant is equivalent with a reason.
-- **Target.** No unexplained survivors in `src/prior_auth/checks/` or the approval service.
+Deferred to `post-monday-hardening`.
 
 ## Risks / Trade-offs
 

@@ -1,6 +1,6 @@
 # Tasks (demo scope, PM 2026-10-16)
 
-Delivers the one-page harness report in **beat 6**.
+**After Monday** (PM, 2026-10-16). Not part of the Monday demo. Delivers the one-page harness report and the Sonnet 4.6 comparison.
 
 - [ ] 1.1 Six cases, each with its provenance (parent plus change): 2 clean, 2 one-note-removed counterfactuals, 1 wrong patient, 1 forged document. A label-consistency test on gold extraction.
 - [ ] 1.2 `evaluation/PREREGISTRATION.md`, committed before the run: the cases, models (Nova Pro, Sonnet 4.6), 3 trials each, metrics, report wording, and prices with source and date.

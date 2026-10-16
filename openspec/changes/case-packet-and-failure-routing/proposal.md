@@ -18,12 +18,12 @@ The article's demo needs two moments. A Strands agent builds a cited case and co
 
 ## Claims delivered
 
-B7, G1–G3, G4–G7, G9–G11, F1–F3, F5–F7, A1.
+B7, G1–G3, G4–G7, G9–G11, F1–F7, A1.
 
 **Deferred (README "Known limitations"):**
-- the deployed operator alarm and SNS topic (F4 is test-only)
-- the mutation run
-- the evidence-rule redesign (E1–E3)
+- an SNS topic. F4 is the deployed alarm on the operator metric.
+- the mutation run (`post-monday-hardening`)
+- the evidence-rule redesign, E1–E3 (`post-monday-hardening`)
 - the second payer and further procedures
 
 ## Capabilities

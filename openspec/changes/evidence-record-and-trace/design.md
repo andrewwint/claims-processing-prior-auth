@@ -14,14 +14,7 @@
   2. That hash equals the agent's final span attribute.
   3. The decision record's recomputed hash equals the reviewer span attribute.
 - **Coverage.** L3 covers both records' fields. L6 covers every link.
-- **Reviewer identity comes from a request interceptor** on the reviewer gateway (PM, 2026-10-16; contract-read in `docs/contract-notes.md`). Gateway does not pass the caller's identity to Lambda targets, but a REQUEST interceptor receives the bearer token (`passRequestHeaders: true`) and can rewrite the `tools/call` arguments.
-  - **Validation.** `src/prior_auth/handlers/reviewer_interceptor.py` validates the token itself with Cognito `GetUser`, a server-side check, so it relies neither on the authorizer having run first nor on a crypto library in the Lambda. It also requires the token's `client_id` to be the clinician client, and its groups to include `clinician` and exactly one tenant group.
-  - **Overwrite.** It writes `reviewer_sub`, `reviewer_username` and `tenant` into the arguments, overwriting any caller-supplied values. It then returns the transformed request.
-  - **On failure** it returns a `transformedGatewayResponse` error (a short-circuit), so the target is never called.
-  - **No logging of credentials.** It never logs headers or the token.
-  - **In the record.** The decision record's reviewer identity is the interceptor's value, labeled `reviewer_identity_source: "validated-token"`.
-  - **Tests.** A unit test shows that a spoofed `reviewer_username` is overwritten. A recorded live call sends a spoofed name, and the decision record shows the real one.
-  - **Live check.** Whether a transformed body reaches a *Lambda* target is not stated in the docs. It is confirmed by that recorded call before the article's row is marked proven. If it does not, the article's evidence-record row is flagged for "reviewer identity as asserted by the clinician app".
+- **Reviewer identity** is recorded **as the clinician app reports it**, and labeled `reviewer_identity_source: "clinician-app"`. The request interceptor that would validate it is deferred to `post-monday-hardening`; the design work is kept there.
 
 ### D2. Who writes the decision record for an auto-approved case (decided: Andrew, 2026-10-16)
 
@@ -47,8 +40,8 @@ The PM's rule is that the agent and tool roles may write only `recommendations/`
 - **Bucket policy** (explicit denies, which apply to every principal in the account):
   - Deny `s3:PutObject` on `decisions/*` unless the principal is the reviewer service role or the approval service role.
   - Deny `s3:PutObject` on `recommendations/*` unless the principal is the agent runtime role.
-  - Deny `s3:PutObject` on `queue/*` unless the principal is the case-tool role (`route_to_reviewer`), and that role's IAM policy allows only `queue/tenant-a/*` and `queue/tenant-b/*` (PM, 2026-10-16). A key directly under `queue/`, or under any other tenant, is refused. Queue entries also fall under the default retention; they are never overwritten, only superseded by the decision record.
-  - The case-tool role stays denied on `decisions/`. L8 is re-run after the queue scoping lands, to confirm.
+  - Deny `s3:PutObject` on `queue/*` unless the principal is the case-tool role (`route_to_reviewer`). One tenant: entries are `queue/<case_id>.json`. Tenant-scoped prefixes move to `post-monday-hardening`.
+  - The case-tool role stays denied on `decisions/` (L8).
   - Deny `s3:BypassGovernanceRetention`, `s3:PutObjectRetention` and `s3:DeleteObjectVersion` unless the principal is `prior-auth-teardown`.
   - Deny any `PutObject` that names a KMS key other than the project key.
 - **Overwrites.** Writers use `If-None-Match: *`, so a second write of the same key is refused.
@@ -112,11 +105,14 @@ So decision records are produced through the real gateway, authorizer and Cedar 
 
 ### D9. Memory
 
-No Memory resource. The runtime and tool roles include an explicit `Deny` on `bedrock-agentcore:CreateMemory`, `CreateEvent` and `RetrieveMemoryRecords`. The evidence is the `list-memories` output, a code search, and the role policies.
+Not used. The Memory IAM deny and its evidence are deferred to `post-monday-hardening`.
+
+### D10. Trace path (PM, 2026-10-16)
+
+`aws/spans` has received no spans since July, though Transaction Search is ACTIVE. The diagnosis is time-boxed to one hour. If spans still don't arrive, the canary scan reads X-Ray traces (`BatchGetTraces`) as its span source, and the evidence records which path was used.
 
 ## Risks / Trade-offs
 
 - [Redaction misses error text or another event path] → The canary scan, with injected failures and a positive control, finds it. The fix is to stop emitting that path.
 - [Governance mode is weaker than compliance mode] → The bypass is limited to the teardown role by the bucket policy, and the README states production uses compliance mode.
-- [The interceptor's body rewrite might not reach a Lambda target] → A recorded live test with a spoofed name decides it before the claim is marked proven. The fallback is the article edit named above.
 - [The bucket policy locks out an administrator] → The teardown role is assumable by account administrators. Teardown assumes it explicitly.

@@ -35,7 +35,7 @@ The page SHALL label "Not found", "extraction failed", and "no verified policy" 
 - **THEN** the view shows "Extraction failed" with the stop reason, not "Not found"
 
 ### Requirement: Decisions are chained records
-Each clinician decision SHALL write a decision record that carries the recommendation record's hash. The record SHALL label the reviewer identity as asserted by the clinician app.
+Each clinician decision SHALL write a decision record that carries the recommendation record's hash. The record SHALL label the reviewer identity as the clinician app reports it.
 
 #### Scenario: Decision recorded
 - **WHEN** a clinician approves or denies

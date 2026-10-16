@@ -20,11 +20,11 @@ An auditor follows one case from the decision back to the recommendation and on 
 - **Clean trace.** A canary scan with a positive control. It runs after the account's trace path is diagnosed.
 - **Server-generated timestamps**, and a test of the decision clock.
 
-**Deferred (README "Known limitations"):**
-- the reviewer-identity interceptor. Decision records label the identity "as asserted by the clinician app".
+Deferred to `post-monday-hardening`:
+- the reviewer-identity interceptor. Decision records name the reviewer as the clinician app reports it.
 - tenants and per-tenant scoping
 - per-tenant keys
-- Memory evidence
+- the Memory deny and its evidence
 - the extra clock edge cases
 - the redeploy test
 

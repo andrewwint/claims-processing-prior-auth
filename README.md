@@ -20,7 +20,9 @@ If you have ten minutes, read in this order:
    | 3 | One note removed: routed to the reviewer, gap marked | In progress |
    | 4 | The agent refused at the reviewer gateway, first by the authorizer, then by Cedar | **Proven** |
    | 5 | A clinician succeeds with the same tool; the decision record chains to the recommendation | In progress |
-   | 6 | A trace with no chart text (canary scan with a positive control); the harness report | Scan in progress; harness after Monday |
+   | 6 | A trace with no chart text (canary scan with a positive control) | In progress |
+
+   After Monday: the harness report (six cases × Nova Pro and Sonnet 4.6 × three trials).
 
 3. **The claims ledger:** [openspec/claims-ledger.md](openspec/claims-ledger.md). One row per article claim, with the evidence that proves it and its status.
 4. **The evidence:** [evidence/](evidence/). Redacted records from deployed runs: gateway configuration, policy text, live allowed and denied calls, and validation findings.
@@ -85,9 +87,9 @@ This repository is a reference implementation that can be torn down the same day
 
 ## Known limitations
 
-This repository is built backwards from a five-minute demo. These are deliberately out of scope, and each one is tracked as an issue.
+This repository is built backwards from a five-minute demo. These are deliberately out of scope, and each one is planned in [`openspec/changes/post-monday-hardening`](openspec/changes/post-monday-hardening/proposal.md).
 
-- **Reviewer identity is asserted, not verified.** Decision records label the reviewer "as asserted by the clinician app". A gateway request interceptor that validates the clinician's token and overwrites the identity is designed but not built.
+- **Reviewer identity is reported, not verified.** Decision records name the reviewer as the clinician app reports it. A gateway request interceptor that validates the clinician's token and overwrites the identity is designed but not built.
 - **One tenant.** There are no tenant groups in use, no cross-tenant tests, and no per-tenant keys. The workbench page reads the review queue with the operator's local AWS credentials. Only decisions go through the reviewer gateway under the clinician's token.
 - **Evidence rules are narrow.** They cover the demo cases. Adversarial review found further gaps that would let a negated or hedged line count as support:
   - negators outside the list ("w/o", "neg.", "cannot confirm", typographic apostrophes, fullwidth or zero-width characters)

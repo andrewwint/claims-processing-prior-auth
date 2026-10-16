@@ -30,7 +30,7 @@ Delivers demo **beats 2 and 3**: a clean case approved by `decide()`, and a one-
 ## 4. Strands agent on Runtime (deploy, with approval)
 
 - [ ] 4.1 The Strands agent: MCP client to the agent gateway, filtered to exactly the three gathering tools; Nova Pro; redaction on. Done when tests confirm the tool list is exactly three (G10).
-- [ ] 4.2 Session wrapper: exactly one terminal outcome per session, with `needs_review` on any gap (F7). Unit tests per failure-table row (F1–F3, F5, F6).
+- [ ] 4.2 Session wrapper: exactly one terminal outcome per session, with `needs_review` on any gap (F7). Unit tests per failure-table row (F1–F3, F5, F6). Access denied emits the operator metric, and the recorded alarm state change closes F4.
 - [ ] 4.3 Runtime stack (CodeZip ARM64, JWT, intake client only), deploy script with `require_mmdsv2`. **Deploy with approval.**
 - [ ] 4.4 Record beat 2 (clean case approved) and beat 3 (counterfactual routed, gap marked), each with a distinct session ID (A1, G3).
 

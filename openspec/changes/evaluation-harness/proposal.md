@@ -2,7 +2,7 @@
 
 ## Why
 
-The article commits to measuring how often the system approves a case it should have routed, and to publishing that number whatever it is. **Beat 6** shows it on one page (PM scope cut, 2026-10-16).
+The article commits to measuring how often the system approves a case it should have routed, and to publishing that number whatever it is. This runs **after Monday's demo**, and the article is published only after these rows are green (PM, 2026-10-16).
 
 ## What Changes
 

@@ -33,15 +33,7 @@ They describe this harness's synthetic cases only.
   - `parent_id`
   - `change`: the type, the target element, and the before and after values
   - `label`
-- **Change types:**
-  - `remove_evidence`
-  - `below_minimum`
-  - `forge_unindexed_doc`
-  - `alter_indexed_text`
-  - `wrong_doc_kind`
-  - `other_patient_doc`
-  - `no_policy_for_plan`
-  - `member_not_eligible`
+- **Change types** (demo set): `remove_evidence` (2 counterfactuals), `other_patient_doc` (1 wrong patient) and `forge_unindexed_doc` (1 forged). Further change types are deferred.
 - **Test.** A diff between a case and its parent shows exactly the declared change, and nothing else.
 - **Label consistency.** For every case labeled "needs review", the checks module run on a *perfect* extraction (the author's gold findings) must refuse it. This catches a label that the rules themselves disagree with, before any model runs, so a "false approval" can't be an artifact of a wrong label.
 

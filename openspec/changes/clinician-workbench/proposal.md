@@ -6,15 +6,16 @@ The article's design ends at a person: the clinician reviews the case and decide
 
 ## What Changes
 
-- **Reviewer gateway tools:** `record_adverse_determination` (reason required) and `record_clinician_approval`, both for clinicians only.
+- **Reviewer gateway tools:** uses `record_adverse_determination` (reason required) and `record_clinician_approval`, which arrive with beat 1 in `gateway-and-policy`.
 - **A single local page:**
   - hosted-UI sign-in through a standard OAuth library (PKCE and `state`)
   - the queue
   - a packet view with distinct failure labels and a marked model summary
   - approve, or deny with a required reason
-- **Decision records** chained to the recommendation record. The reviewer identity is labeled "as asserted by the clinician app".
+- **Decision records** chained to the recommendation record. The reviewer identity is labeled "as the clinician app reports it".
 
 **Deferred (README "Known limitations"):**
+Deferred to `post-monday-hardening`:
 - the request interceptor that would validate the reviewer identity
 - tenants and cross-tenant tests (one tenant)
 - reads through the gateway (the demo page reads the queue with the operator's credentials)
@@ -36,5 +37,5 @@ None.
 ## Impact
 
 - **New code:** `workbench/`, the reviewer tool additions, and tests.
-- **AWS changes:** one more reviewer tool and one more Cedar permit.
+- **AWS changes:** the reviewer Lambda writes decision records; no new gateway tools (beat 1 adds them).
 - **Depends on** `evidence-record-and-trace`.

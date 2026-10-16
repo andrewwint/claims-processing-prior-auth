@@ -14,7 +14,7 @@ The agent runtime SHALL write one recommendation record per case at the end of i
 - **THEN** a recommendation record with every listed field exists, and the final span carries its hash
 
 ### Requirement: Decision records chain to the recommendation
-The reviewer and approval services SHALL write one decision record per decision. The record SHALL hold the decision, the reason, the reviewer identity, the recommendation record's hash and a server-generated decision time. The reviewer identity SHALL be labeled as asserted by the clinician app.
+The reviewer and approval services SHALL write one decision record per decision. The record SHALL hold the decision, the reason, the reviewer identity, the recommendation record's hash and a server-generated decision time. The reviewer identity SHALL be labeled as the clinician app reports it.
 
 #### Scenario: Chain check
 - **WHEN** the chain verifier runs on a decided case

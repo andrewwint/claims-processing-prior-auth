@@ -1,12 +1,13 @@
 # Tasks (demo scope, PM 2026-10-16)
 
-Delivers **beat 5**: a clinician decides on the routed case. It is demoed right after **beat 4**, in which the agent is refused the same tool.
+Delivers **beat 5**: a clinician decides on the routed case.
 
-- [ ] 1.1 Reviewer gateway: add `record_clinician_approval` next to `record_adverse_determination`, with a Cedar permit for clinicians only. Beat 1 shows both gateways' `tools/list` side by side.
+It is demoed right after the agent is refused the same tool (gateway-and-policy).
+
 - [ ] 1.2 Reviewer Lambda:
   - the denial reason is required (schema plus server-side check; empty and whitespace-only are refused)
   - each decision writes a decision record chained to the recommendation record
-  - the reviewer identity is labeled "as asserted by the clinician app"
+  - the reviewer identity is labeled "as the clinician app reports it"
 - [ ] 1.3 A single local page:
   - hosted-UI sign-in through a standard OAuth library that handles PKCE and `state`, bound to 127.0.0.1
   - the queue
