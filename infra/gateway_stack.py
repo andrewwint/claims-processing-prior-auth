@@ -43,8 +43,12 @@ def _tool(t: dict) -> agentcore.CfnGatewayTarget.ToolDefinitionProperty:
 
 
 class GatewayStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, *, domain_prefix: str, **kwargs):
+    def __init__(self, scope: Construct, construct_id: str, *, domain_prefix: str,
+                 gateway_ids: dict[str, str] | None = None, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
+        # First pass: roles are bound to the gateway name prefix. Second pass (after
+        # D1 records the real IDs): bound to the exact gateway.
+        self.gateway_ids = gateway_ids or {}
         self.identity = Identity(self, "Identity", domain_prefix=domain_prefix)
         # Attached in ENFORCE mode from the first deploy. With no policies yet,
         # every tool call is denied by default until the policy stack (D2) lands.
@@ -76,6 +80,10 @@ class GatewayStack(Stack):
         }.items():
             CfnOutput(self, key, value=value)
 
+    def _gateway_arn_pattern(self, name: str) -> str:
+        exact = self.gateway_ids.get(name)
+        return f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{exact or name + '-*'}"
+
     def _gateway(self, prefix, *, name, allowed_client, target, tools, handler, function_name,
                  allowed_scopes=None, custom_claims=None):
         log_group = logs.LogGroup(
@@ -95,7 +103,7 @@ class GatewayStack(Stack):
                 conditions={
                     "StringEquals": {"aws:SourceAccount": self.account},
                     # Confused-deputy guard: only this project's named gateway may assume the role.
-                    "ArnLike": {"aws:SourceArn": f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{name}-*"},
+                    "ArnLike": {"aws:SourceArn": self._gateway_arn_pattern(name)},
                 },
             ),
         )
@@ -103,7 +111,7 @@ class GatewayStack(Stack):
         role.add_to_policy(iam.PolicyStatement(
             actions=["bedrock-agentcore:AuthorizeAction", "bedrock-agentcore:PartiallyAuthorizeActions",
                      "bedrock-agentcore:GetPolicyEngine"],
-            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{name}-*",
+            resources=[self._gateway_arn_pattern(name),
                        self.engine.attr_policy_engine_arn],
         ))
         gateway = agentcore.CfnGateway(

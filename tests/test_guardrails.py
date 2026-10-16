@@ -35,7 +35,7 @@ def test_verifier_fails_if_a_budget_was_removed():
 
 def test_verifier_fails_if_transaction_search_not_restored():
     assert problems(CLEAN, list(BUDGET_NAMES), False) == [
-        "transaction search differs from the recorded pre-project values"
+        "transaction search differs from, or has no, recorded pre-project values for this account"
     ]
 
 
@@ -72,21 +72,36 @@ class FakeXRay:
 
 
 def test_transaction_search_record_restore_roundtrip(tmp_path):
-    path = tmp_path / "ts.json"
     xray = FakeXRay("XRay", 1.0)
-    assert transaction_search.record(xray, path) == {"destination": "XRay", "indexing_percentage": {"Default": 1.0}}
+    ev = tmp_path / "evidence.json"
+    assert transaction_search.record(xray, "111111111111", tmp_path, ev) == {"destination": "XRay", "indexing_percentage": {"Default": 1.0}}
     with pytest.raises(FileExistsError):
-        transaction_search.record(xray, path)
+        transaction_search.record(xray, "111111111111", tmp_path, ev)
     xray.destination, xray.pct = "CloudWatchLogs", 100.0
-    assert transaction_search.compare(xray, path)[2] is False
-    transaction_search.restore(xray, path)
+    assert transaction_search.compare(xray, "111111111111", tmp_path)[2] is False
+    transaction_search.restore(xray, "111111111111", tmp_path)
     assert (xray.destination, xray.pct) == ("XRay", 1.0)
-    assert transaction_search.compare(xray, path)[2] is True
-    assert json.loads(path.read_text())["destination"] == "XRay"
+    assert transaction_search.compare(xray, "111111111111", tmp_path)[2] is True
+    assert json.loads(ev.read_text())["destination"] == "XRay"
 
 
-def test_transaction_search_never_recorded_counts_as_unchanged(tmp_path):
-    assert transaction_search.compare(FakeXRay("XRay", 1.0), tmp_path / "none.json")[2] is True
+def test_another_accounts_record_is_never_used(tmp_path):
+    xray = FakeXRay("XRay", 1.0)
+    transaction_search.record(xray, "111111111111", tmp_path, None)
+    assert transaction_search.compare(xray, "222222222222", tmp_path)[2] is False
+    with pytest.raises(transaction_search.NoRecord):
+        transaction_search.restore(xray, "222222222222", tmp_path)
+
+
+def test_local_records_are_git_ignored():
+    from pathlib import Path
+    assert ".local/" in (Path(__file__).resolve().parent.parent / ".gitignore").read_text().split()
+
+
+def test_teardown_deletes_exact_secret_names_only():
+    from scripts.teardown import SECRETS
+    from scripts.create_users import USERS
+    assert SECRETS == ("prior-auth/agent-client", *(f"prior-auth/users/{u}" for u in USERS))
 
 
 def test_generated_passwords_meet_policy_and_differ():
@@ -155,5 +170,7 @@ def test_teardown_deletes_only_exact_log_group_names():
 def test_deploy_requires_private_context_for_gateways_and_policies():
     assert deploy.missing_context("PriorAuthGateways", [], {}) == ["cognito_domain_prefix"]
     assert deploy.missing_context("PriorAuthGateways", ["cognito_domain_prefix=x"], {}) == []
-    assert deploy.missing_context("PriorAuthPolicy", [], {"cognito_domain_prefix": "x"}) == ["agent_sub", "clinician_test"]
+    assert deploy.missing_context("PriorAuthPolicy", [], {"cognito_domain_prefix": "x"}) == ["agent_sub", "clinician_tag_shape"]
+    assert deploy.missing_context("PriorAuthGateways", ["cognito_domain_prefix="], {}) == ["cognito_domain_prefix"]
+    assert deploy.missing_context("PriorAuthGateways", [], {"cognito_domain_prefix": ""}) == ["cognito_domain_prefix"]
     assert deploy.missing_context("PriorAuthBudgets", [], {}) == []

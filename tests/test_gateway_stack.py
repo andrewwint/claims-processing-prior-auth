@@ -165,3 +165,14 @@ def test_gateway_roles_are_bound_to_their_own_gateway(template):
 def test_domain_prefix_comes_from_deploy_context(template):
     domain = next(iter(template.find_resources("AWS::Cognito::UserPoolDomain").values()))
     assert domain["Properties"]["Domain"] == "prior-auth-test"
+
+
+
+def test_second_pass_binds_roles_to_exact_gateways():
+    app = cdk.App()
+    t = Template.from_stack(GatewayStack(app, "G2", env=cdk.Environment(region="us-east-1"), domain_prefix="p",
+                                         gateway_ids={"prior-auth-agent": "prior-auth-agent-abc123",
+                                                      "prior-auth-reviewer": "prior-auth-reviewer-def456"}))
+    text = json.dumps(t.to_json())
+    assert "gateway/prior-auth-agent-abc123" in text and "gateway/prior-auth-reviewer-def456" in text
+    assert "gateway/prior-auth-agent-*" not in text and "gateway/prior-auth-reviewer-*" not in text

@@ -29,6 +29,20 @@ This repository is a reference implementation that can be torn down the same day
 - **The runtime runs in VPC mode.** The demo uses public mode behind a JWT authorizer.
 - **The evidence store uses Object Lock in compliance mode,** with the retention its records policy requires. The demo uses governance mode so it can be torn down the same day.
 
+## Threat model
+
+**Inside the trust boundary.** AWS account administrators. They can change any control here, including the Cedar policies. The controls are aimed at the agent and at callers outside the account.
+
+**The boundary the article describes.** It holds at three points:
+- **The agent's gateway** has no denial tool.
+- **The reviewer gateway** admits only the clinician app client, and only tokens in the clinician group.
+- **The Cedar policies** forbid the denial action for every non-clinician, and explicitly for the agent.
+
+**Residual risks, stated plainly:**
+- **Direct Lambda invocation.** A principal in the account allowed to call `lambda:InvokeFunction` can invoke the tool Lambdas directly and skip both gateway layers. Gateway does not pass the caller's identity to Lambda targets, so the denial Lambda cannot verify the clinician itself. This does not let anyone forge an approval: `record_approval` rebuilds every verdict from trusted sources, whatever the call path.
+- **Reviewer identity.** Until the clinician workbench verifies a token, a decision record names the reviewer from a tool argument. The record labels that source.
+- **Governance mode.** The evidence store uses Object Lock in governance mode, and only the teardown role may bypass it. Production would use compliance mode.
+
 ## Data
 
 This repository uses synthetic data only. It contains no real patient data, and it must never be used with any.

@@ -25,7 +25,7 @@ The runtime SHALL accept callers only through a JWT authorizer. Its only allowed
 - **THEN** the request is rejected
 
 ### Requirement: The extraction model is named, allow-listed and access-checked
-The extraction model SHALL be Claude Sonnet 4.6, invoked through the US inference profile as an explicit, recorded opt-in. It SHALL be called at temperature 0 only. A real access call with its lifecycle status SHALL be recorded before the first invocation.
+The runtime's default extraction model SHALL be Amazon Nova Pro in us-east-1. Claude Sonnet 4.6, through the US inference profile, SHALL be available only as an explicit, recorded opt-in. Each SHALL be sent only the sampling parameters it accepts. A real access call with lifecycle status SHALL be recorded for each before its first invocation.
 
 #### Scenario: Access record exists
 - **WHEN** the runtime is first deployed

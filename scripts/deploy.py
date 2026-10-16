@@ -21,12 +21,12 @@ class BudgetsMissing(RuntimeError):
 
 REQUIRED_CONTEXT = {
     "PriorAuthGateways": ("cognito_domain_prefix",),
-    "PriorAuthPolicy": ("cognito_domain_prefix", "agent_sub", "clinician_test"),
+    "PriorAuthPolicy": ("cognito_domain_prefix", "agent_sub", "clinician_tag_shape"),
 }
 
 
 def missing_context(stack: str, args: list[str], saved: dict) -> list[str]:
-    given = {a.split("=", 1)[0] for a in args if "=" in a} | set(saved)
+    given = {k for k, _, v in (a.partition("=") for a in args) if v} | {k for k, v in saved.items() if v}
     return [k for k in REQUIRED_CONTEXT.get(stack, ()) if k not in given]
 
 

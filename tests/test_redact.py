@@ -1,3 +1,5 @@
+import pytest
+
 from scripts.redact import find_unredacted, redact
 
 ACCOUNT = "123456789012"
@@ -60,3 +62,38 @@ def test_generic_patterns_never_touch_action_names_or_hashes_of_other_length():
     assert redact("AgentTools___record_approval") == "AgentTools___record_approval"
     sha = "a" * 64
     assert redact(sha) == sha
+
+
+# X4 (second security review)
+@pytest.mark.parametrize("secret,placeholder", [
+    ("eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjMifQ.c2lnbmF0dXJl", "<jwt>"),
+    ("9a8b7c6d-1234-4abc-8def-0123456789ab", "<uuid>"),
+    ("someone@example.com", "<email>"),
+    ("AKIAABCDEFGHIJKLMNOP", "<access-key>"),
+    ("1q2w3e4r5t6y7u8i9o0p1q2w3e4r5t6y7u8i9o0p1q2w3e4r5t6", "<secret>"),
+    ("prior-auth-agent-x1y2z3a4b5", "<gateway-id>"),
+])
+def test_more_identifier_shapes_are_replaced(secret, placeholder):
+    out = redact(f'{{"v": "{secret}"}}')
+    assert placeholder in out and secret not in out
+    assert find_unredacted(out) == []
+
+
+def test_sha256_hashes_survive_redaction():
+    import hashlib
+    h = hashlib.sha256(b"packet").hexdigest()
+    assert redact(h) == h and find_unredacted(h) == []
+
+
+def test_known_values_map_stack_outputs_to_named_placeholders():
+    from scripts.redact import known_values
+    named = known_values({"AgentClientId": AGENT_CLIENT, "ReviewerGatewayArn": GATEWAY_ARN, "Other": "x"})
+    assert named == {AGENT_CLIENT: "<agent-client-id>", GATEWAY_ARN: "<reviewer-gateway-arn>"}
+
+
+
+def test_committed_evidence_has_no_unredacted_identifiers():
+    from pathlib import Path
+    root = Path(__file__).resolve().parent.parent / "evidence"
+    leaks = {str(p): find_unredacted(p.read_text()) for p in root.rglob("*") if p.is_file()}
+    assert {k: v for k, v in leaks.items() if v} == {}

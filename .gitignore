@@ -19,3 +19,4 @@ __pycache__/
 
 # Raw run output stays local; reviewed reports are committed explicitly
 harness/results/raw/
+.local/

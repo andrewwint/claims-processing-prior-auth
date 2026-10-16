@@ -55,10 +55,11 @@
   A CDK assertions test checks it. **Deploy with approval**, then wait for `READY`.
 - [ ] 3.1a After D1, activate the `project` cost-allocation tag once billing has seen it (`ce update-cost-allocation-tags-status`), and record the activation. Until then, the account-wide budget is the alert of record.
 - [ ] 3.1b Copy the agent client secret into Secrets Manager (`scripts/store_agent_secret.py`). Create the synthetic users (`scripts/create_users.py`).
+- [ ] 3.1d Second pass: redeploy the gateway stack with `-c agent_gateway_id=… -c reviewer_gateway_id=…` from the D1 outputs, so each role's trust and policy-evaluation permissions name its exact gateway (X8).
 - [ ] 3.1c Smoke test the fail-closed state: with the engine attached and no policies, a clinician's `tools/list` and `tools/call` are denied. Record the result.
 - [ ] 3.2 Get one real token for each client.
   - Record the agent token's `sub` and `client_id` format, and the clinician token's group claim.
-  - Record how `cognito:groups` appears as a principal tag. Derive the `clinician_test` expression from that record; it is passed to D2 as context.
+  - Record how `cognito:groups` appears as a principal tag (`set` or `string`). Pass that shape to D2 as `-c clinician_tag_shape=…`. The Cedar expression is built in code; free text is never accepted.
   - Write the principal values used by the policies from these records.
   - Stop for a decision if the agent cannot be named as a principal.
 - [ ] 3.3 Policy stack: one engine attached to both gateways in `ENFORCE` mode, plus the five policies in proposal.md. Every permit names its principal.

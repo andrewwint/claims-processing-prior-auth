@@ -14,7 +14,7 @@ def problems(found: dict[str, list[str]], budgets: list[str], ts_matches: bool) 
     out = [f"leftover {kind}: {name}" for kind, names in sorted(found.items()) for name in names]
     out += [f"missing budget: {b}" for b in BUDGET_NAMES if b not in budgets]
     if not ts_matches:
-        out.append("transaction search differs from the recorded pre-project values")
+        out.append("transaction search differs from, or has no, recorded pre-project values for this account")
     return out
 
 
@@ -23,7 +23,8 @@ def main() -> int:
     try:
         found = inventory.inventory(session)
         budgets = inventory.present_budgets(session)
-        recorded, now, matches = transaction_search.compare(session.client("xray"))
+        account_id = session.client("sts").get_caller_identity()["Account"]
+        recorded, now, matches = transaction_search.compare(session.client("xray"), account_id)
     except ClientError as e:
         print(f"Error: {e}", file=sys.stderr)
         return 1

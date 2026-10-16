@@ -101,8 +101,21 @@ Before anything is committed, redaction replaces ARNs, account IDs and Cognito c
 | E5. Teardown deletes by name pattern | Fixed: exact log group names; secrets need the prefix and the project tag; teardown stops if `cdk destroy` fails |
 | E6. Agent client secret only in Cognito | Fixed: copied to Secrets Manager after D1. Reading it from Cognito by account administrators remains possible (residual) |
 | E7. Predictable Cognito domain prefix | Fixed: private deploy-time value |
-| E8. Account principals with `lambda:InvokeFunction` can call the tool Lambdas directly, bypassing both gateway layers | **Open: needs Andrew's decision.** Lambda resource policies cannot deny an account administrator. No project role is granted invoke except the gateway roles. |
+| E8. Account principals with `lambda:InvokeFunction` can call the tool Lambdas directly, bypassing both gateway layers | **Accepted as a documented residual (PM, 2026-10-16).** Account admins are inside the trust boundary, and could also edit the Cedar policies. `record_approval`'s server-side rebuild refuses forged approvals whatever the call path. Contract-read: Gateway does not pass the caller's JWT or identity to Lambda targets (the context carries only gateway, target, tool and message IDs; a request interceptor can inject an `Authorization` header, but the docs describe header delivery only for targets with header allowlists). So the denial Lambda cannot verify the clinician itself. Documented in the README's threat model. |
 | E9. Redaction misses Cognito and gateway identifiers | Fixed: generic patterns, with tests that action names and hashes are untouched |
+
+### Second independent review (2026-10-16)
+
+| Finding | Status |
+|---|---|
+| X1. Approval matched quotes, not meaning: any 4-character quote on the right patient's line counted for any criterion | Fixed in `checks/`: compiled evidence rules (document kind, pattern, numeric minimums, negation), one line per criterion, no rule means never Met. Tests reproduce the reviewer's probes. Carried into `case-packet-and-failure-routing` design D11. |
+| X2. E8 (direct Lambda invoke) | Accepted residual (above) |
+| X3. The Cedar clinician check was free text; the clinician permit's principal was unscoped | Fixed: the check is built in code from a recorded tag shape (`set` or `string`, exact membership, no `like`); the permit is scoped to `principal is AgentCore::OAuthUser`; `agent_sub` is validated against injection; one statement per policy |
+| X4. Redaction gaps: JWTs, UUIDs, emails, access keys, client secrets, gateway IDs | Fixed: generic patterns (SHA-256 hashes untouched), named placeholders from stack outputs, and a test that scans all committed evidence |
+| X5. Transaction Search restore used the author's committed values | Fixed: a local, git-ignored record keyed by account. Restore and verify fail when this account has no record. |
+| X6. The domain prefix fell back to a public default | Fixed: synth and deploy refuse a missing or empty prefix |
+| X7. Secrets were deleted by search | Fixed: exact names only |
+| X8. The trust-policy wildcard on the gateway name | Fixed: a second pass after D1 binds each role to its exact gateway ID (task 3.1d) |
 
 ## Risks / Trade-offs
 

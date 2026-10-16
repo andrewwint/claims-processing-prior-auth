@@ -106,13 +106,32 @@ The eligibility row and the last two extraction-adjacent rows (throttling and un
 - **Telemetry.** Redaction is set through `OTEL_SEMCONV_STABILITY_OPT_IN`. `APPLICATION_LOGS` delivery is not enabled.
 - **Network.** Public network mode behind the JWT authorizer. VPC mode is not used: its network interfaces can remain for hours after deletion, which conflicts with same-day verified teardown. The README notes production uses VPC mode.
 
-### D8. Extraction model and Regions
+### D8. Extraction model and Regions (PM, 2026-10-16)
 
-- **Model.** Claude Sonnet 4.6 (`anthropic.claude-sonnet-4-6`), invoked through `us.anthropic.claude-sonnet-4-6`.
-- **Regions.** The profile routes across us-east-1, us-east-2 and us-west-2. This is an explicit, recorded opt-in, and the allow-list and IAM name exactly the profile and those three foundation-model ARNs.
-- **Sampling.** Temperature 0 only. The model rejects `temperature` and `topP` together (recorded).
-- **Alternative.** Amazon Nova Pro (`amazon.nova-pro-v1:0`) runs on demand in us-east-1 only and is also confirmed. It is the fallback if a strict single Region is required.
-- **Not available.** Claude 4.8 and every Claude 5.x model are refused for this account (recorded).
+- **Runtime default: Amazon Nova Pro** (`amazon.nova-pro-v1:0`).
+  - It runs on demand in us-east-1 only, so "Regions pinned" holds by default.
+  - It is sent temperature 0.
+- **Opt-in: Claude Sonnet 4.6** (`anthropic.claude-sonnet-4-6`), through `us.anthropic.claude-sonnet-4-6`.
+  - It routes across us-east-1, us-east-2 and us-west-2, as a documented, recorded opt-in exercised in the harness.
+  - It is sent temperature 0 only, since it rejects `temperature` with `topP`.
+- **Allow-list and IAM.** Both name exactly Nova Pro in us-east-1, plus the Sonnet 4.6 profile and its three foundation-model ARNs. The opt-in is off unless configured.
+- **Refused for this account** (each probed, each `AccessDeniedException`, recorded):
+  - `us.anthropic.claude-opus-4-8`
+  - `us.anthropic.claude-sonnet-5`
+  - `us.anthropic.claude-sonnet-5-5`
+  - `us.anthropic.claude-opus-5-5`
+  - `us.anthropic.claude-haiku-5-5`
+
+  No other model was probed.
+
+### D11. Compiled evidence rules bind findings to criteria (second security review, X1)
+
+Citation accuracy is not support. A quote can sit exactly on its cited line and still say nothing about the criterion, or say the opposite. So each compiled criterion carries an `evidence_rule`, written in the source policy and verified by the compile step:
+- `doc_kinds`: the document kinds that may support it. The kind comes from the trusted chart store, never the packet.
+- `pattern`: what the quote must state, with optional `minimums` for named numeric groups. Number words up to twenty are read as numbers.
+- **Negation:** the four words before the quote on its line must not contain a negator ("no", "not", "without", "denies", "negative for", "ruled out", and others).
+
+A finding counts only if it passes source match, same patient, and its criterion's rule. One cited line may support only one criterion. A criterion with no compiled rule is never Met. The rules are deliberately narrow: a true finding phrased differently routes to a reviewer, which costs time, not safety.
 
 ### D9. Operator alerts
 

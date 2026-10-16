@@ -27,19 +27,43 @@
           "id": "C1",
           "text": "Six weeks of conservative therapy",
           "policy_version": "SYN-LUMBAR-2026.1",
-          "source_location": "section 2.1"
+          "source_location": "section 2.1",
+          "evidence_rule": {
+            "doc_kinds": [
+              "physical therapy notes"
+            ],
+            "pattern": "\\b(?P<visits>\\d+|[A-Za-z]+) visits over (?P<weeks>\\d+|[A-Za-z]+) weeks\\b",
+            "minimums": {
+              "weeks": 6
+            }
+          }
         },
         {
           "id": "C2",
           "text": "Imaging confirms the diagnosis",
           "policy_version": "SYN-LUMBAR-2026.1",
-          "source_location": "section 2.2"
+          "source_location": "section 2.2",
+          "evidence_rule": {
+            "doc_kinds": [
+              "radiology report"
+            ],
+            "pattern": "\\bdisc herniation with nerve root compression\\b"
+          }
         },
         {
           "id": "C3",
           "text": "Functional limitation documented",
           "policy_version": "SYN-LUMBAR-2026.1",
-          "source_location": "section 2.3"
+          "source_location": "section 2.3",
+          "evidence_rule": {
+            "doc_kinds": [
+              "clinic note"
+            ],
+            "pattern": "\\bOswestry Disability Index (?P<odi>\\d+) percent\\b",
+            "minimums": {
+              "odi": 40
+            }
+          }
         }
       ]
     }
@@ -53,7 +77,8 @@
             "Lumbar radiculopathy, left L5.",
             "Eight visits over seven weeks; conservative therapy completed."
           ]
-        ]
+        ],
+        "kind": "physical therapy notes"
       },
       "SYN-DOC-MRI-001": {
         "pages": [
@@ -62,7 +87,8 @@
             "MRI lumbar spine without contrast.",
             "Impression: L4-L5 disc herniation with nerve root compression."
           ]
-        ]
+        ],
+        "kind": "radiology report"
       },
       "SYN-DOC-FUNC-001": {
         "pages": [
@@ -70,7 +96,8 @@
             "SYNTHETIC clinic note.",
             "Oswestry Disability Index 46 percent, severe functional limitation."
           ]
-        ]
+        ],
+        "kind": "clinic note"
       },
       "SYN-DOC-FUNC-002": {
         "pages": [
@@ -78,7 +105,8 @@
             "SYNTHETIC clinic note for another patient.",
             "Oswestry Disability Index 52 percent, severe functional limitation."
           ]
-        ]
+        ],
+        "kind": "clinic note"
       }
     },
     "index": {

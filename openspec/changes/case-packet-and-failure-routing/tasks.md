@@ -2,11 +2,14 @@
 
 ## 0. Before any model invocation
 
-- [x] 0.1 Real access call to the extraction model, with lifecycle status, accepted sampling parameters and Regions recorded (M7, D8). Done 2026-10-16: Claude Sonnet 4.6 is ACTIVE through `us.anthropic.claude-sonnet-4-6`; temperature only; Claude 4.8 and 5.x refused. Evidence: `evidence/2026-10-16/model-access-extraction.json`.
+- [x] 0.1 Real access calls, with lifecycle status, accepted sampling parameters and Regions recorded (M7, D8). Done 2026-10-16. Evidence: `evidence/2026-10-16/model-access-extraction.json`.
+  - Runtime default Nova Pro: ACTIVE, us-east-1, accepts all three sampling probes.
+  - Opt-in Sonnet 4.6 (via `us.anthropic.claude-sonnet-4-6`): ACTIVE, rejects `temperature` with `topP`.
+  - Refused: the five model IDs listed in design D8.
 
 ## 1. Criteria and synthetic data
 
-- [ ] 1.1 Two synthetic payer policies (two procedures each) in `policies/source/`, labeled synthetic, plus `policies/compile.py` with source verification. Tests:
+- [ ] 1.1 Two synthetic payer policies (two procedures each) in `policies/source/`, labeled synthetic, each criterion with its evidence rule (design D11), plus `policies/compile.py` with source verification. Tests:
   - the compile reproduces the committed output
   - a criterion moved away from its stated location fails the compile (G1, G2)
 - [ ] 1.2 Synthetic charts in `cases/`, labeled synthetic: documents with pages and lines, plus `index.json` mapping `doc_id` to patient. Cases:
@@ -29,6 +32,7 @@
   - another patient's document labeled with this case's patient ID (G6)
   - unknown `doc_id` (G6)
   - a finding for a criterion that isn't in the compiled policy (G4)
+  - one quote cited for every criterion, a quote that doesn't state the criterion, a wrong document kind, a numeric minimum not met, a negated finding, one line cited for two criteria, a criterion with no rule (G11)
 - [ ] 2.2 Packet schema and builder, with `model_summary` labeled. Done when a test shows the example packet reproduces the article's three checklist rows (G3).
 - [ ] 2.3 `decide(packet)` returns approve or route. Tests:
   - the approval path

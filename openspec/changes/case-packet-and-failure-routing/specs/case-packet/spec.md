@@ -35,6 +35,26 @@ A finding's value SHALL match only if it occurs as an exact substring of the tex
 - **WHEN** the value is empty or has fewer than four non-whitespace characters
 - **THEN** the source-match check fails
 
+### Requirement: A finding must satisfy its criterion's compiled evidence rule
+A finding SHALL count toward a criterion only if it:
+- comes from an allowed document kind
+- matches the criterion's compiled pattern and numeric minimums
+- is not negated on its line
+
+One cited line SHALL support at most one criterion. A criterion without a compiled rule SHALL never be Met.
+
+#### Scenario: One quote for every criterion
+- **WHEN** a packet cites the same quote for every criterion
+- **THEN** no criterion is Met and the packet is not approvable
+
+#### Scenario: Negated finding
+- **WHEN** the cited line negates the quoted finding
+- **THEN** the finding does not count
+
+#### Scenario: Threshold not met
+- **WHEN** the quote states a value below the criterion's minimum
+- **THEN** the finding does not count
+
 ### Requirement: Same patient is derived from the chart index
 The same-patient check SHALL take each cited document's patient from the chart index by `doc_id` and compare it with the request record's patient. It SHALL ignore any patient ID in the packet or supplied by the model.
 

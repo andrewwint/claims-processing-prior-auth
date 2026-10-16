@@ -8,10 +8,16 @@ patient IDs inside the packet are never read.
 
 import hashlib
 import json
+import re
 import unicodedata
 from dataclasses import dataclass, field
 
 MIN_VALUE_CHARS = 4
+NEGATORS = ("no", "not", "without", "denies", "denied", "negative for", "absence of", "absent", "never", "ruled out")
+NEGATION_WINDOW_WORDS = 4
+NUMBER_WORDS = {w: i for i, w in enumerate(
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen "
+    "sixteen seventeen eighteen nineteen twenty".split())}
 FINDING_FIELDS = {"criterion_id": str, "doc_id": str, "page": int, "line": int, "value": str}
 
 
@@ -51,15 +57,53 @@ def source_match(finding: dict, docs: dict) -> str | None:
     value = finding["value"]
     if len("".join(value.split())) < MIN_VALUE_CHARS:
         return f"source match: value for {finding['criterion_id']} is shorter than {MIN_VALUE_CHARS} characters"
-    doc = docs.get(finding["doc_id"])
-    try:
-        line = doc["pages"][finding["page"] - 1][finding["line"] - 1] if finding["page"] > 0 and finding["line"] > 0 else None
-    except (TypeError, KeyError, IndexError):
-        line = None
+    line = _cited_line(finding, docs)
     if line is None:
         return f"source match: {finding['doc_id']} page {finding['page']} line {finding['line']} does not exist"
     if _nfc(value) not in _nfc(line):
         return f"source match: value for {finding['criterion_id']} not at {finding['doc_id']} p{finding['page']} l{finding['line']}"
+    return None
+
+
+def _cited_line(finding: dict, docs: dict) -> str | None:
+    doc = docs.get(finding["doc_id"])
+    try:
+        return doc["pages"][finding["page"] - 1][finding["line"] - 1] if finding["page"] > 0 and finding["line"] > 0 else None
+    except (TypeError, KeyError, IndexError):
+        return None
+
+
+def _number(text: str) -> int | None:
+    return int(text) if text.isdigit() else NUMBER_WORDS.get(text.lower())
+
+
+def satisfies_rule(finding: dict, criterion: dict, docs: dict) -> str | None:
+    """Binds a finding to its criterion, from the compiled criterion's evidence rule.
+
+    The quote must come from an allowed kind of document, match the criterion's
+    pattern (with any numeric minimums), and not be negated on its line.
+    Returns a failure or None. Run only after source_match has passed.
+    """
+    rule = criterion.get("evidence_rule")
+    cid = criterion["id"]
+    if not rule:
+        return f"evidence rule: {cid} has no compiled evidence rule"
+    doc = docs[finding["doc_id"]]
+    if doc.get("kind") not in rule["doc_kinds"]:
+        return f"evidence rule: {cid} cannot be supported by a {doc.get('kind', 'unknown')} document"
+    value = _nfc(finding["value"])
+    match = re.search(rule["pattern"], value)
+    if match is None:
+        return f"evidence rule: value for {cid} does not state what the criterion requires"
+    for group, minimum in rule.get("minimums", {}).items():
+        n = _number(match.group(group))
+        if n is None or n < minimum:
+            return f"evidence rule: value for {cid} is below the required {group} of {minimum}"
+    line = _nfc(_cited_line(finding, docs))
+    before = line[: line.index(value)].lower().split()[-NEGATION_WINDOW_WORDS:]
+    window = " ".join(before)
+    if any(re.search(rf"\b{re.escape(n)}\b", window) for n in NEGATORS):
+        return f"evidence rule: value for {cid} is negated on its line"
     return None
 
 
@@ -108,10 +152,22 @@ def recompute(packet, request: dict, criteria: list[dict], chart: dict) -> Verdi
     by_criterion: dict[str, list[dict]] = {i: [] for i in ids}
     for f in packet["findings"]:
         by_criterion[f["criterion_id"]].append(f)
+    # One cited line may support only one criterion.
+    used: dict[tuple, str] = {}
+    for f in packet["findings"]:
+        key = (f["doc_id"], f["page"], f["line"])
+        if used.setdefault(key, f["criterion_id"]) != f["criterion_id"]:
+            verdict.failures.append(f"evidence rule: {f['doc_id']} p{f['page']} l{f['line']} is cited for more than one criterion")
+    by_id = {c["id"]: c for c in criteria}
     for cid in ids:
         findings = by_criterion[cid]
-        problems = [p for f in findings for p in (same_patient(f, chart["index"], request["patient_id"]),
-                                                   source_match(f, chart["docs"])) if p]
+        problems = []
+        for f in findings:
+            found = [p for p in (same_patient(f, chart["index"], request["patient_id"]), source_match(f, chart["docs"])) if p]
+            if not found:
+                rule_failure = satisfies_rule(f, by_id[cid], chart["docs"])
+                found = [rule_failure] if rule_failure else []
+            problems += found
         verdict.failures += problems
         verdict.statuses[cid] = "Met" if findings and not problems else "Not found"
     return verdict

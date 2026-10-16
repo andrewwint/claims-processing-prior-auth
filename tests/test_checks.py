@@ -81,8 +81,8 @@ def test_trivial_values_never_match(value):
 def test_nfc_equivalent_text_matches():
     chart = copy.deepcopy(CHART)
     chart["docs"]["SYN-DOC-MRI-001"]["pages"][0][2] = "Impression: L4-L5 café note."
-    v = verdict(lambda p: finding(p, "C2").update(value="café note"), chart=chart)
-    assert "C2" not in v.gaps
+    f = {"criterion_id": "C2", "doc_id": "SYN-DOC-MRI-001", "page": 1, "line": 3, "value": "cafe\u0301 note"}
+    assert checks.source_match(f, chart["docs"]) is None
 
 
 # Check 3: same patient, from the chart index
@@ -132,3 +132,58 @@ def test_hash_is_canonical_and_sensitive():
     q = copy.deepcopy(p)
     q["findings"][0]["line"] = 2
     assert checks.packet_hash(q) != checks.packet_hash(p)
+
+
+# X1 (second security review): a finding must satisfy its criterion's compiled evidence rule
+def _all_cite(packet, doc_id, page, line, value):
+    packet["findings"] = [{"criterion_id": c, "doc_id": doc_id, "page": page, "line": line, "value": value}
+                          for c in ("C1", "C2", "C3")]
+
+
+@pytest.mark.parametrize("doc_id,line,value", [
+    ("SYN-DOC-PT-001", 1, "SYNTHETIC"),
+    ("SYN-DOC-MRI-001", 3, "nerve"),
+    ("SYN-DOC-MRI-001", 3, "L4-L5 disc herniation with nerve root compression"),
+])
+def test_one_quote_for_every_criterion_is_refused(doc_id, line, value):
+    v = verdict(lambda p: _all_cite(p, doc_id, 1, line, value))
+    assert not v.approvable
+
+
+def test_quote_must_state_what_the_criterion_requires():
+    v = verdict(lambda p: finding(p, "C1").update(value="conservative therapy completed"))
+    assert any("does not state what the criterion requires" in f for f in v.failures)
+
+
+def test_wrong_kind_of_document_is_refused():
+    v = verdict(lambda p: finding(p, "C2").update(doc_id="SYN-DOC-PT-001", line=2, value="Lumbar radiculopathy"))
+    assert any("cannot be supported by a physical therapy notes document" in f for f in v.failures)
+
+
+def test_numeric_minimum_is_enforced():
+    chart = copy.deepcopy(CHART)
+    chart["docs"]["SYN-DOC-PT-001"]["pages"][0][2] = "Four visits over three weeks; conservative therapy completed."
+    v = verdict(lambda p: finding(p, "C1").update(value="Four visits over three weeks"), chart=chart)
+    assert any("below the required weeks of 6" in f for f in v.failures)
+
+
+def test_negated_finding_is_refused():
+    chart = copy.deepcopy(CHART)
+    chart["docs"]["SYN-DOC-MRI-001"]["pages"][0][2] = "Impression: no disc herniation with nerve root compression."
+    v = verdict(lambda p: finding(p, "C2").update(value="disc herniation with nerve root compression"), chart=chart)
+    assert any("negated on its line" in f for f in v.failures)
+
+
+def test_same_line_cannot_support_two_criteria():
+    def reuse(p):
+        p["findings"].append({"criterion_id": "C1", "doc_id": "SYN-DOC-MRI-001", "page": 1, "line": 3,
+                              "value": "L4-L5 disc herniation with nerve root compression"})
+    v = verdict(reuse)
+    assert any("cited for more than one criterion" in f for f in v.failures)
+
+
+def test_criterion_without_a_rule_is_never_met():
+    criteria = copy.deepcopy(CRITERIA)
+    del criteria[2]["evidence_rule"]
+    v = checks.recompute(PACKETS["SYN-PKT-PASS"], REQUEST, criteria, CHART)
+    assert "evidence rule: C3 has no compiled evidence rule" in v.failures

@@ -1,17 +1,55 @@
 {
   "date": "2026-10-16",
-  "purpose": "extraction model access check before first invocation (case-packet-and-failure-routing)",
-  "extraction_model": {
-    "model_id": "anthropic.claude-sonnet-4-6",
-    "invoked_via": "us.anthropic.claude-sonnet-4-6",
+  "purpose": "Extraction model access check before first invocation (case-packet-and-failure-routing, approved 2026-10-16)",
+  "runtime_default": {
+    "model_id": "amazon.nova-pro-v1:0",
+    "invoked_via": "amazon.nova-pro-v1:0",
+    "regions": [
+      "us-east-1"
+    ],
     "lifecycle_status": "ACTIVE",
     "inference_types": [
+      "ON_DEMAND",
       "INFERENCE_PROFILE"
     ],
-    "profile_regions": [
+    "calls": {
+      "maxTokens_only": {
+        "ok": true,
+        "stop_reason": "end_turn",
+        "content_block_types": [
+          "text"
+        ],
+        "text": "Ready."
+      },
+      "temperature_0": {
+        "ok": true,
+        "stop_reason": "end_turn",
+        "content_block_types": [
+          "text"
+        ],
+        "text": "Ready."
+      },
+      "temperature_and_topP": {
+        "ok": true,
+        "stop_reason": "end_turn",
+        "content_block_types": [
+          "text"
+        ],
+        "text": "Ready."
+      }
+    }
+  },
+  "opt_in_harness": {
+    "model_id": "anthropic.claude-sonnet-4-6",
+    "invoked_via": "us.anthropic.claude-sonnet-4-6",
+    "regions": [
       "us-east-1",
       "us-east-2",
       "us-west-2"
+    ],
+    "lifecycle_status": "ACTIVE",
+    "inference_types": [
+      "INFERENCE_PROFILE"
     ],
     "calls": {
       "maxTokens_only": {
@@ -37,29 +75,12 @@
       }
     }
   },
-  "in_region_alternative": {
-    "model_id": "amazon.nova-pro-v1:0",
-    "lifecycle_status": "ACTIVE",
-    "inference_types": [
-      "ON_DEMAND",
-      "INFERENCE_PROFILE"
-    ],
-    "calls": {
-      "temperature_0": {
-        "ok": true,
-        "stop_reason": "end_turn",
-        "content_block_types": [
-          "text"
-        ],
-        "text": "Ready."
-      }
-    }
-  },
   "refused_for_this_account": {
-    "anthropic.claude-sonnet-5-5": "AccessDeniedException",
-    "anthropic.claude-sonnet-5": "AccessDeniedException",
-    "anthropic.claude-opus-5-5": "AccessDeniedException",
-    "anthropic.claude-haiku-5-5": "AccessDeniedException",
-    "anthropic.claude-opus-4-8": "AccessDeniedException"
-  }
+    "us.anthropic.claude-opus-4-8": "AccessDeniedException",
+    "us.anthropic.claude-sonnet-5": "AccessDeniedException",
+    "us.anthropic.claude-sonnet-5-5": "AccessDeniedException",
+    "us.anthropic.claude-opus-5-5": "AccessDeniedException",
+    "us.anthropic.claude-haiku-5-5": "AccessDeniedException"
+  },
+  "note": "Only the model IDs listed under refused_for_this_account were probed and refused. Other models were not probed."
 }

@@ -2,7 +2,7 @@ import aws_cdk as cdk
 import pytest
 from aws_cdk.assertions import Template
 
-from infra.cedar import all_policies, forbid_agent_denial
+from infra.cedar import CLINICIAN_TESTS, all_policies, clinician_test, forbid_agent_denial
 from infra.gateway_stack import GatewayStack
 from infra.policy_stack import PolicyStack
 from scripts.redact import redact
@@ -12,8 +12,8 @@ ARTICLE_SNIPPET = """forbid(
   action == AgentCore::Action::"ReviewerTools___record_adverse_determination",
   resource == AgentCore::Gateway::"<reviewer-gateway-arn>"
 );"""
-TEST = 'principal.hasTag("cognito:groups") && principal.getTag("cognito:groups") like "*clinician*"'
-P = all_policies(agent_sub="AGENT", agent_arn="AGENT_ARN", reviewer_arn="REVIEWER_ARN", clinician_test=TEST)
+TEST = CLINICIAN_TESTS["set"]
+P = all_policies(agent_sub="AGENT", agent_arn="AGENT_ARN", reviewer_arn="REVIEWER_ARN", tag_shape="set")
 
 
 def test_agent_forbid_matches_the_article_snippet_after_redaction():
@@ -33,7 +33,8 @@ def test_five_policies_two_forbids_on_the_denial_tool():
 def test_every_permit_constrains_its_principal():
     for name, s in P.items():
         if s.startswith("permit("):
-            assert 'principal == AgentCore::OAuthUser::"AGENT"' in s or f"when {{ {TEST} }}" in s, name
+            assert ('principal == AgentCore::OAuthUser::"AGENT"' in s
+                    or ("principal is AgentCore::OAuthUser" in s and f"when {{ {TEST} }}" in s)), name
 
 
 def test_agent_permits_never_reach_the_reviewer_gateway():
@@ -64,7 +65,7 @@ def stacks():
     g = GatewayStack(app, "G", env=env, domain_prefix="prior-auth-test")
     p = PolicyStack(app, "P", env=env, engine_id=g.engine.attr_policy_engine_id,
                     agent_arn=g.agent_gateway.attr_gateway_arn, reviewer_arn=g.reviewer_gateway.attr_gateway_arn,
-                    agent_sub="AGENT", clinician_test=TEST)
+                    agent_sub="AGENT", tag_shape="set")
     return Template.from_stack(g), Template.from_stack(p)
 
 
@@ -84,3 +85,23 @@ def test_policies_are_active_and_use_default_validation(stacks):
     for pol in pols:
         assert pol["Properties"]["EnforcementMode"] == "ACTIVE"
         assert "ValidationMode" not in pol["Properties"]
+
+
+
+# X3 (second security review)
+def test_clinician_test_is_built_from_a_recorded_shape_never_free_text():
+    with pytest.raises(ValueError):
+        clinician_test('principal.hasTag("cognito:groups")')
+    for expr in CLINICIAN_TESTS.values():
+        assert '"clinician"' in expr and "like" not in expr and ";" not in expr
+
+
+@pytest.mark.parametrize("sub", ['x" };permit(principal,action,resource);//', "", "a b", "a;b", "a}b"])
+def test_agent_sub_cannot_inject_cedar(sub):
+    with pytest.raises(ValueError):
+        all_policies(agent_sub=sub, agent_arn="A", reviewer_arn="R", tag_shape="set")
+
+
+def test_each_policy_is_a_single_statement():
+    for s in P.values():
+        assert s.count(";") == 1 and s.rstrip().endswith(";")

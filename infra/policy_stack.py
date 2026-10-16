@@ -14,10 +14,10 @@ from infra.cedar import all_policies
 
 class PolicyStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, *, engine_id: str, agent_arn: str, reviewer_arn: str,
-                 agent_sub: str, clinician_test: str, **kwargs):
+                 agent_sub: str, tag_shape: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
         statements = all_policies(agent_sub=agent_sub, agent_arn=agent_arn, reviewer_arn=reviewer_arn,
-                                  clinician_test=clinician_test)
+                                  tag_shape=tag_shape)
         for name, statement in statements.items():
             agentcore.CfnPolicy(
                 self, name, name=name, policy_engine_id=engine_id,

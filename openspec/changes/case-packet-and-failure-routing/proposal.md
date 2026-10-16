@@ -36,10 +36,11 @@ It is priority 2.
   - A Strands agent on AgentCore Runtime: HTTP protocol, a JWT authorizer that admits only the intake client, and one session per case.
   - A post-deploy step requires metadata service v2.
   - Telemetry content redaction is on from the first deploy.
-- **Extraction model:** Claude Sonnet 4.6.
-  - Model ID `anthropic.claude-sonnet-4-6`, invoked through the US inference profile `us.anthropic.claude-sonnet-4-6`.
-  - Sampling is temperature 0 only.
-  - The access call was made and recorded before any build (evidence `2026-10-16/model-access-extraction.json`).
+- **Extraction model (PM, 2026-10-16):**
+  - **Runtime default:** Amazon Nova Pro (`amazon.nova-pro-v1:0`), on demand in us-east-1 only. "Regions pinned" holds by default.
+  - **Opt-in:** Claude Sonnet 4.6 (`anthropic.claude-sonnet-4-6`), through `us.anthropic.claude-sonnet-4-6` (us-east-1, us-east-2, us-west-2). It is a documented, recorded opt-in, exercised in the harness. It is sent temperature only, since it rejects `temperature` together with `topP`.
+  - Both access calls were recorded before any build (evidence `2026-10-16/model-access-extraction.json`).
+- **Compiled evidence rules (second security review, X1).** Each compiled criterion carries a deterministic evidence rule: allowed document kinds, a required pattern with numeric minimums, and a negation check. A finding counts toward a criterion only if it satisfies that rule, and one cited line may support only one criterion. Citation accuracy alone never makes a criterion Met.
 - **Mutation testing** over the checks module, the approval service and the runtime wrapper, with surviving mutants reported.
 
 ## Claims delivered
