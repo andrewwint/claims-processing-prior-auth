@@ -11,7 +11,9 @@ from aws_cdk import aws_cloudwatch as cloudwatch, aws_cognito as cognito, aws_ia
 from aws_cdk import aws_logs as logs
 from constructs import Construct
 
+from infra.evidence_stack import bucket_name
 from infra.identity import RESOURCE_SERVER, SCOPE, Identity
+from infra.names import EVIDENCE_KEY_ALIAS, ROLE_NAMES
 from prior_auth.agent import operator
 from prior_auth.handlers.schemas import (APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
                            REVIEWER_TOOLS)
@@ -88,6 +90,7 @@ class GatewayStack(Stack):
                       "prior-auth-reviewer-tools")],
             custom_claims=None if b4_layer2_test else [CLINICIAN_GROUP_CLAIM],
         )
+        self._approval_reads_packets()
         self._traces_only()
         # F4: the operator alert. No SNS (PM, 2026-10-16); the alarm state change is the evidence.
         cloudwatch.Alarm(
@@ -102,6 +105,7 @@ class GatewayStack(Stack):
             "UserPoolId": self.identity.pool.user_pool_id,
             "AgentClientId": self.identity.agent_client.user_pool_client_id,
             "ClinicianClientId": self.identity.clinician_client.user_pool_client_id,
+            "IntakeClientId": self.identity.intake_client.user_pool_client_id,
             "TokenDomain": self.identity.domain.base_url(),
             "AgentGatewayId": self.agent_gateway.attr_gateway_identifier,
             "PolicyEngineId": self.engine.attr_policy_engine_id,
@@ -112,6 +116,16 @@ class GatewayStack(Stack):
             "ReviewerGatewayArn": self.reviewer_gateway.attr_gateway_arn,
         }.items():
             CfnOutput(self, key, value=value)
+
+    def _approval_reads_packets(self) -> None:
+        """The approval service reads packets from the evidence bucket (read-only)."""
+        fn = self.functions["prior-auth-approval-service"]
+        fn.add_environment("EVIDENCE_BUCKET", bucket_name())
+        fn.add_to_role_policy(iam.PolicyStatement(
+            actions=["s3:GetObject"], resources=[f"arn:aws:s3:::{bucket_name()}/packets/*"]))
+        fn.add_to_role_policy(iam.PolicyStatement(
+            actions=["kms:Decrypt"], resources=["*"],
+            conditions={"ForAnyValue:StringEquals": {"kms:ResourceAliases": EVIDENCE_KEY_ALIAS}}))
 
     def _traces_only(self) -> None:
         """Gateway tracing (approval gate D3): TRACES to X-Ray only.
@@ -137,6 +151,8 @@ class GatewayStack(Stack):
         return f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{exact or name + '-*'}"
 
     def _function(self, construct_id: str, handler: str, function_name: str) -> lambda_.Function:
+        role_key = {"prior-auth-agent-tools": "agent_tools", "prior-auth-approval-service": "approval_service",
+                    "prior-auth-reviewer-tools": "reviewer_tools"}.get(function_name)
         log_group = logs.LogGroup(
             self, f"{construct_id}Logs", log_group_name=f"/aws/lambda/{function_name}",
             retention=logs.RetentionDays.ONE_WEEK, removal_policy=RemovalPolicy.DESTROY,
@@ -146,6 +162,11 @@ class GatewayStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_13, architecture=lambda_.Architecture.ARM_64,
             handler=handler, code=lambda_.Code.from_asset(ASSET_ROOT, exclude=ASSET_EXCLUDE),
             timeout=Duration.seconds(15), memory_size=256, log_group=log_group,
+            # Fixed role names, so the evidence bucket policy can name each writer.
+            role=iam.Role(self, f"{construct_id}Role", role_name=ROLE_NAMES[role_key],
+                          assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
+                          managed_policies=[iam.ManagedPolicy.from_aws_managed_policy_name(
+                              "service-role/AWSLambdaBasicExecutionRole")]) if role_key else None,
         )
         self.functions[function_name] = fn
         return fn

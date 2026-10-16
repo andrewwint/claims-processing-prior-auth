@@ -11,6 +11,7 @@ RESOURCE_SERVER = "prior-auth"
 WORKBENCH_CALLBACK = "http://localhost:8765/callback"
 WORKBENCH_LOGOUT = "http://localhost:8765/"
 SCOPE = "tools"
+INVOKE_SCOPE = "invoke"
 
 
 class Identity(Construct):
@@ -33,8 +34,9 @@ class Identity(Construct):
             "Domain", cognito_domain=cognito.CognitoDomainOptions(domain_prefix=domain_prefix)
         )
         tools_scope = cognito.ResourceServerScope(scope_name=SCOPE, scope_description="Call gateway tools")
+        invoke_scope = cognito.ResourceServerScope(scope_name=INVOKE_SCOPE, scope_description="Invoke the agent runtime")
         server = self.pool.add_resource_server(
-            "ResourceServer", identifier=RESOURCE_SERVER, scopes=[tools_scope]
+            "ResourceServer", identifier=RESOURCE_SERVER, scopes=[tools_scope, invoke_scope]
         )
         self.agent_client = self.pool.add_client(
             "AgentClient",
@@ -55,6 +57,20 @@ class Identity(Construct):
         # authorization code + PKCE with a localhost callback only. The earlier risk was
         # the implicit grant delivering tokens to a third-party callback; neither remains.
         # The only password fallback is SRP, so a password never crosses the wire.
+        # The intake client is the only caller the runtime admits (beat 2). Client credentials only.
+        self.intake_client = self.pool.add_client(
+            "IntakeClient",
+            user_pool_client_name="prior-auth-intake",
+            generate_secret=True,
+            auth_flows=cognito.AuthFlow(),
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(client_credentials=True),
+                scopes=[cognito.OAuthScope.resource_server(server, invoke_scope)],
+            ),
+            access_token_validity=Duration.minutes(60),
+            prevent_user_existence_errors=True,
+        )
+        self.intake_client.node.default_child.add_property_override("ExplicitAuthFlows", ["ALLOW_REFRESH_TOKEN_AUTH"])
         self.clinician_client = self.pool.add_client(
             "ClinicianClient",
             user_pool_client_name="prior-auth-clinician",

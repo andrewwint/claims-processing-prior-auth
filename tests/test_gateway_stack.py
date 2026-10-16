@@ -130,8 +130,21 @@ def test_gateway_roles_can_authorize_policy_decisions(template):
 
 
 def test_no_lambda_environment_holds_a_secret(template):
+    allowed = {"EVIDENCE_BUCKET"}  # names only, never credentials
     for fn in template.find_resources("AWS::Lambda::Function").values():
-        assert "Environment" not in fn["Properties"]
+        variables = fn["Properties"].get("Environment", {}).get("Variables", {})
+        assert set(variables) <= allowed, variables
+
+
+def test_intake_client_is_client_credentials_only(template):
+    intake = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-intake")
+    assert intake["AllowedOAuthFlows"] == ["client_credentials"] and intake["ExplicitAuthFlows"] == ["ALLOW_REFRESH_TOKEN_AUTH"]
+
+
+def test_tool_lambdas_have_fixed_role_names(template):
+    names = sorted(r["Properties"].get("RoleName") for r in template.find_resources("AWS::IAM::Role").values()
+                   if r["Properties"].get("RoleName"))
+    assert names == ["prior-auth-agent-tools-role", "prior-auth-approval-service-role", "prior-auth-reviewer-tools-role"]
 
 
 def test_lambda_asset_contains_only_the_package_and_trusted_stores(tmp_path):

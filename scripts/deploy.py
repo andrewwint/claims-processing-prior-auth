@@ -28,13 +28,15 @@ from infra.names import BUDGET_NAMES, BUDGET_STACK, CDK_CLI
 from scripts.inventory import present_budgets
 
 GATEWAY_STACK, POLICY_STACK = "PriorAuthGateways", "PriorAuthPolicy"
-KNOWN_STACKS = (BUDGET_STACK, GATEWAY_STACK, POLICY_STACK)
+EVIDENCE_STACK, RUNTIME_STACK = "PriorAuthEvidence", "PriorAuthRuntime"
+KNOWN_STACKS = (BUDGET_STACK, EVIDENCE_STACK, GATEWAY_STACK, POLICY_STACK, RUNTIME_STACK)
 GATEWAY_ID_KEYS = ("agent_gateway_id", "reviewer_gateway_id")
 REQUIRED_CONTEXT = {
     GATEWAY_STACK: ("cognito_domain_prefix",),
     # Policies deploy after D1 is recorded, so the exact gateway IDs are known and
     # required: a policy deploy must never revert the roles to the name-prefix wildcard.
     POLICY_STACK: ("cognito_domain_prefix", "agent_sub", "clinician_tag_shape", "policy_engine_id", *GATEWAY_ID_KEYS),
+    RUNTIME_STACK: ("cognito_domain_prefix", "intake_client_id", "user_pool_id", "agent_gateway_url", *GATEWAY_ID_KEYS),
 }
 
 
