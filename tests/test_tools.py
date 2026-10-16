@@ -142,9 +142,31 @@ def test_approval_service_uses_the_shared_checks_module():
     assert approval.checks is checks
 
 
-def test_stubs_answer_each_other_tool():
-    for tool in FIVE - {"record_approval"}:
-        assert call(tool, {"case_id": "SYN-CASE-1"})["synthetic"] is True
+def test_check_eligibility_reads_the_trusted_store():
+    ok = call("check_eligibility", {"member_id": "SYN-MBR-101", "cpt_code": "63030"})
+    assert ok["eligible"] is True and ok["payer_id"] == "SYN-PAYER-LARKSPUR"
+    assert call("check_eligibility", {"member_id": "SYN-MBR-101", "cpt_code": "99999"})["eligible"] is False
+    assert call("check_eligibility", {"member_id": "NOPE", "cpt_code": "63030"})["reason"] == "member not found"
+
+
+def test_fetch_policy_criteria_is_an_exact_match():
+    got = call("fetch_policy_criteria", {"payer_id": "SYN-PAYER-LARKSPUR", "cpt_code": "63030"})
+    assert got["verified_policy"] is True and [c["id"] for c in got["criteria"]] == ["C1", "C2", "C3"]
+    assert "evidence_rule" not in got["criteria"][0]
+    assert call("fetch_policy_criteria", {"payer_id": "SYN-PAYER-LARKSPUR", "cpt_code": "6303"})["verified_policy"] is False
+
+
+def test_extract_clinical_evidence_returns_the_case_documents_with_line_numbers():
+    got = call("extract_clinical_evidence", {"case_id": "SYN-CASE-CLEAN-1"})
+    docs = {d["doc_id"]: d for d in got["documents"]}
+    assert set(docs) == {"SYN-DOC-101-PT", "SYN-DOC-101-MRI", "SYN-DOC-101-FUNC"}
+    assert docs["SYN-DOC-101-PT"]["lines"][2] == {"page": 1, "line": 3,
+                                                   "text": "Eight visits over seven weeks; conservative therapy completed."}
+    assert call("extract_clinical_evidence", {"case_id": "NOPE"})["documents"] == []
+
+
+def test_route_to_reviewer_acknowledges():
+    assert call("route_to_reviewer", {"case_id": "C", "reason": "gap", "gaps": ["C3"]})["routed"] is True
 
 
 def test_unknown_tool_is_an_error():

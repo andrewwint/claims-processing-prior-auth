@@ -2,6 +2,8 @@ import re
 
 import aws_cdk as cdk
 
+from scripts.stage_bundle import stage
+
 from infra.budget_stack import PROJECT_TAG_KEY, PROJECT_TAG_VALUE, BudgetStack
 from infra.gateway_stack import GatewayStack
 from infra.policy_stack import PolicyStack
@@ -17,6 +19,7 @@ def _context(app: cdk.App, key: str) -> str:
 
 
 def main() -> None:
+    stage()  # the deployed bundle is always rebuilt from the code and committed data
     app = cdk.App()
     env = cdk.Environment(region=REGION)
     # The budget stack needs deploy-time values; other stacks synthesize without them.

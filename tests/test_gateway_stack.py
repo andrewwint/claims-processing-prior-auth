@@ -134,22 +134,21 @@ def test_no_lambda_environment_holds_a_secret(template):
         assert "Environment" not in fn["Properties"]
 
 
-def test_lambda_asset_contains_only_the_prior_auth_package(tmp_path):
-    import shutil
+def test_lambda_asset_contains_only_the_package_and_trusted_stores(tmp_path):
     from pathlib import Path
 
-    from aws_cdk import CopyOptions, FileSystem
-    from infra.gateway_stack import ASSET_EXCLUDE, ASSET_ROOT
+    from scripts.stage_bundle import stage
 
-    root = Path(__file__).resolve().parent.parent / ASSET_ROOT
-    out = tmp_path / "asset"
-    FileSystem.copy_directory(str(root), str(out), CopyOptions(exclude=ASSET_EXCLUDE))
+    out = stage(tmp_path / "lambda")
     files = sorted(str(p.relative_to(out)) for p in out.rglob("*") if p.is_file())
     assert files and all(f.startswith("prior_auth/") for f in files), files
+    assert not any("__pycache__" in f or "/." in f for f in files)
+    assert not any(f.endswith((".py",)) and "/trusted/" in f for f in files)
+    root = Path(__file__).resolve().parent.parent
     core = Path("prior_auth") / "checks" / "core.py"
-    assert (out / core).read_bytes() == (root / core).read_bytes()
-    assert not any("/." in f or f.startswith(".") for f in files)
-    shutil.rmtree(out)
+    assert (out / core).read_bytes() == (root / "src" / core).read_bytes()
+    assert (out / "prior_auth/trusted/policies/SYN-PAYER-LARKSPUR/63030.json").is_file()
+    assert (out / "prior_auth/trusted/charts/index.json").is_file()
 
 
 # Security review fixes (E1-E4, E7, hardening)

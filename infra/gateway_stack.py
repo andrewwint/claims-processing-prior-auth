@@ -16,8 +16,9 @@ from prior_auth.agent import operator
 from prior_auth.handlers.schemas import (APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
                            REVIEWER_TOOLS)
 
-# Lambda code is bundled from src/: only the prior_auth package, no caches or dotfiles.
-ASSET_ROOT = "src"
+# Lambda code is bundled from build/lambda (scripts/stage_bundle.py): the prior_auth
+# package plus the trusted, read-only synthetic stores. No caches or dotfiles.
+ASSET_ROOT = "build/lambda"
 ASSET_EXCLUDE = ["*", ".*", "**/.*", "!prior_auth", "!prior_auth/**", "**/__pycache__", "**/.*"]
 
 

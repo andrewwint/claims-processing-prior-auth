@@ -21,3 +21,6 @@ __pycache__/
 # Raw run output stays local; reviewed reports are committed explicitly
 evaluation/results/raw/
 .local/
+
+# Staged Lambda bundle
+build/
