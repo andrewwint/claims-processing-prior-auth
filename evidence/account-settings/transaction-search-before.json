@@ -1,0 +1,6 @@
+{
+  "destination": "CloudWatchLogs",
+  "indexing_percentage": {
+    "Default": 100.0
+  }
+}

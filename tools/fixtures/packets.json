@@ -1,0 +1,90 @@
+{
+  "_label": "SYNTHETIC DATA ONLY. Author-written fixture; not real patient data.",
+  "packets": {
+    "SYN-PKT-PASS": {
+      "packet_id": "SYN-PKT-PASS",
+      "case_id": "SYN-CASE-PASS",
+      "patient_id": "SYN-PAT-0001",
+      "cpt_code": "63030",
+      "payer_id": "SYN-PAYER-A",
+      "policy_version": "SYN-POLICY-LUMBAR-2026.1",
+      "criteria": [
+        {
+          "criterion": "Six weeks of conservative therapy",
+          "status": "Met",
+          "evidence": "eight visits over seven weeks",
+          "source_id": "PT-NOTES-001"
+        },
+        {
+          "criterion": "Imaging confirms the diagnosis",
+          "status": "Met",
+          "evidence": "L4-L5 disc herniation with nerve root compression",
+          "source_id": "MRI-001"
+        },
+        {
+          "criterion": "Functional limitation documented",
+          "status": "Met",
+          "evidence": "Oswestry Disability Index 46 percent",
+          "source_id": "FUNC-001"
+        }
+      ],
+      "sources": {
+        "PT-NOTES-001": {
+          "patient_id": "SYN-PAT-0001",
+          "kind": "physical therapy notes",
+          "text": "SYNTHETIC. Physical therapy: eight visits over seven weeks for lumbar radiculopathy. Conservative therapy completed."
+        },
+        "MRI-001": {
+          "patient_id": "SYN-PAT-0001",
+          "kind": "radiology report",
+          "text": "SYNTHETIC. MRI lumbar spine: L4-L5 disc herniation with nerve root compression."
+        },
+        "FUNC-001": {
+          "patient_id": "SYN-PAT-0001",
+          "kind": "clinic note",
+          "text": "SYNTHETIC. Oswestry Disability Index 46 percent, severe functional limitation."
+        }
+      }
+    },
+    "SYN-PKT-FAIL": {
+      "packet_id": "SYN-PKT-FAIL",
+      "case_id": "SYN-CASE-FAIL",
+      "patient_id": "SYN-PAT-0001",
+      "cpt_code": "63030",
+      "payer_id": "SYN-PAYER-A",
+      "policy_version": "SYN-POLICY-LUMBAR-2026.1",
+      "criteria": [
+        {
+          "criterion": "Six weeks of conservative therapy",
+          "status": "Met",
+          "evidence": "eight visits over seven weeks",
+          "source_id": "PT-NOTES-001"
+        },
+        {
+          "criterion": "Imaging confirms the diagnosis",
+          "status": "Met",
+          "evidence": "L4-L5 disc herniation with nerve root compression",
+          "source_id": "MRI-001"
+        },
+        {
+          "criterion": "Functional limitation documented",
+          "status": "Not found",
+          "evidence": "",
+          "source_id": ""
+        }
+      ],
+      "sources": {
+        "PT-NOTES-001": {
+          "patient_id": "SYN-PAT-0001",
+          "kind": "physical therapy notes",
+          "text": "SYNTHETIC. Physical therapy: eight visits over seven weeks for lumbar radiculopathy. Conservative therapy completed."
+        },
+        "MRI-001": {
+          "patient_id": "SYN-PAT-0001",
+          "kind": "radiology report",
+          "text": "SYNTHETIC. MRI lumbar spine: L4-L5 disc herniation with nerve root compression."
+        }
+      }
+    }
+  }
+}

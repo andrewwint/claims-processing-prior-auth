@@ -1,0 +1,145 @@
+[
+  {
+    "BudgetLimit": {
+      "Amount": "536.0",
+      "Unit": "USD"
+    },
+    "BudgetName": "prior-auth-agentcore-account",
+    "BudgetType": "COST",
+    "CalculatedSpend": {
+      "ActualSpend": {
+        "Amount": "35.116",
+        "Unit": "USD"
+      },
+      "ForecastedSpend": {
+        "Amount": "38.874",
+        "Unit": "USD"
+      }
+    },
+    "CostTypes": {
+      "IncludeCredit": true,
+      "IncludeDiscount": true,
+      "IncludeOtherSubscription": true,
+      "IncludeRecurring": true,
+      "IncludeRefund": true,
+      "IncludeSubscription": true,
+      "IncludeSupport": true,
+      "IncludeTax": true,
+      "IncludeUpfront": true,
+      "UseAmortized": false,
+      "UseBlended": false
+    },
+    "HealthStatus": {
+      "LastUpdatedTime": "2026-10-16 17:16:16.698000-04:00",
+      "Status": "HEALTHY"
+    },
+    "LastUpdatedTime": "2026-10-16 17:16:17.191000-04:00",
+    "Notifications": [
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 136.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      },
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 536.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      },
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 56.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      },
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 86.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      }
+    ],
+    "TimePeriod": {
+      "End": "2087-06-14 20:00:00-04:00",
+      "Start": "2026-09-30 20:00:00-04:00"
+    },
+    "TimeUnit": "MONTHLY"
+  },
+  {
+    "BudgetLimit": {
+      "Amount": "500.0",
+      "Unit": "USD"
+    },
+    "BudgetName": "prior-auth-agentcore-project",
+    "BudgetType": "COST",
+    "CalculatedSpend": {
+      "ActualSpend": {
+        "Amount": "0.0",
+        "Unit": "USD"
+      }
+    },
+    "CostFilters": {
+      "TagKeyValue": [
+        "user:project$prior-auth-agentcore"
+      ]
+    },
+    "CostTypes": {
+      "IncludeCredit": true,
+      "IncludeDiscount": true,
+      "IncludeOtherSubscription": true,
+      "IncludeRecurring": true,
+      "IncludeRefund": true,
+      "IncludeSubscription": true,
+      "IncludeSupport": true,
+      "IncludeTax": true,
+      "IncludeUpfront": true,
+      "UseAmortized": false,
+      "UseBlended": false
+    },
+    "HealthStatus": {
+      "LastUpdatedTime": "2026-10-16 17:16:16.490000-04:00",
+      "Status": "HEALTHY"
+    },
+    "LastUpdatedTime": "2026-10-16 17:16:17.043000-04:00",
+    "Notifications": [
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 100.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      },
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 20.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      },
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 50.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      },
+      {
+        "ComparisonOperator": "GREATER_THAN",
+        "NotificationState": "OK",
+        "NotificationType": "ACTUAL",
+        "Threshold": 500.0,
+        "ThresholdType": "ABSOLUTE_VALUE"
+      }
+    ],
+    "TimePeriod": {
+      "End": "2087-06-14 20:00:00-04:00",
+      "Start": "2026-09-30 20:00:00-04:00"
+    },
+    "TimeUnit": "MONTHLY"
+  }
+]

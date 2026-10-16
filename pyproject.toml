@@ -1,0 +1,18 @@
+[project]
+name = "prior-auth-agentcore"
+version = "0.1.0"
+description = "Reference implementation for 'Build the Case, Let the Clinician Decide'"
+requires-python = ">=3.11"
+dependencies = [
+    "aws-cdk-lib==2.273.0",
+    "aws-cdk.aws-bedrock-agentcore-alpha==2.273.0a0",
+    "constructs==10.8.1",
+    "boto3==1.43.114",
+]
+
+[dependency-groups]
+dev = ["pytest==9.1.1"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

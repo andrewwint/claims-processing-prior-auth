@@ -1,0 +1,121 @@
+import json
+
+import aws_cdk as cdk
+import pytest
+from aws_cdk.assertions import Template
+
+from infra.gateway_stack import GatewayStack
+
+FIVE = ["check_eligibility", "fetch_policy_criteria", "extract_clinical_evidence", "record_approval", "route_to_reviewer"]
+
+
+@pytest.fixture(scope="module")
+def template():
+    app = cdk.App()
+    return Template.from_stack(GatewayStack(app, "G", env=cdk.Environment(region="us-east-1")))
+
+
+def _one(template, rtype, **match):
+    found = [r for r in template.find_resources(rtype).values()
+             if all(r["Properties"].get(k) == v for k, v in match.items())]
+    assert len(found) == 1, (rtype, match, len(found))
+    return found[0]["Properties"]
+
+
+def _client_ref(template, name):
+    return {"Ref": next(k for k, r in template.find_resources("AWS::Cognito::UserPoolClient").items()
+                        if r["Properties"]["ClientName"] == name)}
+
+
+def test_self_signup_is_disabled(template):
+    pool = _one(template, "AWS::Cognito::UserPool", UserPoolName="prior-auth-users")
+    assert pool["AdminCreateUserConfig"]["AllowAdminCreateUserOnly"] is True
+
+
+def test_agent_is_a_client_credentials_client_not_a_user(template):
+    agent = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-agent")
+    assert agent["AllowedOAuthFlows"] == ["client_credentials"]
+    assert agent["GenerateSecret"] is True
+    clinician = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-clinician")
+    assert "AllowedOAuthFlows" not in clinician or clinician["AllowedOAuthFlows"] != ["client_credentials"]
+
+
+def test_groups(template):
+    names = sorted(r["Properties"]["GroupName"] for r in template.find_resources("AWS::Cognito::UserPoolGroup").values())
+    assert names == ["clinician", "tenant-a", "tenant-b"]
+
+
+def test_reviewer_gateway_admits_the_clinician_client_only(template):
+    gw = _one(template, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-reviewer")
+    jwt = gw["AuthorizerConfiguration"]["CustomJWTAuthorizer"]
+    assert jwt["AllowedClients"] == [_client_ref(template, "prior-auth-clinician")]
+    assert gw["AuthorizerType"] == "CUSTOM_JWT" and gw["ProtocolType"] == "MCP"
+
+
+def test_agent_gateway_admits_the_agent_client_only(template):
+    gw = _one(template, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-agent")
+    assert gw["AuthorizerConfiguration"]["CustomJWTAuthorizer"]["AllowedClients"] == [_client_ref(template, "prior-auth-agent")]
+
+
+def _tools(target):
+    return [t["Name"] for t in target["TargetConfiguration"]["Mcp"]["Lambda"]["ToolSchema"]["InlinePayload"]]
+
+
+def test_agent_target_registers_exactly_five_tools(template):
+    assert _tools(_one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="AgentTools")) == FIVE
+
+
+def test_reviewer_target_is_named_for_the_article_snippet(template):
+    assert _tools(_one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="ReviewerTools")) == ["record_adverse_determination"]
+
+
+def test_record_approval_schema_has_no_booleans(template):
+    payload = _one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="AgentTools")["TargetConfiguration"]["Mcp"]["Lambda"]["ToolSchema"]["InlinePayload"]
+    approval = next(t for t in payload if t["Name"] == "record_approval")["InputSchema"]
+    assert {k: v["Type"] for k, v in approval["Properties"].items()} == {"packet_id": "string", "packet_hash": "string"}
+    assert "boolean" not in json.dumps(payload)
+
+
+def test_every_target_uses_the_gateway_role_and_holds_no_secret(template):
+    targets = template.find_resources("AWS::BedrockAgentCore::GatewayTarget").values()
+    assert len(targets) == 2
+    for t in targets:
+        assert t["Properties"]["CredentialProviderConfigurations"] == [{"CredentialProviderType": "GATEWAY_IAM_ROLE"}]
+
+
+def test_lambda_log_groups_are_explicit_and_destroyed(template):
+    groups = template.find_resources("AWS::Logs::LogGroup")
+    names = sorted(g["Properties"]["LogGroupName"] for g in groups.values())
+    assert names == ["/aws/lambda/prior-auth-agent-tools", "/aws/lambda/prior-auth-reviewer-tools"]
+    assert all(g["DeletionPolicy"] == "Delete" for g in groups.values())
+
+
+def test_gateway_roles_can_authorize_policy_decisions(template):
+    statements = [s for p in template.find_resources("AWS::IAM::Policy").values()
+                  for s in p["Properties"]["PolicyDocument"]["Statement"]]
+    authz = [s for s in statements if "bedrock-agentcore:AuthorizeAction" in s["Action"]]
+    assert len(authz) == 2
+    for s in authz:
+        assert set(s["Action"]) == {"bedrock-agentcore:AuthorizeAction", "bedrock-agentcore:PartiallyAuthorizeActions",
+                                    "bedrock-agentcore:GetPolicyEngine"}
+
+
+def test_no_lambda_environment_holds_a_secret(template):
+    for fn in template.find_resources("AWS::Lambda::Function").values():
+        assert "Environment" not in fn["Properties"]
+
+
+def test_lambda_asset_contains_only_the_tools_package(tmp_path):
+    import shutil
+    from pathlib import Path
+
+    from aws_cdk import CopyOptions, FileSystem
+    from infra.gateway_stack import ASSET_EXCLUDE
+
+    root = Path(__file__).resolve().parent.parent
+    out = tmp_path / "asset"
+    FileSystem.copy_directory(str(root), str(out), CopyOptions(exclude=ASSET_EXCLUDE))
+    files = sorted(str(p.relative_to(out)) for p in out.rglob("*") if p.is_file())
+    assert files and all(f.startswith("tools/") for f in files), files
+    assert not any("/." in f or f.startswith(".") for f in files)
+    shutil.rmtree(out)
