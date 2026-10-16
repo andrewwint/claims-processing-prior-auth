@@ -6,7 +6,7 @@ follows its row in docs/empty-output-rules.md.
 
 from dataclasses import dataclass, field
 
-from prior_auth import checks, stores
+from prior_auth import checks, records, stores
 from prior_auth.agent import operator
 from prior_auth.agent.session import run_session
 from prior_auth.decide import GatewayError, act, decide, route_case
@@ -46,13 +46,36 @@ def packet_id_for(case_id: str) -> str:
     return f"PKT-{case_id}"
 
 
-def run_case(case_id: str, call, extract, store_packet, cloudwatch=None, model_id: str = "") -> dict:
+def _mark_span(name: str, value: str) -> None:
+    try:
+        from opentelemetry import trace
+        trace.get_current_span().set_attribute(name, value)
+    except Exception:  # telemetry must never change an outcome
+        pass
+
+
+def run_case(case_id: str, call, extract, store_packet, cloudwatch=None, model_id: str = "",
+             record_recommendation=None) -> dict:
     """call(action, args) -> result | raises GatewayError; extract(case_id) -> Extraction;
-    store_packet(packet) writes the packet to the packet store before approval."""
+    store_packet(packet) writes the packet before approval; record_recommendation(record) -> hash
+    writes the recommendation record before the decision is acted on (every outcome)."""
     request = stores.request(case_id)
+    received_at = records.now()  # server-generated; never from the model or the packet
+    run_id = records.new_run_id(received_at)
+    _mark_span("pa.case_id", case_id)
+    _mark_span("pa.run_id", run_id)
+
+    def recommend(packet, decision: dict, policy_version=None) -> None:
+        if record_recommendation is None:
+            return
+        record = records.recommendation_record(
+            case_id=case_id, run_id=run_id, packet=packet or {"packet_id": None, "findings": []},
+            decision=decision, policy_version=policy_version, received_at=received_at, recommended_at=records.now())
+        _mark_span("pa.recommendation_record_sha256", record_recommendation(record))
 
     def route(reason, gaps=()):
-        return route_case(case_id, reason, list(gaps), call)
+        recommend(None, {"decision": "route", "reason": reason, "gaps": list(gaps)})
+        return route_case(case_id, reason, list(gaps), call, run_id)
 
     def body(rec):
         if request is None:
@@ -91,11 +114,16 @@ def run_case(case_id: str, call, extract, store_packet, cloudwatch=None, model_i
         packet = {
             "packet_id": packet_id_for(case_id),
             "case_id": case_id,
+            "run_id": run_id,
             "findings": checks.findings_from_citations(ex.citations, docs),
             "model_summary": {"label": SUMMARY_LABEL, "text": ex.summary or None,
                               "status": "present" if ex.summary else "missing"},
         }
         chart = {"docs": docs, "index": stores.chart_index()}
-        rec.set(act(decide(packet, request, crit, chart), case_id, call, store_packet, packet) | {"packet": packet})
+        decision = decide(packet, request, crit, chart)
+        recommend(packet, {"decision": "approve"} if hasattr(decision, "packet_hash")
+                  else {"decision": "route", "reason": decision.reason, "gaps": decision.gaps},
+                  crit[0]["policy_version"])
+        rec.set(act(decision, case_id, call, store_packet, packet, run_id) | {"packet": packet, "run_id": run_id})
 
     return run_session(body, lambda: route("needs review"))

@@ -36,7 +36,8 @@ CASE_TOOLS = [
           {"case_id": _s("Case ID")}),
     _tool("route_to_reviewer", "Send the case packet to a clinician queue with the gaps marked.",
           {"case_id": _s("Case ID"), "reason": _s("Why the case needs a clinician"),
-           "gaps": {"type": "array", "description": "Criteria not met or checks failed", "items": {"type": "string"}}},
+           "gaps": {"type": "array", "description": "Criteria not met or checks failed", "items": {"type": "string"}},
+           "run_id": _s("The agent run whose recommendation record this case points to")},
           required=["case_id", "reason"]),
 ]
 
@@ -51,7 +52,8 @@ TOOL_TARGETS = {**{t["name"]: CASE_TARGET for t in CASE_TOOLS}, **{t["name"]: AP
 
 REVIEWER_TOOLS = [
     _tool("record_adverse_determination", "Record a clinician's adverse determination with a specific reason.",
-          {"case_id": _s("Case ID"), "reason": _s("The specific reason for the determination")}),
+          {"case_id": _s("Case ID"), "reason": _s("The specific reason for the determination"),
+           "reviewer": _s("The reviewer, as the clinician app reports it")}),
     _tool("record_clinician_approval", "Record a clinician's approval of a routed case.",
-          {"case_id": _s("Case ID")}),
+          {"case_id": _s("Case ID"), "reviewer": _s("The reviewer, as the clinician app reports it")}),
 ]

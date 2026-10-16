@@ -34,7 +34,8 @@ class GatewayError(RuntimeError):
     """A tool call failed: denied by Cedar, rejected, or errored."""
 
 
-def act(decision: Approve | Route, case_id: str, call, store_packet=None, packet: dict | None = None) -> dict:
+def act(decision: Approve | Route, case_id: str, call, store_packet=None, packet: dict | None = None,
+        run_id: str | None = None) -> dict:
     """Carry out the decision through the gateway (D6 rows for the ending tools).
 
     call(action, arguments) returns the tool result or raises GatewayError.
@@ -51,14 +52,17 @@ def act(decision: Approve | Route, case_id: str, call, store_packet=None, packet
         except GatewayError as e:
             reason = f"approval call failed: {e}"
         # decide() approved but the service did not: route, and count the disagreement.
-        routed = route_case(case_id, reason, [], call)
+        routed = route_case(case_id, reason, [], call, run_id)
         return {**routed, "disagreement": True}
-    return route_case(case_id, decision.reason, decision.gaps, call)
+    return route_case(case_id, decision.reason, decision.gaps, call, run_id)
 
 
-def route_case(case_id: str, reason: str, gaps: list, call) -> dict:
+def route_case(case_id: str, reason: str, gaps: list, call, run_id: str | None = None) -> dict:
+    args = {"case_id": case_id, "reason": reason, "gaps": gaps}
+    if run_id:
+        args["run_id"] = run_id
     try:
-        call(ROUTE_ACTION, {"case_id": case_id, "reason": reason, "gaps": gaps})
+        call(ROUTE_ACTION, args)
     except GatewayError as e:
         # The case cannot reach a person: an operator must act.
         return {"outcome": "operator_alert", "reason": f"route_to_reviewer failed: {e}", "gaps": gaps}

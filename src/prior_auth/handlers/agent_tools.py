@@ -7,8 +7,11 @@ evidence-record-and-trace.
 
 import json
 import logging
+import os
 
-from prior_auth import stores
+import boto3
+
+from prior_auth import evidence_store, records, stores
 from prior_auth.handlers.schemas import CASE_TOOLS
 
 logger = logging.getLogger()
@@ -54,9 +57,14 @@ def extract_clinical_evidence(event: dict) -> dict:
         for doc_id, d in docs.items()]}
 
 
-def route_to_reviewer(event: dict) -> dict:
-    return {"routed": True, "case_id": event.get("case_id"), "reason": event.get("reason"),
-            "gaps": event.get("gaps", [])}
+def route_to_reviewer(event: dict, s3=None) -> dict:
+    """Write the queue entry for the clinician (queue/<case_id>.json), pointing at the run's recommendation."""
+    entry = {"case_id": event.get("case_id"), "run_id": event.get("run_id"), "reason": event.get("reason"),
+             "gaps": event.get("gaps", []), "queued_at": records.now()}
+    bucket = os.environ.get("EVIDENCE_BUCKET")
+    if bucket and isinstance(entry["case_id"], str):
+        evidence_store.put_queue_entry(s3 or boto3.client("s3"), bucket, entry)
+    return {"routed": True, **{k: entry[k] for k in ("case_id", "run_id", "reason", "gaps")}}
 
 
 TOOLS = {"check_eligibility": check_eligibility, "fetch_policy_criteria": fetch_policy_criteria,

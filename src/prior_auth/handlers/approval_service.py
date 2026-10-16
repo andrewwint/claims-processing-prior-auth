@@ -40,16 +40,44 @@ def _review(packet_id, claimed):
     return approval.review(packet_id, claimed, packets=stored, trusted=trusted), approval.case_for(packet_id, trusted)
 
 
+def _record_auto_approval(packet_id: str, case_id: str, s3=None) -> tuple[list[str], dict]:
+    """Write the auto-approval's decision record, chained to the run's recommendation record."""
+    import boto3
+
+    from prior_auth import evidence_store, records
+    bucket = os.environ.get("EVIDENCE_BUCKET")
+    if not bucket or not packet_id.startswith("PKT-"):
+        return [], {}
+    s3 = s3 or boto3.client("s3")
+    run_id = (evidence_store.get_packet(s3, bucket, packet_id) or {}).get("run_id")
+    key = evidence_store.recommendation_key(case_id, run_id) if run_id else None
+    rec_hash = evidence_store.stored_hash(s3, bucket, key) if key else None
+    if rec_hash is None:
+        return ["no recommendation record for this run"], {}
+    record = records.decision_record(
+        case_id=case_id, run_id=run_id, decision="auto_approval", reason=None, reviewer_identity="approval-service",
+        reviewer_identity_source="service", recommendation_key=key, recommendation_record_hash=rec_hash,
+        decided_at=records.now())
+    try:
+        return [], {"decision_record_hash": evidence_store.put_decision(s3, bucket, record),
+                    "recommendation_record_hash": rec_hash, "run_id": run_id}
+    except evidence_store.AlreadyExists:
+        return ["this run already has a decision"], {}
+
+
 def record_approval(event: dict) -> dict:
     packet_id, claimed = event.get("packet_id"), event.get("packet_hash")
     failures, case_id = _review(packet_id, claimed)
+    chain = {}
+    if not failures:
+        failures, chain = _record_auto_approval(packet_id, case_id)
     # Identifiers and outcome only; never packet contents.
     logger.info(json.dumps({"tool": "record_approval", "packet_id": packet_id,
                             "packet_hash": claimed, "approved": not failures, "failure_count": len(failures)}))
     if failures:
         return {"approved": False, "status": "refused", "packet_id": packet_id, "reasons": failures}
     return {"approved": True, "status": "recorded", "packet_id": packet_id, "packet_hash": claimed,
-            "case_id": case_id}
+            "case_id": case_id, **chain}
 
 
 def handler(event, context):

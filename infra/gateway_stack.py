@@ -90,7 +90,7 @@ class GatewayStack(Stack):
                       "prior-auth-reviewer-tools")],
             custom_claims=None if b4_layer2_test else [CLINICIAN_GROUP_CLAIM],
         )
-        self._approval_reads_packets()
+        self._evidence_access()
         self._traces_only()
         # F4: the operator alert. No SNS (PM, 2026-10-16); the alarm state change is the evidence.
         cloudwatch.Alarm(
@@ -117,15 +117,35 @@ class GatewayStack(Stack):
         }.items():
             CfnOutput(self, key, value=value)
 
-    def _approval_reads_packets(self) -> None:
-        """The approval service reads packets from the evidence bucket (read-only)."""
-        fn = self.functions["prior-auth-approval-service"]
-        fn.add_environment("EVIDENCE_BUCKET", bucket_name())
-        fn.add_to_role_policy(iam.PolicyStatement(
-            actions=["s3:GetObject"], resources=[f"arn:aws:s3:::{bucket_name()}/packets/*"]))
-        fn.add_to_role_policy(iam.PolicyStatement(
-            actions=["kms:Decrypt"], resources=["*"],
-            conditions={"ForAnyValue:StringEquals": {"kms:ResourceAliases": EVIDENCE_KEY_ALIAS}}))
+    # Per function: the evidence prefixes it reads and the ones it writes (the bucket
+    # policy separately denies writes from anyone not named in PREFIX_WRITERS).
+    EVIDENCE_ACCESS = {
+        "prior-auth-agent-tools": ((), ("queue/",)),
+        "prior-auth-approval-service": (("packets/", "recommendations/"), ("decisions/",)),
+        "prior-auth-reviewer-tools": (("queue/", "recommendations/"), ("decisions/",)),
+    }
+
+    def _evidence_access(self) -> None:
+        """Each tool Lambda gets only the evidence prefixes it needs."""
+        bucket = bucket_name()
+        key_condition = {"ForAnyValue:StringEquals": {"kms:ResourceAliases": EVIDENCE_KEY_ALIAS}}
+        for name, (reads, writes) in self.EVIDENCE_ACCESS.items():
+            fn = self.functions[name]
+            fn.add_environment("EVIDENCE_BUCKET", bucket)
+            if reads:
+                fn.add_to_role_policy(iam.PolicyStatement(
+                    actions=["s3:GetObject"], resources=[f"arn:aws:s3:::{bucket}/{p}*" for p in reads]))
+                # So a missing record reads as 404 (not 403); listing is limited to the same prefixes.
+                fn.add_to_role_policy(iam.PolicyStatement(
+                    actions=["s3:ListBucket"], resources=[f"arn:aws:s3:::{bucket}"],
+                    conditions={"StringLike": {"s3:prefix": [f"{p}*" for p in reads]}}))
+                fn.add_to_role_policy(iam.PolicyStatement(actions=["kms:Decrypt"], resources=["*"],
+                                                          conditions=key_condition))
+            if writes:
+                fn.add_to_role_policy(iam.PolicyStatement(
+                    actions=["s3:PutObject"], resources=[f"arn:aws:s3:::{bucket}/{p}*" for p in writes]))
+                fn.add_to_role_policy(iam.PolicyStatement(actions=["kms:GenerateDataKey", "kms:Encrypt"],
+                                                          resources=["*"], conditions=key_condition))
 
     def _traces_only(self) -> None:
         """Gateway tracing (approval gate D3): TRACES to X-Ray only.
