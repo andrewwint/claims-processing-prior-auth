@@ -9,13 +9,16 @@ Guards:
   override cdk.context.json; nothing else counts as context);
 - once the gateway stack exists, its exact gateway IDs are required, and the
   synthesized template must not bind any gateway role to a wildcard;
-- AWS errors refuse the deploy instead of skipping a guard.
+- AWS errors refuse the deploy instead of skipping a guard;
+- the working tree is clean, so every deploy maps to a commit; the deployed SHA
+  is appended to evidence/deploys.jsonl.
 """
 
 import json
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 import boto3
@@ -97,6 +100,26 @@ def wildcard_trust(template: dict) -> list[str]:
     return hits
 
 
+DEPLOY_LOG = Path("evidence/deploys.jsonl")
+
+
+def dirty_paths() -> list[str]:
+    out = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True, check=True).stdout
+    return [line[3:] for line in out.splitlines() if line.strip()]
+
+
+def head_sha() -> str:
+    return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def record_deploy(stack: str, sha: str, returncode: int, log: Path = DEPLOY_LOG) -> None:
+    log.parent.mkdir(parents=True, exist_ok=True)
+    entry = {"stack": stack, "sha": sha, "result": "deployed" if returncode == 0 else f"failed ({returncode})",
+             "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    with log.open("a") as f:
+        f.write(json.dumps(entry, sort_keys=True) + "\n")
+
+
 def cdk_args(stack: str, extra: list[str]) -> list[str]:
     # Deploy only the named stack; never redeploy a dependency as a side effect.
     return ["deploy", stack, "--exclusively", "--require-approval", "never", *extra]
@@ -142,6 +165,11 @@ def main(argv: list[str]) -> int:
         return 2
     stack, extra = argv[0], argv[1:]
     saved = _saved_context()
+    dirty = dirty_paths()
+    if dirty:
+        print(f"refusing to deploy {stack}: the working tree is not clean ({', '.join(dirty[:5])})", file=sys.stderr)
+        return 2
+    sha = head_sha()
     try:
         if stack != BUDGET_STACK:
             require_budgets(present_budgets(boto3.Session(region_name="us-east-1")))
@@ -154,7 +182,9 @@ def main(argv: list[str]) -> int:
     except (BudgetsMissing, Refused, ClientError, BotoCoreError, subprocess.CalledProcessError) as e:
         print(f"refusing to deploy {stack}: {e}", file=sys.stderr)
         return 1 if not isinstance(e, Refused) else 2
-    return subprocess.run(["npx", "-y", CDK_CLI, *cdk_args(stack, extra)]).returncode
+    rc = subprocess.run(["npx", "-y", CDK_CLI, *cdk_args(stack, extra)]).returncode
+    record_deploy(stack, sha, rc)
+    return rc
 
 
 if __name__ == "__main__":

@@ -46,6 +46,8 @@ def test_deploy_refuses_without_budgets():
 
 
 def test_deploy_main_refuses_before_running_cdk(monkeypatch):
+    monkeypatch.setattr(deploy, "dirty_paths", lambda: [])
+    monkeypatch.setattr(deploy, "head_sha", lambda: "abc")
     monkeypatch.setattr(deploy, "present_budgets", lambda session: [])
     monkeypatch.setattr(deploy, "_stack_exists", lambda name: False)
     monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("cdk must not run"))
@@ -199,6 +201,8 @@ def test_deploy_fails_cleanly_when_credentials_are_expired(monkeypatch):
     def expired(session):
         raise TokenRetrievalError(provider="sso", error_msg="Token has expired")
 
+    monkeypatch.setattr(deploy, "dirty_paths", lambda: [])
+    monkeypatch.setattr(deploy, "head_sha", lambda: "abc")
     monkeypatch.setattr(deploy, "present_budgets", expired)
     monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("cdk must not run"))
     assert deploy.main(["PriorAuthGateways", "-c", "cognito_domain_prefix=x"]) == 1
@@ -249,3 +253,21 @@ def test_wildcard_trust_is_detected_in_a_template():
     tpl["Resources"]["R"]["Properties"]["AssumeRolePolicyDocument"]["Statement"][0]["Condition"]["ArnLike"]["aws:SourceArn"] = \
         "arn:aws:bedrock-agentcore:us-east-1:1:gateway/prior-auth-agent-abc123"
     assert deploy.wildcard_trust(tpl) == []
+
+
+
+# PM, 2026-10-16: deploys only from a clean tree, with the SHA recorded
+def test_deploy_refuses_a_dirty_tree(monkeypatch):
+    monkeypatch.setattr(deploy, "dirty_paths", lambda: ["src/prior_auth/decide.py"])
+    monkeypatch.setattr(deploy, "present_budgets", lambda session: pytest.fail("no AWS call on a dirty tree"))
+    monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("cdk must not run"))
+    assert deploy.main(["PriorAuthGateways"]) == 2
+
+
+def test_deploy_records_the_sha(tmp_path):
+    log = tmp_path / "deploys.jsonl"
+    deploy.record_deploy("PriorAuthGateways", "abc123", 0, log)
+    deploy.record_deploy("PriorAuthPolicy", "abc123", 1, log)
+    rows = [json.loads(line) for line in log.read_text().splitlines()]
+    assert [(r["stack"], r["sha"], r["result"]) for r in rows] == [
+        ("PriorAuthGateways", "abc123", "deployed"), ("PriorAuthPolicy", "abc123", "failed (1)")]
