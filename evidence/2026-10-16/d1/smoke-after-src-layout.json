@@ -1,0 +1,270 @@
+{
+  "B1_B2_agent_tools_list": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "tools": [
+          {
+            "description": "Coverage and benefits for the member and service.",
+            "inputSchema": {
+              "properties": {
+                "cpt_code": {
+                  "description": "CPT code of the requested service",
+                  "type": "string"
+                },
+                "member_id": {
+                  "description": "Synthetic member ID",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "cpt_code",
+                "member_id"
+              ],
+              "type": "object"
+            },
+            "name": "AgentTools___check_eligibility"
+          },
+          {
+            "description": "Findings from the record for one criterion, each with its source.",
+            "inputSchema": {
+              "properties": {
+                "case_id": {
+                  "description": "Case ID",
+                  "type": "string"
+                },
+                "criterion_id": {
+                  "description": "Criterion ID from the compiled policy",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "criterion_id"
+              ],
+              "type": "object"
+            },
+            "name": "AgentTools___extract_clinical_evidence"
+          },
+          {
+            "description": "Verified criteria for the CPT code and payer.",
+            "inputSchema": {
+              "properties": {
+                "cpt_code": {
+                  "description": "CPT code",
+                  "type": "string"
+                },
+                "payer_id": {
+                  "description": "Synthetic payer ID",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "cpt_code",
+                "payer_id"
+              ],
+              "type": "object"
+            },
+            "name": "AgentTools___fetch_policy_criteria"
+          },
+          {
+            "description": "Send the case packet to a clinician queue with the gaps marked.",
+            "inputSchema": {
+              "properties": {
+                "case_id": {
+                  "description": "Case ID",
+                  "type": "string"
+                },
+                "gaps": {
+                  "description": "Criteria not met or checks failed",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "reason": {
+                  "description": "Why the case needs a clinician",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "reason"
+              ],
+              "type": "object"
+            },
+            "name": "AgentTools___route_to_reviewer"
+          },
+          {
+            "description": "Approve a stored case packet. The approval service loads the packet, verifies the hash and re-runs every check before recording anything.",
+            "inputSchema": {
+              "properties": {
+                "packet_hash": {
+                  "description": "SHA-256 of the packet's canonical JSON",
+                  "type": "string"
+                },
+                "packet_id": {
+                  "description": "ID of the stored case packet",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "packet_hash",
+                "packet_id"
+              ],
+              "type": "object"
+            },
+            "name": "ApprovalService___record_approval"
+          }
+        ]
+      }
+    },
+    "http_status": 200
+  },
+  "B4_layer1_agent_token_on_reviewer": {
+    "body": {
+      "error": {
+        "code": -32002,
+        "message": "insufficient_scope - The request requires higher privileges than provided by the access token."
+      },
+      "id": 0,
+      "jsonrpc": "2.0"
+    },
+    "http_status": 403
+  },
+  "B6_record_approval_failing_packet_refused_server_side": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "content": [
+          {
+            "text": "{\"approved\":false,\"status\":\"refused\",\"packet_id\":\"SYN-PKT-FAIL\",\"reasons\":[\"criterion not met: C3\"]}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "http_status": 200
+  },
+  "B6_record_approval_forged_packet_refused_server_side": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "content": [
+          {
+            "text": "{\"approved\":false,\"status\":\"refused\",\"packet_id\":\"SYN-PKT-FORGED\",\"reasons\":[\"source match: value for C1 not at SYN-DOC-PT-001 p1 l3\",\"same patient: SYN-DOC-FUNC-002 belongs to another patient\",\"criterion not met: C1\",\"criterion not met: C3\"]}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "http_status": 200
+  },
+  "B6_record_approval_missing_hash_denied_by_policy": {
+    "body": {
+      "error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [Authorization denied due to policy evaluation errors:\nProperty packet_hash is missing but required]"
+      },
+      "id": 1,
+      "jsonrpc": "2.0"
+    },
+    "http_status": 200
+  },
+  "B6_record_approval_passing_packet": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "content": [
+          {
+            "text": "{\"approved\":true,\"status\":\"recorded\",\"packet_id\":\"SYN-PKT-PASS\",\"packet_hash\":\"152eb3f95032a00bf101fa9cab1a8f5d041692129704dacb0ff5f6de92db4593\",\"case_id\":\"SYN-CASE-PASS\"}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "http_status": 200
+  },
+  "B8_clinician_records_adverse_determination": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "content": [
+          {
+            "text": "{\"recorded\":true,\"status\":\"recorded\",\"case_id\":\"SYN-CASE-1\",\"synthetic\":true}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "http_status": 200
+  },
+  "B8_clinician_tools_list": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "tools": [
+          {
+            "description": "Record a clinician's adverse determination with a specific reason.",
+            "inputSchema": {
+              "properties": {
+                "case_id": {
+                  "description": "Case ID",
+                  "type": "string"
+                },
+                "reason": {
+                  "description": "The specific reason for the determination",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "case_id",
+                "reason"
+              ],
+              "type": "object"
+            },
+            "name": "ReviewerTools___record_adverse_determination"
+          }
+        ]
+      }
+    },
+    "http_status": 200
+  },
+  "agent_call_check_eligibility": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "content": [
+          {
+            "text": "{\"tool\":\"check_eligibility\",\"synthetic\":true,\"result\":\"stub\",\"input_keys\":[\"cpt_code\",\"member_id\"]}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "http_status": 200
+  },
+  "layer1_non_clinician_staff_on_reviewer": {
+    "body": {
+      "error": {
+        "code": -32002,
+        "message": "insufficient_scope - The request requires higher privileges than provided by the access token."
+      },
+      "id": 0,
+      "jsonrpc": "2.0"
+    },
+    "http_status": 403
+  }
+}

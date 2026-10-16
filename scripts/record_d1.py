@@ -129,7 +129,7 @@ def _approval_args(packet_id: str) -> dict:
     return {"packet_id": packet_id, "packet_hash": packet_hash(packets[packet_id])}
 
 
-def calls(session, out, named) -> None:
+def calls(session, out, named, filename: str = "calls.json") -> None:
     """Allowed, refused and denied calls through the live boundary."""
     agent = gc.agent_token(out, session)
     clinician = gc.user_token(out, session, "syn-clinician-1")
@@ -156,7 +156,7 @@ def calls(session, out, named) -> None:
         "layer1_non_clinician_staff_on_reviewer": gc.mcp(R, staff, "tools/call",
             {"name": "ReviewerTools___record_adverse_determination", "arguments": deny_args}),
     }
-    save("calls.json", results, named)
+    save(filename, results, named)
     for k, v in results.items():
         print(k, _summary(v))
 
@@ -192,6 +192,9 @@ def main() -> int:
         if len(sys.argv) > 3 and sys.argv[3] == "--require-clinician-only" and not result["clinician_only"]:
             print("FAIL: the reviewer gateway is not back to clinician-only", file=sys.stderr)
             return 1
+        return 0
+    if sys.argv[1] == "calls" and len(sys.argv) > 2:
+        calls(session, out, named, sys.argv[2])
         return 0
     {"state": state, "smoke": smoke, "tokens": tokens, "policies": policies, "calls": calls,
      "b4call": b4_call}[sys.argv[1]](session, out, named)

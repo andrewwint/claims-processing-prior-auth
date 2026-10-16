@@ -119,7 +119,7 @@ The answer is two records with two jobs.
 | Record | Holds | Lives in |
 | --- | --- | --- |
 | Trace | Case ID, step, model ID, token counts, latency, stop reason, content hashes | AgentCore Observability, exported over OpenTelemetry |
-| Evidence record | The packet, the recommendation, citations, policy version, reviewer identity, decision, timestamps | Encrypted, write-once storage under customer-managed keys |
+| Evidence record | The packet, the recommendation, citations, policy version, the reviewer's identity as the clinician app reports it, decision, timestamps | Encrypted, write-once storage under customer-managed keys |
 
 The trace answers "what happened" without holding a word of the chart. The hash in the trace proves the evidence record was not changed after the fact. The timestamps answer the CMS clock.
 
