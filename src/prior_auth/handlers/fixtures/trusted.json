@@ -32,7 +32,7 @@
             "doc_kinds": [
               "physical therapy notes"
             ],
-            "pattern": "(?i:(?P<visits>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) visits over (?P<weeks>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) weeks)",
+            "pattern": "(?i:\\b(?P<visits>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) visits over (?P<weeks>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) weeks\\b)",
             "minimums": {
               "visits": 1,
               "weeks": 6
@@ -48,7 +48,7 @@
             "doc_kinds": [
               "radiology report"
             ],
-            "pattern": "(?:L\\d-[LS]\\d )?disc herniation with nerve root compression",
+            "pattern": "\\bdisc herniation with nerve root compression\\b",
             "minimums": {}
           }
         },
@@ -61,7 +61,7 @@
             "doc_kinds": [
               "clinic note"
             ],
-            "pattern": "Oswestry Disability Index (?P<odi>\\d+) percent",
+            "pattern": "\\bOswestry Disability Index (?P<odi>\\d+) percent\\b",
             "minimums": {
               "odi": 40
             }

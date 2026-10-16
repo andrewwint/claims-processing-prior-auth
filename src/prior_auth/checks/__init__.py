@@ -3,6 +3,7 @@
 from prior_auth.checks.core import (  # noqa: F401
     MIN_VALUE_CHARS,
     Verdict,
+    findings_from_citations,
     packet_hash,
     recompute,
     same_patient,

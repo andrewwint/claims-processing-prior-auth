@@ -108,7 +108,7 @@ Before anything is committed, redaction replaces ARNs, account IDs and Cognito c
 
 | Finding | Status |
 |---|---|
-| X1. Approval matched quotes, not meaning: any 4-character quote on the right patient's line counted for any criterion | Fixed in `src/prior_auth/checks/`: compiled evidence rules (document kind, pattern, numeric minimums, negation), one line per criterion, no rule means never Met. Tests reproduce the reviewer's probes. Carried into `case-packet-and-failure-routing` design D11. |
+| X1. Approval matched quotes, not meaning: any 4-character quote on the right patient's line counted for any criterion | Fixed in `src/prior_auth/checks/`: compiled evidence rules (document kind, pattern, numeric minimums, negation), one line per criterion, no rule means never Met. Tests reproduce the reviewer's probes. Carried into `case-packet-and-failure-routing` design D9. |
 | X2. E8 (direct Lambda invoke) | Accepted residual (above) |
 | X3. The Cedar clinician check was free text; the clinician permit's principal was unscoped | Fixed: the check is built in code from a recorded tag shape (`set` or `string`, exact membership, no `like`); the permit is scoped to `principal is AgentCore::OAuthUser`; `agent_sub` is validated against injection; one statement per policy |
 | X4. Redaction gaps: JWTs, UUIDs, emails, access keys, client secrets, gateway IDs | Fixed: generic patterns (SHA-256 hashes untouched), named placeholders from stack outputs, and a test that scans all committed evidence |

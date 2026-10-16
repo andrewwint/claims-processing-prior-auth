@@ -16,6 +16,7 @@ The rule underneath every decision here: **an approval is derived only from trus
 | Compiled criteria, `data/policies/compiled/<payer>/<cpt>.json` | criterion ID, text, policy version, source location | the compile step, committed and bundled with the code | runtime, approval service |
 | Chart store, `s3://prior-auth-charts/docs/<doc_id>.json` | pages and lines of one synthetic document | `scripts/seed_charts.py`, under the operator's credentials | runtime, approval service |
 | Chart index, `s3://prior-auth-charts/index.json` | `doc_id` → owning patient ID | `scripts/seed_charts.py` | runtime, approval service |
+| Eligibility records, `data/cases/eligibility.json` (synthetic, bundled with the case tools) | member ID → payer, plan, coverage dates, covered CPT codes | committed with the synthetic data | `check_eligibility` |
 | **Packet store**, `s3://prior-auth-cases/packets/<packet_id>.json` | the packet (untrusted claims) | the runtime | approval service |
 
 - **IAM.**
@@ -29,12 +30,11 @@ The rule underneath every decision here: **an approval is derived only from trus
 `src/prior_auth/checks/` is a single package. The runtime's `decide()` and the approval service both import it, and a test asserts they reference the same module object. Another test asserts that the deployed Lambda bundle contains a byte-identical copy.
 
 - **Check 1, schema.** The packet has a `case_id` and a list of findings. Each finding has `criterion_id`, `doc_id`, `page`, `line` and `value`. Any finding for a criterion ID outside the compiled policy fails the check.
-- **Check 2, source match.** This is the strict rule:
-  - The `value` must occur as an exact substring of the text at (`doc_id`, `page`, `line`).
-  - Both strings are Unicode NFC-normalized first. Nothing else is normalized: no case folding, no whitespace collapsing, no fuzzy matching, no spans across lines.
-  - The value must have at least 4 non-whitespace characters, so an empty or trivial value never matches.
-  - A wrong line, a single changed character, or a change of case is a failure.
-- **Check 3, evidence rule.** The cited text must satisfy the criterion's compiled evidence rule (design D11).
+- **Values come from the chart, not the model (PM, 2026-10-16).**
+  - The model returns citations only: `(criterion_id, doc_id, page, line)`.
+  - `checks.findings_from_citations()` fills each finding's `value` with the cited line from the trusted chart store. Any value the model supplied is dropped, and a citation to a missing line gets an empty value.
+- **Check 2, source match.** The `value` must equal the text at (`doc_id`, `page`, `line`) exactly, after Unicode NFC normalization and nothing else. For an honest packet this always holds. It still catches a stored packet whose values were edited after the fact. A value shorter than 4 non-whitespace characters fails.
+- **Check 3, evidence rule.** The cited line, read from the trusted chart, must satisfy the criterion's compiled evidence rule (design D9).
 - **Check 4, same patient.** The owning patient is looked up as `index[doc_id]` and compared with the request record's patient ID.
   - The packet's `patient_id`, and any patient ID the model supplied, are ignored.
   - A `doc_id` missing from the index fails the check.
@@ -54,7 +54,14 @@ The rule underneath every decision here: **an approval is derived only from trus
   - `fetch_policy_criteria`
   - `extract_clinical_evidence`
 
-  It uses them to assemble the case: real tool use, with every call evaluated by Cedar as the agent identity. Its final output is the packet's findings as structured output, plus the model summary.
+  It uses them to assemble the case: real tool use, with every call evaluated by Cedar as the agent identity.
+- **Extraction schema.** The agent's final output is structured:
+
+  ```
+  {"citations": [{"criterion_id": str, "doc_id": str, "page": int, "line": int}], "summary": str}
+  ```
+
+  It returns citations only, never quoted values. Code builds the findings from the chart store (D2) and stores the summary as the labeled model summary.
 - **The tool filter.** The MCP client lists the gateway's tools and keeps only those three by exact name, before the agent is built. A test asserts that the Strands agent's tool list is exactly those three. `record_approval` and `route_to_reviewer` are never given to the agent.
 - **`decide(packet)` (`src/prior_auth/decide.py`) runs as code after the agent finishes.** It returns `Approve(packet_id, packet_hash)` or `Route(reason, gaps)`, computed by `checks.recompute()`. It is the **only** caller of `record_approval` and `route_to_reviewer`, under the same agent identity. No other code path calls either tool, and a test asserts that.
 - **Same identity, different code paths.** Cedar permits the agent identity to call all five tools. The model can choose among the three gathering tools only, because the other two are not in its tool list. The approval service's server-side rebuild is unchanged: even a forged approval call is refused.
@@ -94,6 +101,8 @@ This replaces any global "empty output" rule.
 | Extraction | access denied | `operator_alert`: metric and CloudWatch alarm (F4) |
 | Model summary | empty or failed | the packet stays valid, the summary is marked "missing", and the decision is unaffected |
 | Any step | unexpected exception | routed, "needs review", naming the step |
+| `record_approval` | refused by the approval service, denied by Cedar, or errored | routed to the reviewer with the reason; counted as a decide-vs-service disagreement |
+| `route_to_reviewer` | fails | `operator_alert`: the case cannot reach a person, so an operator must act |
 
 The eligibility row and the last two extraction-adjacent rows (throttling and unexpected exceptions) go beyond the PM's four rows. They exist so that no step is left without a rule.
 
@@ -104,6 +113,12 @@ The eligibility row and the last two extraction-adjacent rows (throttling and un
   - a JWT authorizer whose allowed client is the `prior-auth-intake` app client only (client credentials)
   - models from the allow-list
 - **Intake.** `scripts/intake.py` writes the request record, then invokes the runtime with a token from the intake client and a session ID derived from the case ID.
+- **Session IDs.** `runtimeSessionId` must be 33–256 characters, and it doubles as an idempotency token (contract notes). The ID is `prior-auth-case-<case_id>-<first 16 hex of sha256(case_id)>`: deterministic per case, and always at least 33 characters. A test checks the length for the shortest possible case ID.
+- **Agent token without a secret (PM, 2026-10-16; contract-read in the notes).**
+  - An AgentCore Identity OAuth2 credential provider (vendor `CognitoOauth2`, client credentials) holds the agent client's secret in the token vault.
+  - The runtime obtains the gateway token with `@requires_access_token(provider_name=..., scopes=["prior-auth/tools"], auth_flow="M2M")`, using the workload access token Runtime supplies.
+  - The provider is created by a post-deploy script that reads the client secret from Cognito in memory, so the secret never appears in a CloudFormation template.
+  - The runtime's environment holds no secret, so the article's Identity row stands.
 - **Metadata service v2.** `scripts/require_mmdsv2.py` runs after every deploy.
 - **Telemetry (PM, 2026-10-16).**
   - **Strands:** content redaction is on from the first invocation (`OTEL_SEMCONV_STABILITY_OPT_IN`, Strands ≥ 1.47). It covers prompts, completions and system instructions. Tool inputs and outputs are checked separately, because chart text arrives as tool results.
@@ -130,20 +145,20 @@ The eligibility row and the last two extraction-adjacent rows (throttling and un
 
   No other model was probed.
 
-### D11. Compiled evidence rules bind findings to criteria (second security review, X1)
+### D9. Compiled evidence rules bind findings to criteria (second security review, X1)
 
-Citation accuracy is not support. A quote can sit exactly on its cited line and still say nothing about the criterion, or say the opposite. So each compiled criterion carries an `evidence_rule`, written in the source policy and verified by the compile step:
-- `doc_kinds`: the document kinds that may support it. The kind comes from the trusted chart store, never the packet.
-- `pattern`: what the quote must state, with optional `minimums` for named numeric groups. Number words up to twenty are read as numbers.
-- **Negation:** the four words before the quote on its line must not contain a negator ("no", "not", "without", "denies", "negative for", "ruled out", and others).
+Citation accuracy is not support. A line can be cited exactly and still say nothing about the criterion, or say the opposite. So each compiled criterion carries an `evidence_rule`, written in the source policy and verified by the compile step. It is applied to the **whole cited line** from the trusted chart, as `checks/core.py` does:
+- **`doc_kinds`:** the document kinds that may support it. The kind comes from the trusted chart store, never the packet.
+- **`pattern`:** searched for in the cited line (patterns carry their own word boundaries). Every named numeric group must have a `minimums` entry, and number words up to twenty are read as numbers.
+- **Disqualifying terms:** **anywhere on the cited line**, any negating, hedging or planning term ("no", "not", "n't", "without", "denies", "rule out", "plan", "goal", "history of", "excluded", "prior", and the rest of `DISQUALIFYING_TERMS`) disqualifies the line.
 
-A finding counts only if it passes source match, same patient, and its criterion's rule. One cited line may support only one criterion. A criterion with no compiled rule is never Met. The rules are deliberately narrow: a true finding phrased differently routes to a reviewer, which costs time, not safety.
+A finding counts only if it passes source match, same patient and its criterion's rule. One cited line may support only one criterion. A criterion with no compiled rule is never Met. The rules are deliberately narrow: a true finding phrased differently routes to a reviewer, which costs time, not safety. The allow-list redesign (E1–E3) is in `post-monday-hardening`.
 
-### D9. Operator alert
+### D10. Operator alert
 
 - **Path.** Access denied emits `PriorAuth/Operator` `ModelAccessDenied` (`src/prior_auth/agent/operator.py`). The CloudWatch alarm `prior-auth-model-access-denied`, already deployed, goes into ALARM. There is no SNS topic (PM, 2026-10-16); the recorded alarm state change is the evidence.
 
-### D10. Mutation testing
+### D11. Mutation testing
 
 Deferred to `post-monday-hardening`.
 

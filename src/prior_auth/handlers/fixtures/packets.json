@@ -10,21 +10,21 @@
           "doc_id": "SYN-DOC-PT-001",
           "page": 1,
           "line": 3,
-          "value": "Eight visits over seven weeks"
+          "value": "Eight visits over seven weeks; conservative therapy completed."
         },
         {
           "criterion_id": "C2",
           "doc_id": "SYN-DOC-MRI-001",
           "page": 1,
           "line": 3,
-          "value": "L4-L5 disc herniation with nerve root compression"
+          "value": "Impression: L4-L5 disc herniation with nerve root compression."
         },
         {
           "criterion_id": "C3",
           "doc_id": "SYN-DOC-FUNC-001",
           "page": 1,
           "line": 2,
-          "value": "Oswestry Disability Index 46 percent"
+          "value": "Oswestry Disability Index 46 percent, severe functional limitation."
         }
       ],
       "model_summary": {
@@ -41,14 +41,14 @@
           "doc_id": "SYN-DOC-PT-001",
           "page": 1,
           "line": 3,
-          "value": "Eight visits over seven weeks"
+          "value": "Eight visits over seven weeks; conservative therapy completed."
         },
         {
           "criterion_id": "C2",
           "doc_id": "SYN-DOC-MRI-001",
           "page": 1,
           "line": 3,
-          "value": "L4-L5 disc herniation with nerve root compression"
+          "value": "Impression: L4-L5 disc herniation with nerve root compression."
         }
       ],
       "criteria_status": {

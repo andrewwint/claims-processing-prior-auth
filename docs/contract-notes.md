@@ -37,6 +37,8 @@ If a newer document disagrees with these notes, the newer document wins. Update 
 
 ## Runtime
 
+- **Session IDs.** `runtimeSessionId` on `InvokeAgentRuntime` must be **33–256 characters**, and it is an idempotency token (botocore service model, read 2026-10-16). This project derives `prior-auth-case-<case_id>-<16 hex of sha256(case_id)>`.
+
 - **Deployment artifacts.** CodeZip (S3, ARM64 wheels) or an ARM64 container. Limits:
   - code: 250 MB compressed
   - container image: 2 GB
@@ -61,6 +63,13 @@ If a newer document disagrees with these notes, the newer document wins. Update 
 - **Custom attributes.** Can be added with `Agent(trace_attributes=…)` or on spans you create yourself.
 
 ## Identity
+
+- **Machine-to-machine tokens without a secret in the agent** (read 2026-10-16):
+  - An OAuth2 credential provider (`CreateOauth2CredentialProvider`, vendor `CognitoOauth2` or `CustomOauth2`) stores the client secret in the AgentCore Identity token vault, which returns a managed `clientSecretArn`.
+  - Agent code obtains a client-credentials token with `@requires_access_token(provider_name=..., scopes=[...], auth_flow="M2M")` from `bedrock_agentcore.identity.auth`.
+  - On Runtime, the workload access token that authorizes the call is supplied automatically (`GetResourceOauth2Token` with `oauth2Flow` M2M).
+  - The runtime never holds the secret.
+  (Docs: obtain credentials, obtain OAuth 2.0 access token.)
 
 - **Workload identities.** Runtime creates a workload identity automatically.
 - **Token exchange.** `GetWorkloadAccessTokenForJWT` exchanges an inbound user token. Credential providers (API key, OAuth2) are stored in the token vault.

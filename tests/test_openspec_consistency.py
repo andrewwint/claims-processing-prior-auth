@@ -65,3 +65,23 @@ def test_no_open_task_describes_cut_or_reversed_scope():
             if line.lstrip().startswith("- [ ]"):
                 hits = [w for w in STALE if w.lower() in line.lower()]
                 assert not hits, f"{change}: {line.strip()[:80]} -> {hits}"
+
+
+DOC_REF = re.compile(r"(?<![\w/])(docs/[\w./-]+\.md)")
+
+
+def test_no_dangling_doc_references():
+    sources = [ROOT / "README.md", ROOT / "openspec" / "claims-ledger.md", *CHANGES.rglob("*.md"),
+               *(ROOT / "docs").glob("*.md")]
+    missing = {}
+    for src in sources:
+        for ref in DOC_REF.findall(src.read_text()):
+            if not (ROOT / ref).exists():
+                missing.setdefault(ref, []).append(str(src.relative_to(ROOT)))
+    assert missing == {}
+
+
+def test_empty_output_rules_doc_matches_the_design_table():
+    design = (CHANGES / "case-packet-and-failure-routing" / "design.md").read_text()
+    table = design[design.index("### D6."):design.index("### D7.")].split("\n", 1)[1].strip()
+    assert table in (ROOT / "docs" / "empty-output-rules.md").read_text()

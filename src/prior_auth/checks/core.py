@@ -60,15 +60,39 @@ def _nfc(text: str) -> str:
     return unicodedata.normalize("NFC", text)
 
 
+CITATION_FIELDS = ("criterion_id", "doc_id", "page", "line")
+
+
+def findings_from_citations(citations: list[dict], docs: dict) -> list[dict]:
+    """Turn the model's citations into findings.
+
+    The model returns citations only: (criterion_id, doc_id, page, line). Each
+    finding's value is filled from the trusted chart store, so any value the
+    model supplied is ignored. A citation to a line that does not exist keeps an
+    empty value, which source match then refuses.
+    """
+    findings = []
+    for c in citations:
+        f = {k: c.get(k) for k in CITATION_FIELDS}
+        line = _cited_line(f, docs) if all(isinstance(f[k], int) for k in ("page", "line")) else None
+        f["value"] = line if line is not None else ""
+        findings.append(f)
+    return findings
+
+
 def source_match(finding: dict, docs: dict) -> str | None:
-    """Check 2. Exact NFC substring of the cited line. Returns a failure or None."""
+    """Check 2. The value must be exactly the cited line (NFC). Returns a failure or None.
+
+    Values are filled from the chart store by code, so for an honest packet this
+    always holds; it still refuses a stored packet whose values were edited.
+    """
     value = finding["value"]
     if len("".join(value.split())) < MIN_VALUE_CHARS:
         return f"source match: value for {finding['criterion_id']} is shorter than {MIN_VALUE_CHARS} characters"
     line = _cited_line(finding, docs)
     if line is None:
         return f"source match: {finding['doc_id']} page {finding['page']} line {finding['line']} does not exist"
-    if _nfc(value) not in _nfc(line):
+    if _nfc(value) != _nfc(line):
         return f"source match: value for {finding['criterion_id']} not at {finding['doc_id']} p{finding['page']} l{finding['line']}"
     return None
 
@@ -88,8 +112,9 @@ def _number(text: str) -> int | None:
 def satisfies_rule(finding: dict, criterion: dict, docs: dict) -> str | None:
     """Binds a finding to its criterion, from the compiled criterion's evidence rule.
 
-    The quote must come from an allowed kind of document, match the criterion's
-    pattern (with any numeric minimums), and not be negated on its line.
+    The cited line (from the trusted chart) must come from an allowed kind of
+    document, contain the criterion's pattern with every numeric minimum met, and
+    carry no negating, hedging or planning term anywhere on the line.
     Returns a failure or None. Run only after source_match has passed.
     """
     rule = criterion.get("evidence_rule")
@@ -102,35 +127,19 @@ def satisfies_rule(finding: dict, criterion: dict, docs: dict) -> str | None:
     groups = set(re.compile(rule["pattern"]).groupindex)
     if groups != set(rule.get("minimums", {})):
         return f"evidence rule: {cid} rule must set a minimum for every number it captures"
-    value = _nfc(finding["value"])
-    match = re.fullmatch(rule["pattern"], value)
+    # The rule runs on the trusted cited line, never on a packet-supplied value.
+    line = _nfc(_cited_line(finding, docs))
+    match = re.search(rule["pattern"], line)
     if match is None:
-        return f"evidence rule: value for {cid} does not state what the criterion requires"
+        return f"evidence rule: the line cited for {cid} does not state what the criterion requires"
     for group, minimum in rule.get("minimums", {}).items():
         n = _number(match.group(group))
         if n is None or n < minimum:
-            return f"evidence rule: value for {cid} is below the required {group} of {minimum}"
-    line = _nfc(_cited_line(finding, docs))
-    if not any(_bounded(line, i, len(value)) for i in _occurrences(line, value)):
-        return f"evidence rule: value for {cid} is not a whole phrase on its line"
+            return f"evidence rule: the line cited for {cid} is below the required {group} of {minimum}"
     lowered = line.lower()
     if "n't" in lowered or any(re.search(rf"(?<![a-z]){re.escape(t)}(?![a-z])", lowered) for t in DISQUALIFYING_TERMS):
         return f"evidence rule: the line cited for {cid} negates, hedges or plans rather than states"
     return None
-
-
-def _occurrences(line: str, value: str) -> list[int]:
-    out, i = [], line.find(value)
-    while i != -1:
-        out.append(i)
-        i = line.find(value, i + 1)
-    return out
-
-
-def _bounded(line: str, start: int, length: int) -> bool:
-    before = line[start - 1] if start > 0 else " "
-    after = line[start + length] if start + length < len(line) else " "
-    return not before.isalnum() and not after.isalnum()
 
 
 def same_patient(finding: dict, index: dict, patient_id: str) -> str | None:

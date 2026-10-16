@@ -80,12 +80,11 @@ def test_trivial_values_never_match(value):
 
 def test_nfc_equivalent_text_matches():
     chart = copy.deepcopy(CHART)
-    chart["docs"]["SYN-DOC-MRI-001"]["pages"][0][2] = "Impression: L4-L5 café note."
-    f = {"criterion_id": "C2", "doc_id": "SYN-DOC-MRI-001", "page": 1, "line": 3, "value": "cafe\u0301 note"}
+    chart["docs"]["SYN-DOC-MRI-001"]["pages"][0][2] = "Impression: L4-L5 caf\u00e9 note."
+    f = {"criterion_id": "C2", "doc_id": "SYN-DOC-MRI-001", "page": 1, "line": 3,
+         "value": "Impression: L4-L5 cafe\u0301 note."}
     assert checks.source_match(f, chart["docs"]) is None
 
-
-# Check 3: same patient, from the chart index
 def test_another_patients_document_fails():
     v = verdict(lambda p: finding(p, "C3").update(doc_id="SYN-DOC-FUNC-002", value="Oswestry Disability Index 52 percent"))
     assert "same patient: SYN-DOC-FUNC-002 belongs to another patient" in v.failures
@@ -150,29 +149,28 @@ def test_one_quote_for_every_criterion_is_refused(doc_id, line, value):
     assert not v.approvable
 
 
-def test_quote_must_state_what_the_criterion_requires():
-    v = verdict(lambda p: finding(p, "C1").update(value="conservative therapy completed"))
+def test_line_must_state_what_the_criterion_requires():
+    v = verdict(lambda p: finding(p, "C1").update(line=2, value=CHART["docs"]["SYN-DOC-PT-001"]["pages"][0][1]))
     assert any("does not state what the criterion requires" in f for f in v.failures)
 
-
 def test_wrong_kind_of_document_is_refused():
-    v = verdict(lambda p: finding(p, "C2").update(doc_id="SYN-DOC-PT-001", line=2, value="Lumbar radiculopathy"))
+    line = CHART["docs"]["SYN-DOC-PT-001"]["pages"][0][2]
+    v = verdict(lambda p: finding(p, "C2").update(doc_id="SYN-DOC-PT-001", line=3, value=line))
     assert any("cannot be supported by a physical therapy notes document" in f for f in v.failures)
-
 
 def test_numeric_minimum_is_enforced():
     chart = copy.deepcopy(CHART)
-    chart["docs"]["SYN-DOC-PT-001"]["pages"][0][2] = "Four visits over three weeks; conservative therapy completed."
-    v = verdict(lambda p: finding(p, "C1").update(value="Four visits over three weeks"), chart=chart)
+    new = "Four visits over three weeks; conservative therapy completed."
+    chart["docs"]["SYN-DOC-PT-001"]["pages"][0][2] = new
+    v = verdict(lambda p: finding(p, "C1").update(value=new), chart=chart)
     assert any("below the required weeks of 6" in f for f in v.failures)
-
 
 def test_negated_finding_is_refused():
     chart = copy.deepcopy(CHART)
-    chart["docs"]["SYN-DOC-MRI-001"]["pages"][0][2] = "Impression: no disc herniation with nerve root compression."
-    v = verdict(lambda p: finding(p, "C2").update(value="disc herniation with nerve root compression"), chart=chart)
+    new = "Impression: no disc herniation with nerve root compression."
+    chart["docs"]["SYN-DOC-MRI-001"]["pages"][0][2] = new
+    v = verdict(lambda p: finding(p, "C2").update(value=new), chart=chart)
     assert any("negates, hedges or plans" in f for f in v.failures)
-
 
 def test_same_line_cannot_support_two_criteria():
     def reuse(p):
@@ -211,8 +209,9 @@ def test_reviewer_probes_are_refused(cid, doc, line_text, value):
     page = chart["docs"][doc]["pages"][0]
     line_no = len(page) + 1
     page.append(line_text)
-    v = verdict(lambda p: finding(p, cid).update(doc_id=doc, line=line_no, value=value), chart=chart)
+    v = verdict(lambda p: finding(p, cid).update(doc_id=doc, line=line_no, value=line_text), chart=chart)
     assert v.statuses[cid] != "Met" and not v.approvable
+    assert any(f.startswith("evidence rule:") for f in v.failures), v.failures
 
 
 def test_rule_without_minimum_for_a_captured_number_is_invalid():
@@ -224,3 +223,32 @@ def test_rule_without_minimum_for_a_captured_number_is_invalid():
 
 def test_the_passing_fixture_still_approves_after_tightening():
     assert verdict().approvable
+
+
+
+# PM review, 2026-10-16: the model returns citations only; values come from the chart store
+def test_model_supplied_value_is_ignored():
+    citations = [{"criterion_id": "C1", "doc_id": "SYN-DOC-PT-001", "page": 1, "line": 3,
+                  "value": "Twelve visits over eight weeks, fully documented"}]
+    findings = checks.findings_from_citations(citations, CHART["docs"])
+    assert findings[0]["value"] == CHART["docs"]["SYN-DOC-PT-001"]["pages"][0][2]
+    assert set(findings[0]) == {"criterion_id", "doc_id", "page", "line", "value"}
+
+
+def test_citation_to_a_missing_line_gets_an_empty_value_and_fails():
+    findings = checks.findings_from_citations(
+        [{"criterion_id": "C1", "doc_id": "SYN-DOC-PT-001", "page": 1, "line": 99}], CHART["docs"])
+    assert findings[0]["value"] == ""
+    assert checks.source_match(findings[0], CHART["docs"]) is not None
+
+
+def test_packet_built_from_citations_is_approvable():
+    packet = copy.deepcopy(PACKETS["SYN-PKT-PASS"])
+    packet["findings"] = checks.findings_from_citations(
+        [{k: f[k] for k in ("criterion_id", "doc_id", "page", "line")} for f in packet["findings"]], CHART["docs"])
+    assert checks.recompute(packet, REQUEST, CRITERIA, CHART).approvable
+
+
+def test_forged_value_in_a_stored_packet_is_still_caught():
+    v = verdict(lambda p: finding(p, "C1").update(value="Twelve visits over eight weeks."))
+    assert any(f.startswith("source match:") for f in v.failures)

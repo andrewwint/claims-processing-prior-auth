@@ -37,6 +37,17 @@ Each step SHALL follow its own row of the per-step table in `docs/empty-output-r
 - **WHEN** the eligibility lookup returns nothing or fails
 - **THEN** the case routes to a reviewer labeled "eligibility unknown"
 
+### Requirement: Failures of the ending tools never pass silently
+If `record_approval` is refused by the approval service, denied by Cedar, or errors, the case SHALL be routed to the reviewer with the reason and counted as a disagreement between `decide` and the service. If `route_to_reviewer` fails, the session SHALL end in `operator_alert`.
+
+#### Scenario: Approval refused after decide approved
+- **WHEN** `decide` returns approve and `record_approval` is refused, denied, or errors
+- **THEN** the case is routed to the reviewer with the reason, and a disagreement is recorded
+
+#### Scenario: Routing fails
+- **WHEN** `route_to_reviewer` fails
+- **THEN** the session's outcome is `operator_alert`
+
 ### Requirement: Denied model access alerts an operator
 A denied model call SHALL end the session with an operator alert and emit the operator metric that drives the CloudWatch alarm `prior-auth-model-access-denied`. There is no SNS topic.
 
@@ -59,5 +70,5 @@ Every session SHALL end in exactly one of `approved`, `routed` or `operator_aler
 No injected failure SHALL produce an approval or an adverse outcome. Every failure SHALL end as routed, needs review, or operator alert.
 
 #### Scenario: Any injected failure
-- **WHEN** any failure is injected at any step
+- **WHEN** any failure is injected at any step, including `record_approval` and `route_to_reviewer`
 - **THEN** the outcome is routed, needs review, or operator alert, and there is exactly one
