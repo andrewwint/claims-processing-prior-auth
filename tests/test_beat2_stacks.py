@@ -98,3 +98,9 @@ def test_identity_provider_config_points_at_the_pool_discovery_url():
 def test_runtime_entry_point_is_instrumented(runtime):
     rt = next(iter(runtime.find_resources("AWS::BedrockAgentCore::Runtime").values()))["Properties"]
     assert rt["AgentRuntimeArtifact"]["CodeConfiguration"]["EntryPoint"] == ["opentelemetry-instrument", "main.py"]
+
+
+
+def test_runtime_role_can_set_the_span_destination_policy(runtime):
+    st = next(s for s in _statements(runtime, "AWS::IAM::Policy") if "logs:PutResourcePolicy" in s["Action"])
+    assert "/aws/bedrock-agentcore/runtimes/*" in json.dumps(st["Resource"])

@@ -123,6 +123,8 @@ The answer is two records with two jobs.
 
 The trace answers "what happened" without holding a word of the chart. The hash in the trace proves the evidence record was not changed after the fact. The timestamps answer the CMS clock.
 
+Defaults work against you here. In this build, two separate settings each sent chart text to telemetry, one into spans and one into log records. Turning off either one alone still leaked. Only a planted canary, searched for everywhere, proved both were closed.
+
 I did this kind of work at Crisis Text Line: PII redaction, data contracts, and audit hardening on a platform holding some of the most sensitive conversations there are. The lesson carries over. Decide what may never appear in a log before you write the first logging line.
 
 ## Choose models with evidence
@@ -163,9 +165,7 @@ Model choice becomes configuration. One allow-list names the models the agent ma
 
 ## Build the case
 
-I grew up next to a clinic my family ran in Jamaica. Patients waited there for answers that depended on paperwork they could not see.
-
-An agent can shorten that wait. It can clear the obvious approvals in minutes and hand a clinician a finished case for the rest. It should never be the one who says no.
+An agent can shorten the wait for a decision. It can clear the obvious approvals in minutes and hand a clinician a finished case for the rest. It should never be the one who says no.
 
 The design follows from that one rule. Take the denial tool away and enforce it outside the prompt. Ground every claim in a cited source. Send every failure to a person. Keep a record an auditor can follow, with no chart text in the logs. Choose models by how rarely they approve what they should not.
 

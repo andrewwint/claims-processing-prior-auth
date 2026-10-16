@@ -29,9 +29,17 @@ NUMBER_WORDS = {w: i for i, w in enumerate(
 FINDING_FIELDS = {"criterion_id": str, "doc_id": str, "page": int, "line": int, "value": str}
 
 
-def packet_hash(packet: dict) -> str:
-    canonical = json.dumps(packet, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
-    return hashlib.sha256(canonical.encode()).hexdigest()
+def canonical_bytes(record) -> bytes:
+    """The one canonical JSON encoding: sorted keys, no whitespace, UTF-8."""
+    return json.dumps(record, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
+
+
+def canonical_hash(record) -> str:
+    """The one hash function for packets, recommendation and decision records, the trace and the verifier."""
+    return hashlib.sha256(canonical_bytes(record)).hexdigest()
+
+
+packet_hash = canonical_hash  # packets are records too
 
 
 def schema_failures(packet, criterion_ids: set[str]) -> list[str]:

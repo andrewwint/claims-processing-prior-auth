@@ -55,6 +55,9 @@ class RuntimeStack(Stack):
             iam.PolicyStatement(actions=["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents",
                                          "logs:DescribeLogStreams", "logs:DescribeLogGroups"],
                                 resources=[f"arn:aws:logs:{region}:{account}:log-group:/aws/bedrock-agentcore/runtimes/*"]),
+            # Spans go to the agent's own log group; AgentCore uses this to let X-Ray deliver them there.
+            iam.PolicyStatement(actions=["logs:PutResourcePolicy", "logs:DescribeResourcePolicies"],
+                                resources=[f"arn:aws:logs:{region}:{account}:log-group:/aws/bedrock-agentcore/runtimes/*"]),
             iam.PolicyStatement(actions=["xray:PutTraceSegments", "xray:PutTelemetryRecords",
                                          "xray:GetSamplingRules", "xray:GetSamplingTargets"], resources=["*"]),
             # Memory is not used for patient data.
