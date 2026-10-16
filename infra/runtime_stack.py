@@ -68,7 +68,9 @@ class RuntimeStack(Stack):
         self.runtime = agentcore.Runtime(
             self, "Runtime", runtime_name=RUNTIME_NAME, execution_role=role,
             agent_runtime_artifact=agentcore.AgentRuntimeArtifact.from_code_asset(
-                path=code_path, runtime=agentcore.AgentCoreRuntime.PYTHON_3_13, entrypoint=["main.py"]),
+                # ADOT auto-instrumentation: without this prefix a CodeZip runtime emits no spans.
+                path=code_path, runtime=agentcore.AgentCoreRuntime.PYTHON_3_13,
+                entrypoint=["opentelemetry-instrument", "main.py"]),
             authorizer_configuration=agentcore.RuntimeAuthorizerConfiguration.using_jwt(
                 discovery_url=f"https://cognito-idp.{region}.amazonaws.com/{user_pool_id}/.well-known/openid-configuration",
                 allowed_clients=[intake_client_id]),

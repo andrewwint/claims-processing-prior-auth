@@ -92,3 +92,9 @@ def test_identity_provider_config_points_at_the_pool_discovery_url():
     cfg = provider_config({"UserPoolId": "us-east-1_X", "AgentClientId": "C"}, "s")["customOauth2ProviderConfig"]
     assert cfg["oauthDiscovery"]["discoveryUrl"].endswith("/us-east-1_X/.well-known/openid-configuration")
     assert cfg["clientId"] == "C"
+
+
+
+def test_runtime_entry_point_is_instrumented(runtime):
+    rt = next(iter(runtime.find_resources("AWS::BedrockAgentCore::Runtime").values()))["Properties"]
+    assert rt["AgentRuntimeArtifact"]["CodeConfiguration"]["EntryPoint"] == ["opentelemetry-instrument", "main.py"]
