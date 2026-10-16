@@ -225,3 +225,30 @@ def test_pool_runs_the_pre_token_trigger_v2(template):
     cfg = pool["LambdaConfig"]["PreTokenGenerationConfig"]
     assert cfg["LambdaVersion"] == "V2_0"
     assert pool["UserPoolTier"] == "ESSENTIALS"
+
+
+# D3: gateway tracing, traces only
+def test_gateways_deliver_traces_to_xray_and_never_application_logs(template):
+    sources = [r["Properties"] for r in template.find_resources("AWS::Logs::DeliverySource").values()]
+    assert sorted(s["Name"] for s in sources) == ["prior-auth-agent-traces", "prior-auth-reviewer-traces"]
+    assert {s["LogType"] for s in sources} == {"TRACES"}
+    dests = [r["Properties"] for r in template.find_resources("AWS::Logs::DeliveryDestination").values()]
+    assert [d["DeliveryDestinationType"] for d in dests] == ["XRAY"]
+    template.resource_count_is("AWS::Logs::Delivery", 2)
+    assert "APPLICATION_LOGS" not in json.dumps(template.to_json())
+
+
+# D4: the temporary B4 layer-2 test configuration
+def test_b4_test_config_admits_agent_and_drops_claim_check_only_when_flagged():
+    app = cdk.App()
+    t = Template.from_stack(GatewayStack(app, "G3", env=cdk.Environment(region="us-east-1"), domain_prefix="p",
+                                         b4_layer2_test=True))
+    gw = _one(t, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-reviewer")
+    jwt = gw["AuthorizerConfiguration"]["CustomJWTAuthorizer"]
+    assert len(jwt["AllowedClients"]) == 2 and "CustomClaims" not in jwt
+    assert gw["PolicyEngineConfiguration"]["Mode"] == "ENFORCE"
+
+
+def test_normal_config_is_clinician_only(template):
+    jwt = _one(template, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-reviewer")["AuthorizerConfiguration"]["CustomJWTAuthorizer"]
+    assert jwt["AllowedClients"] == [_client_ref(template, "prior-auth-clinician")] and jwt["CustomClaims"]

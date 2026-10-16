@@ -52,6 +52,11 @@ If a newer document disagrees with these notes, the newer document wins. Update 
 ## Observability
 
 - **Default content capture.** With the AWS Distro for OpenTelemetry (ADOT), Strands agent spans include prompts, completions, and tool inputs and outputs by default.
+- **ADOT GenAI content.** ADOT ≥ 0.18 has `AWS_GENAI_CONTENT_EXTRACTION_OPT_OUT` ("keeps model payloads and tool request/response data on spans" when true). The runtime sets default ADOT environment variables, and `DISABLE_ADOT_OBSERVABILITY=true` unsets them. Which instrumentations attach content in this build is recorded by the telemetry check (case-packet task 5.0) before the first deploy. (Docs: add observability, read 2026-10-16.)
+- **Gateway telemetry** (observed and from the docs, 2026-10-16):
+  - Gateway **spans** carry operational attributes only: operation, gateway, tool name, latency, status and error code. No bodies.
+  - Gateway **APPLICATION_LOGS** include full request and response bodies, meaning tool arguments and results. They are never enabled here.
+  - Tracing is a vended `TRACES` delivery to an `XRAY` destination, and requires Transaction Search. Delivery creates an X-Ray resource policy for `delivery.logs.amazonaws.com`.
 - **Redaction.** Strands 1.47 and later can redact `gen_ai.input.messages`, `gen_ai.output.messages`, and `gen_ai.system_instructions` with `OTEL_SEMCONV_STABILITY_OPT_IN="gen_ai_unredacted_attributes="`.
 - **Custom attributes.** Can be added with `Agent(trace_attributes=…)` or on spans you create yourself.
 

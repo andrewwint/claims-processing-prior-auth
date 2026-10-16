@@ -10,7 +10,7 @@
 - [ ] 1.5 Runner and trial records, with the sampling settings as sent (M5) and the stop reason, decision, approval-service verdict and policy denials. Scoring tests:
   - truncation counts as a failure (M4)
   - false auto-approval, auto-approval and disagreement definitions (M1)
-- [ ] 1.6 Report generator: every trial (M3), the required wording (M6), and a byte-identical regeneration test. The false auto-approval rate is stated as "x of N" with its 95% upper bound (rule of three when x = 0, Clopper–Pearson otherwise), always next to the auto-approval rate. Done when tests cover the form and the bound arithmetic.
+- [ ] 1.6 Report generator: every trial (M3), the required wording (M6), and a byte-identical regeneration test. Per model, latency p50 and p95 and cost per case (from token counts and the pre-registered prices) appear next to the false auto-approval rate (x of N with its bound) and the auto-approval rate. The false auto-approval rate is stated as "x of N" with its 95% upper bound (rule of three when x = 0, Clopper–Pearson otherwise), always next to the auto-approval rate. Done when tests cover the form and the bound arithmetic.
 - [ ] 1.7 Run per the pre-registration, against the deployed gateways. Commit the raw trials and the report unedited, whatever the rate (M8).
 
 ## Workflow follow-up

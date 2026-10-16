@@ -34,7 +34,9 @@ def main() -> None:
         "prior-auth-agent": app.node.try_get_context("agent_gateway_id"),
         "prior-auth-reviewer": app.node.try_get_context("reviewer_gateway_id"),
     }.items() if v}
-    gateways = GatewayStack(app, "PriorAuthGateways", env=env, domain_prefix=domain_prefix, gateway_ids=gateway_ids)
+    b4_test = str(app.node.try_get_context("b4_layer2_test")).lower() == "true"
+    gateways = GatewayStack(app, "PriorAuthGateways", env=env, domain_prefix=domain_prefix, gateway_ids=gateway_ids,
+                            b4_layer2_test=b4_test)
     # D2 takes D1's recorded values explicitly (no cross-stack exports, which would
     # also lock the gateway stack against updates): the engine ID, the exact gateway
     # IDs, and the principal values recorded from real tokens (task 3.2).

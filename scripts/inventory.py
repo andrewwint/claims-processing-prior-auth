@@ -43,6 +43,8 @@ def inventory(session: boto3.Session) -> dict[str, list[str]]:
         for n in _search(session.client("logs"), "describe_log_groups", "logGroups[].logGroupName", logGroupNamePrefix="/aws/lambda/")
     ]
     found["log delivery source"] = _search(session.client("logs"), "describe_delivery_sources", "deliverySources[].name")
+    found["log delivery destination"] = _search(session.client("logs"), "describe_delivery_destinations",
+                                                "deliveryDestinations[].name")
     found["iam role"] = _search(session.client("iam"), "list_roles", "Roles[].RoleName")
     found["secret"] = [
         s["Name"] for s in _search(session.client("secretsmanager"), "list_secrets", "SecretList[]")

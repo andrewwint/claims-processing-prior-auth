@@ -22,9 +22,11 @@ It is priority 2.
   - check 3: the cited text satisfies the criterion's compiled evidence rule
   - check 4: the same patient, derived from the chart index
   - `recompute()`, which rebuilds every criterion's status from trusted sources
-- **The decision is a code function.** `decide(packet)` returns approve or route. It calls `checks.recompute()`, and the runtime wrapper acts on its result.
-  - The model has no tools: it cannot call `record_approval` or `route_to_reviewer`.
+- **A Strands agent gathers; the decision is code.**
+  - The Strands agent connects to the agent gateway over MCP and is given exactly three tools: `check_eligibility`, `fetch_policy_criteria` and `extract_clinical_evidence`. Every call goes through Cedar as the agent identity.
+  - `decide(packet)` runs as code after the agent finishes. It calls `checks.recompute()`, and it is the only caller of `record_approval` and `route_to_reviewer`.
   - The model's prose is labeled a model summary, and no decision reads it.
+- **No Knowledge Base.** Policy lookup is an exact match on (payer, CPT).
 - **The approval service never trusts the packet.**
   - It loads the stored packet and verifies the hash. The hash proves integrity, not truth.
   - It then rebuilds the verdict: criteria come from the compiled policy for the request's (payer, CPT); each finding is re-verified against the chart, value at its cited location; the patient is derived from the chart index.
@@ -34,7 +36,7 @@ It is priority 2.
 - **Per-step empty-output table.** This replaces a global wrapper rule. Each row gets one test.
 - **Failure routing.** Each row of the article's failure table, with access-denied alerting an operator through an SNS topic. The topic's email subscription is confirmed before the alarm test.
 - **Agent runtime.**
-  - A Strands agent on AgentCore Runtime: HTTP protocol, a JWT authorizer that admits only the intake client, and one session per case.
+  - The Strands agent on AgentCore Runtime: HTTP protocol, a JWT authorizer that admits only the intake client, and one session per case.
   - A post-deploy step requires metadata service v2.
   - Telemetry content redaction is on from the first deploy.
 - **Extraction model (PM, 2026-10-16):**

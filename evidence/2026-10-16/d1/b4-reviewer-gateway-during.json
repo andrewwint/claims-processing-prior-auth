@@ -1,0 +1,10 @@
+{
+  "allowedClients": [
+    "<clinician-client-id>",
+    "<agent-client-id>"
+  ],
+  "customClaims": null,
+  "label": "during",
+  "policy_mode": "ENFORCE",
+  "status": "READY"
+}

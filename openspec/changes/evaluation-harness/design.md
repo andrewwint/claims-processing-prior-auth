@@ -21,6 +21,12 @@ Rates are given per model, with numerator, denominator and N. No ranking claims 
 
 The pre-registration fixes this wording, and a report test checks both the form and the arithmetic.
 
+**Latency and cost per model (PM, 2026-10-16).** These are reported alongside the two rates:
+- **Latency:** p50 and p95 of end-to-end case time, from intake to the terminal outcome.
+- **Cost per case:** computed from the recorded input and output token counts, at the per-token prices recorded with their source and date in the pre-registration.
+
+They describe this harness's synthetic cases only.
+
 ### D2. Case generation and provenance
 
 - **Generator.** `harness/cases.py` builds every case from a parent by exactly one declared change. Each case file records:

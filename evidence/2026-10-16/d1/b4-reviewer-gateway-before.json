@@ -1,0 +1,20 @@
+{
+  "allowedClients": [
+    "<clinician-client-id>"
+  ],
+  "customClaims": [
+    {
+      "authorizingClaimMatchValue": {
+        "claimMatchOperator": "EQUALS",
+        "claimMatchValue": {
+          "matchValueString": "clinician"
+        }
+      },
+      "inboundTokenClaimName": "pa_role",
+      "inboundTokenClaimValueType": "STRING"
+    }
+  ],
+  "label": "before",
+  "policy_mode": "ENFORCE",
+  "status": "READY"
+}

@@ -47,17 +47,18 @@ The rule underneath every decision here: **an approval is derived only from trus
 
   Status labels in the packet are ignored.
 
-### D3. The decision is code; the model has no tools
+### D3. A Strands agent gathers the case; the decision is code (PM, 2026-10-16)
 
-- **The pipeline** in `agent/pipeline.py` is plain code:
-  1. eligibility
-  2. criteria lookup
-  3. extraction, per criterion (model)
-  4. build the packet
-  5. `decide(packet)`
-  6. act on the decision
-- **The model** is called only for structured extraction and for the summary. It gets no tool list, so it cannot call `record_approval`, `route_to_reviewer` or any gateway tool.
-- **`decide(packet)`** returns `Approve(packet_id, packet_hash)` or `Route(reason, gaps)`, computed by `checks.recompute()`. The wrapper then calls the matching gateway tool with the agent's client-credentials token. No other code path calls `record_approval`.
+- **The agent is a Strands agent** on AgentCore Runtime. It connects to the agent gateway over MCP with the agent's client-credentials token, and is given **exactly three tools**:
+  - `check_eligibility`
+  - `fetch_policy_criteria`
+  - `extract_clinical_evidence`
+
+  It uses them to assemble the case: real tool use, with every call evaluated by Cedar as the agent identity. Its final output is the packet's findings as structured output, plus the model summary.
+- **The tool filter.** The MCP client lists the gateway's tools and keeps only those three by exact name, before the agent is built. A test asserts that the Strands agent's tool list is exactly those three. `record_approval` and `route_to_reviewer` are never given to the agent.
+- **`decide(packet)` runs as code after the agent finishes.** It returns `Approve(packet_id, packet_hash)` or `Route(reason, gaps)`, computed by `checks.recompute()`. It is the **only** caller of `record_approval` and `route_to_reviewer`, under the same agent identity. No other code path calls either tool, and a test asserts that.
+- **Same identity, different code paths.** Cedar permits the agent identity to call all five tools. The model can choose among the three gathering tools only, because the other two are not in its tool list. The approval service's server-side rebuild is unchanged: even a forged approval call is refused.
+- **No Knowledge Base.** Policy lookup is an exact match on (payer, CPT) against the compiled criteria. There is no retrieval and no similarity search (PM, 2026-10-16).
 - **The model summary** is stored under `model_summary` with `label: "Model summary. Not used for any decision."` Neither `decide()` nor `recompute()` reads it, and a test changes it and shows the decision does not change.
 
 ### D4. The approval service never trusts the packet
@@ -104,7 +105,11 @@ The eligibility row and the last two extraction-adjacent rows (throttling and un
   - models from the allow-list
 - **Intake.** `scripts/intake.py` writes the request record, then invokes the runtime with a token from the intake client and a session ID derived from the case ID.
 - **Metadata service v2.** `scripts/require_mmdsv2.py` runs after every deploy.
-- **Telemetry.** Redaction is set through `OTEL_SEMCONV_STABILITY_OPT_IN`. `APPLICATION_LOGS` delivery is not enabled.
+- **Telemetry (PM, 2026-10-16).**
+  - **Strands:** content redaction is on from the first invocation (`OTEL_SEMCONV_STABILITY_OPT_IN`, Strands ≥ 1.47). It covers prompts, completions and system instructions. Tool inputs and outputs are checked separately, because chart text arrives as tool results.
+  - **ADOT and botocore auto-instrumentation** may attach request content: the runtime's default ADOT configuration, the GenAI content-extraction setting, and the botocore Bedrock extension. Task 5.0 records what each one attaches, and disables any content capture it finds, before the first deploy.
+  - **Runtime `APPLICATION_LOGS`** are not enabled; they include the request payload.
+  - **The proof** stays the canary scan with its positive control (`evidence-record-and-trace`).
 - **Network.** Public network mode behind the JWT authorizer. VPC mode is not used: its network interfaces can remain for hours after deletion, which conflicts with same-day verified teardown. The README notes production uses VPC mode.
 
 ### D8. Extraction model and Regions (PM, 2026-10-16)

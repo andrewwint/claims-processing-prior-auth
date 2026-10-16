@@ -161,11 +161,40 @@ def calls(session, out, named) -> None:
         print(k, _summary(v))
 
 
+def reviewer_gateway(session, out, named, label: str) -> dict:
+    """D4: the reviewer gateway's authorizer before, during and after the test configuration."""
+    gw = session.client("bedrock-agentcore-control").get_gateway(gatewayIdentifier=out["ReviewerGatewayId"])
+    jwt = gw["authorizerConfiguration"]["customJWTAuthorizer"]
+    state = {"label": label, "status": gw["status"], "allowedClients": jwt.get("allowedClients"),
+             "customClaims": jwt.get("customClaims"), "policy_mode": gw["policyEngineConfiguration"]["mode"]}
+    save(f"b4-reviewer-gateway-{label}.json", state, named)
+    clinician_only = jwt.get("allowedClients") == [out["ClinicianClientId"]] and bool(jwt.get("customClaims"))
+    print(label, gw["status"], "clinician-only:", clinician_only, "| clients:", len(jwt.get("allowedClients", [])),
+          "| claim check:", bool(jwt.get("customClaims")))
+    return {"clinician_only": clinician_only}
+
+
+def b4_call(session, out, named) -> None:
+    agent = gc.agent_token(out, session)
+    r = gc.mcp(out["ReviewerGatewayUrl"], agent, "tools/call",
+               {"name": "ReviewerTools___record_adverse_determination",
+                "arguments": {"case_id": "SYN-CASE-1", "reason": "B4 layer 2 test (synthetic)"}})
+    save("b4-layer2-agent-call.json", r, named)
+    print("B4 layer 2 agent call:", _summary(r))
+
+
 def main() -> int:
     session = boto3.Session(region_name="us-east-1")
     out = gc.outputs()
     named = known_values(out)
-    {"state": state, "smoke": smoke, "tokens": tokens, "policies": policies, "calls": calls}[sys.argv[1]](session, out, named)
+    if sys.argv[1] == "reviewer":
+        result = reviewer_gateway(session, out, named, sys.argv[2])
+        if len(sys.argv) > 3 and sys.argv[3] == "--require-clinician-only" and not result["clinician_only"]:
+            print("FAIL: the reviewer gateway is not back to clinician-only", file=sys.stderr)
+            return 1
+        return 0
+    {"state": state, "smoke": smoke, "tokens": tokens, "policies": policies, "calls": calls,
+     "b4call": b4_call}[sys.argv[1]](session, out, named)
     return 0
 
 

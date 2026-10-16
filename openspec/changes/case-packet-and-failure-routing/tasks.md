@@ -77,7 +77,11 @@
 
 ## 5. Agent runtime (deploy, with approval)
 
-- [ ] 5.1 The pipeline with the allow-listed model, temperature 0 only, and the redaction setting. The model gets no tool list. Done when unit tests with a fake gateway and a fake model pass, including one asserting the model is never given tools.
+- [ ] 5.0 Telemetry check, before the first deploy (PM, 2026-10-16). Run the agent locally with the runtime's ADOT configuration, the botocore instrumentation and Strands telemetry against a fake model and a fake gateway. Record which span and log attributes carry prompt, completion, tool-argument or tool-result content. Disable each one found, through Strands redaction, ADOT and GenAI content settings, and disabling instrumentations, and re-run until a planted canary appears nowhere. Record the settings in the contract notes.
+- [ ] 5.1 The Strands agent: MCP client to the agent gateway, filtered to exactly the three gathering tools; the allow-listed model with only its accepted sampling settings; redaction on. Then `decide(packet)` as the only caller of `record_approval` and `route_to_reviewer`. Tests, with a fake gateway and a fake model:
+  - the agent's tool list is exactly the three gathering tools (G10)
+  - no code path other than `decide` calls the two ending tools (G10)
+  - the gathering calls go through the gateway as the agent identity
 - [ ] 5.2 Runtime stack:
   - CodeZip ARM64, HTTP protocol, JWT authorizer admitting only `prior-auth-intake`
   - the case and chart buckets

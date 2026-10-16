@@ -66,8 +66,8 @@ The same-patient check SHALL take each cited document's patient from the chart i
 - **WHEN** a finding cites a `doc_id` that is not in the chart index
 - **THEN** the same-patient check fails
 
-### Requirement: The decision is a code function the model cannot bypass
-The approve-or-route decision SHALL be made by `decide(packet)` from the checks module's recomputation. The model SHALL receive no tools and SHALL NOT be able to call `record_approval` or `route_to_reviewer`.
+### Requirement: The decision is a code function the agent cannot bypass
+The approve-or-route decision SHALL be made by `decide(packet)` from the checks module's recomputation, after the agent finishes. `decide` SHALL be the only caller of `record_approval` and `route_to_reviewer`. The Strands agent SHALL be given exactly three gathering tools: `check_eligibility`, `fetch_policy_criteria` and `extract_clinical_evidence`.
 
 #### Scenario: Approval path
 - **WHEN** every compiled criterion has at least one finding and every finding verifies
@@ -77,9 +77,13 @@ The approve-or-route decision SHALL be made by `decide(packet)` from the checks 
 - **WHEN** any criterion is not Met or any check fails
 - **THEN** `decide` returns route with the gaps marked
 
-#### Scenario: Model has no tools
-- **WHEN** the model is invoked
-- **THEN** the request carries no tool configuration
+#### Scenario: Agent's tool list
+- **WHEN** the Strands agent is built from the agent gateway's tool list
+- **THEN** its tools are exactly `check_eligibility`, `fetch_policy_criteria` and `extract_clinical_evidence`
+
+#### Scenario: Only decide calls the ending tools
+- **WHEN** the code base is searched for calls to `record_approval` or `route_to_reviewer`
+- **THEN** the only caller is `decide`'s action step
 
 ### Requirement: Model prose never affects a decision
 The packet's prose SHALL be stored as a labeled model summary, and no decision SHALL depend on it.

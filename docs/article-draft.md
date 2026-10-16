@@ -55,14 +55,14 @@ The same move works here. The agent never gets a tool that can deny.
 | `route_to_reviewer` | Sends the case packet to a clinician queue | Yes |
 | `record_adverse_determination` | Denies, delays, or modifies care | No. Only the reviewer app holds it |
 
-AgentCore Gateway fronts every tool, and Policy in AgentCore evaluates each call against Cedar rules before the tool runs. So the boundary is written twice. The agent's gateway does not expose the denial tool at all. That tool lives on a separate reviewer gateway that only clinicians can sign in to. A Cedar `forbid` on the agent's identity stands behind it, so the call fails even if the agent reaches the tool.
+AgentCore Gateway fronts every tool, and Policy in AgentCore evaluates each call against Cedar rules before the tool runs. So the boundary is written twice. The agent's gateway does not expose the denial tool at all. That tool lives on a separate reviewer gateway that only clinicians can sign in to. A Cedar `forbid` stands behind it, naming the agent's identity and anyone without the clinician role, so the call fails even if the agent reaches the tool.
 
 ```
 forbid(
-  principal == AgentCore::OAuthUser::"<agent-client-id>",
+  principal is AgentCore::OAuthUser,
   action == AgentCore::Action::"ReviewerTools___record_adverse_determination",
   resource == AgentCore::Gateway::"<reviewer-gateway-arn>"
-);
+) when { principal == AgentCore::OAuthUser::"<agent-client-id>" || !(principal.hasTag("pa_role") && principal.getTag("pa_role") == "clinician") };
 ```
 
 Policy checks the shape of a call. It cannot check whether the agent's inputs are true. That job belongs to grounding.

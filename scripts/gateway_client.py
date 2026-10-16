@@ -84,13 +84,25 @@ def claims(token: str) -> dict:
     return json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))
 
 
-def mcp(url: str, token: str | None, method: str, params: dict | None = None, rpc_id: int = 1) -> dict:
+def sampled_trace_headers() -> dict:
+    """W3C and X-Ray trace headers with the sampled flag set, so the gateway records spans."""
+    import os as _os
+    import time as _time
+    trace_hex = f"{int(_time.time()):08x}" + _os.urandom(12).hex()
+    parent = _os.urandom(8).hex()
+    return {"traceparent": f"00-{trace_hex}-{parent}-01",
+            "X-Amzn-Trace-Id": f"Root=1-{trace_hex[:8]}-{trace_hex[8:]};Parent={parent};Sampled=1"}
+
+
+def mcp(url: str, token: str | None, method: str, params: dict | None = None, rpc_id: int = 1,
+        extra_headers: dict | None = None) -> dict:
     body = {"jsonrpc": "2.0", "id": rpc_id, "method": method}
     if params is not None:
         body["params"] = params
     headers = {"Content-Type": "application/json", "Accept": "application/json, text/event-stream"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    headers.update(extra_headers or {})
     req = urllib.request.Request(url, data=json.dumps(body).encode(), headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:

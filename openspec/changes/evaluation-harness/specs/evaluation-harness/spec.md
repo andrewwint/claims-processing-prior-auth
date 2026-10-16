@@ -38,6 +38,10 @@ The report SHALL give, per model, the false auto-approval rate (approvals the ap
 - **WHEN** the report is generated
 - **THEN** both rates appear with numerator, denominator, and N
 
+#### Scenario: Latency and cost
+- **WHEN** the report is generated
+- **THEN** each model's row shows latency p50 and p95 and cost per case next to the two rates
+
 #### Scenario: Zero false approvals
 - **WHEN** no false auto-approvals occur in N trials
 - **THEN** the report states "0 of N" with the 95% upper bound of about 3/N, next to the auto-approval rate

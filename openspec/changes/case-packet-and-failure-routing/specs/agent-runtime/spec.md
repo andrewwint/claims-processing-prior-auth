@@ -32,8 +32,12 @@ The runtime's default extraction model SHALL be Amazon Nova Pro in us-east-1. Cl
 - **THEN** a dated access-check record for the model exists in the evidence directory
 
 ### Requirement: Telemetry content is redacted from the first deploy
-The agent SHALL run with prompt, completion and system-instruction content redacted from telemetry from its first deployment.
+The Strands agent SHALL run with prompt, completion and system-instruction content redacted from its first invocation. No ADOT or botocore instrumentation SHALL attach request, response, tool-argument or tool-result content.
 
 #### Scenario: Redaction setting
 - **WHEN** the runtime configuration is read
-- **THEN** the redaction setting is present
+- **THEN** the redaction setting is present, and the content-capture settings found in the telemetry check are disabled
+
+#### Scenario: Planted canary
+- **WHEN** a canary is planted in a tool result during the telemetry check
+- **THEN** it appears in no span attribute and no log line

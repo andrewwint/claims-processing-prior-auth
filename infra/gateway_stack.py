@@ -47,7 +47,7 @@ def _tool(t: dict) -> agentcore.CfnGatewayTarget.ToolDefinitionProperty:
 
 class GatewayStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, *, domain_prefix: str,
-                 gateway_ids: dict[str, str] | None = None, **kwargs):
+                 gateway_ids: dict[str, str] | None = None, b4_layer2_test: bool = False, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
         # First pass: roles are bound to the gateway name prefix. Second pass (after
         # D1 records the real IDs): bound to the exact gateway.
@@ -63,7 +63,7 @@ class GatewayStack(Stack):
         # every tool call is denied by default until the policy stack (D2) lands.
         self.engine = agentcore.CfnPolicyEngine(self, "PolicyEngine", name="prior_auth_engine")
         self.agent_gateway = self._gateway(
-            "Agent", name="prior-auth-agent", allowed_client=self.identity.agent_client.user_pool_client_id,
+            "Agent", name="prior-auth-agent", allowed_clients=[self.identity.agent_client.user_pool_client_id],
             targets=[
                 ("AgentTools", CASE_TARGET, CASE_TOOLS, "tools.agent_tools.handler", "prior-auth-agent-tools"),
                 ("ApprovalService", APPROVAL_TARGET, APPROVAL_TOOLS, "tools.approval_service.handler",
@@ -71,12 +71,19 @@ class GatewayStack(Stack):
             ],
             allowed_scopes=[f"{RESOURCE_SERVER}/{SCOPE}"],
         )
+        # D4 only: a temporary test configuration that lets the agent's token past
+        # layer 1 so the Cedar forbid (layer 2) can be shown to deny it. Reverted
+        # by redeploying without the flag.
+        reviewer_clients = [self.identity.clinician_client.user_pool_client_id]
+        if b4_layer2_test:
+            reviewer_clients.append(self.identity.agent_client.user_pool_client_id)
         self.reviewer_gateway = self._gateway(
-            "Reviewer", name="prior-auth-reviewer", allowed_client=self.identity.clinician_client.user_pool_client_id,
+            "Reviewer", name="prior-auth-reviewer", allowed_clients=reviewer_clients,
             targets=[("ReviewerTools", REVIEWER_TARGET, REVIEWER_TOOLS, "tools.reviewer_tools.handler",
                       "prior-auth-reviewer-tools")],
-            custom_claims=[CLINICIAN_GROUP_CLAIM],
+            custom_claims=None if b4_layer2_test else [CLINICIAN_GROUP_CLAIM],
         )
+        self._traces_only()
         for key, value in {
             "UserPoolId": self.identity.pool.user_pool_id,
             "AgentClientId": self.identity.agent_client.user_pool_client_id,
@@ -91,6 +98,25 @@ class GatewayStack(Stack):
             "ReviewerGatewayArn": self.reviewer_gateway.attr_gateway_arn,
         }.items():
             CfnOutput(self, key, value=value)
+
+    def _traces_only(self) -> None:
+        """Gateway tracing (approval gate D3): TRACES to X-Ray only.
+
+        Gateway APPLICATION_LOGS include full request and response bodies, which
+        here are tool arguments quoting synthetic chart text, so they are never
+        enabled. Spans carry only operational attributes (contract notes).
+        """
+        destination = logs.CfnDeliveryDestination(
+            self, "TracesDestination", name="prior-auth-traces-xray", delivery_destination_type="XRAY")
+        for prefix, gw in (("Agent", self.agent_gateway), ("Reviewer", self.reviewer_gateway)):
+            source = logs.CfnDeliverySource(
+                self, f"{prefix}TracesSource", name=f"prior-auth-{prefix.lower()}-traces",
+                log_type="TRACES", resource_arn=gw.attr_gateway_arn)
+            delivery = logs.CfnDelivery(
+                self, f"{prefix}TracesDelivery", delivery_source_name=source.name,
+                delivery_destination_arn=destination.attr_arn)
+            delivery.add_dependency(source)
+            delivery.add_dependency(destination)
 
     def _gateway_arn_pattern(self, name: str) -> str:
         exact = self.gateway_ids.get(name)
@@ -110,7 +136,7 @@ class GatewayStack(Stack):
         self.functions[function_name] = fn
         return fn
 
-    def _gateway(self, prefix, *, name, allowed_client, targets, allowed_scopes=None, custom_claims=None):
+    def _gateway(self, prefix, *, name, allowed_clients, targets, allowed_scopes=None, custom_claims=None):
         """targets: (construct id, target name, tools, handler, function name) per Lambda target."""
         role = iam.Role(
             self, f"{prefix}GatewayRole",
@@ -134,7 +160,7 @@ class GatewayStack(Stack):
             role_arn=role.role_arn,
             authorizer_configuration=agentcore.CfnGateway.AuthorizerConfigurationProperty(
                 custom_jwt_authorizer=agentcore.CfnGateway.CustomJWTAuthorizerConfigurationProperty(
-                    discovery_url=self.identity.discovery_url, allowed_clients=[allowed_client],
+                    discovery_url=self.identity.discovery_url, allowed_clients=allowed_clients,
                     allowed_scopes=allowed_scopes, custom_claims=custom_claims,
                 )
             ),
