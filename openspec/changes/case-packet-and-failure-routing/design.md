@@ -13,7 +13,7 @@ The rule underneath every decision here: **an approval is derived only from trus
 | Source | Holds | Written by | Read by |
 |---|---|---|---|
 | Request records, `s3://prior-auth-cases/requests/<case_id>.json` | case ID, payer, CPT, patient ID, received time | the intake script, under the operator's credentials | runtime, approval service |
-| Compiled criteria, `policies/compiled/<payer>/<cpt>.json` | criterion ID, text, policy version, source location | the compile step, committed and bundled with the code | runtime, approval service |
+| Compiled criteria, `data/policies/compiled/<payer>/<cpt>.json` | criterion ID, text, policy version, source location | the compile step, committed and bundled with the code | runtime, approval service |
 | Chart store, `s3://prior-auth-charts/docs/<doc_id>.json` | pages and lines of one synthetic document | `scripts/seed_charts.py`, under the operator's credentials | runtime, approval service |
 | Chart index, `s3://prior-auth-charts/index.json` | `doc_id` → owning patient ID | `scripts/seed_charts.py` | runtime, approval service |
 | **Packet store**, `s3://prior-auth-cases/packets/<packet_id>.json` | the packet (untrusted claims) | the runtime | approval service |
@@ -26,7 +26,7 @@ The rule underneath every decision here: **an approval is derived only from trus
 
 ### D2. One checks module
 
-`checks/` is a single package. The runtime's `decide()` and the approval service both import it, and a test asserts they reference the same module object. Another test asserts that the deployed Lambda bundle contains a byte-identical copy.
+`src/prior_auth/checks/` is a single package. The runtime's `decide()` and the approval service both import it, and a test asserts they reference the same module object. Another test asserts that the deployed Lambda bundle contains a byte-identical copy.
 
 - **Check 1, schema.** The packet has a `case_id` and a list of findings. Each finding has `criterion_id`, `doc_id`, `page`, `line` and `value`. Any finding for a criterion ID outside the compiled policy fails the check.
 - **Check 2, source match.** This is the strict rule:
@@ -56,7 +56,7 @@ The rule underneath every decision here: **an approval is derived only from trus
 
   It uses them to assemble the case: real tool use, with every call evaluated by Cedar as the agent identity. Its final output is the packet's findings as structured output, plus the model summary.
 - **The tool filter.** The MCP client lists the gateway's tools and keeps only those three by exact name, before the agent is built. A test asserts that the Strands agent's tool list is exactly those three. `record_approval` and `route_to_reviewer` are never given to the agent.
-- **`decide(packet)` runs as code after the agent finishes.** It returns `Approve(packet_id, packet_hash)` or `Route(reason, gaps)`, computed by `checks.recompute()`. It is the **only** caller of `record_approval` and `route_to_reviewer`, under the same agent identity. No other code path calls either tool, and a test asserts that.
+- **`decide(packet)` (`src/prior_auth/decide.py`) runs as code after the agent finishes.** It returns `Approve(packet_id, packet_hash)` or `Route(reason, gaps)`, computed by `checks.recompute()`. It is the **only** caller of `record_approval` and `route_to_reviewer`, under the same agent identity. No other code path calls either tool, and a test asserts that.
 - **Same identity, different code paths.** Cedar permits the agent identity to call all five tools. The model can choose among the three gathering tools only, because the other two are not in its tool list. The approval service's server-side rebuild is unchanged: even a forged approval call is refused.
 - **No Knowledge Base.** Policy lookup is an exact match on (payer, CPT) against the compiled criteria. There is no retrieval and no similarity search (PM, 2026-10-16).
 - **The model summary** is stored under `model_summary` with `label: "Model summary. Not used for any decision."` Neither `decide()` nor `recompute()` reads it, and a test changes it and shows the decision does not change.
@@ -75,7 +75,7 @@ It writes nothing on refusal and returns the failures. This replaces the fixture
 
 ### D5. Session invariant
 
-- **Recorder.** `agent/session.py` holds a single-assignment outcome recorder.
+- **Recorder.** `src/prior_auth/agent/session.py` holds a single-assignment outcome recorder.
 - **Terminal outcomes:** `approved`, `routed`, `operator_alert`.
 - **Ending without one.** If the session ends without a terminal outcome (an exception, a timeout, or a path that returns early), the wrapper's `finally` block records `needs_review` and routes the case with the reason "session ended without an outcome".
 - **Second attempt.** A second attempt to set a terminal outcome is refused and logged as an invariant violation, with a metric. The first outcome stands.
@@ -147,9 +147,9 @@ A finding counts only if it passes source match, same patient, and its criterion
 
 ### D10. Mutation testing
 
-- **Tool.** `mutmut` runs over `checks/`, the approval service and `agent/session.py` plus the pipeline wrapper.
+- **Tool.** `mutmut` runs over `src/prior_auth/checks/`, the approval service and `src/prior_auth/agent/session.py` plus the pipeline wrapper.
 - **Report.** It lists every surviving mutant with a disposition: a test is added, or the mutant is equivalent with a reason.
-- **Target.** No unexplained survivors in `checks/` or the approval service.
+- **Target.** No unexplained survivors in `src/prior_auth/checks/` or the approval service.
 
 ## Risks / Trade-offs
 

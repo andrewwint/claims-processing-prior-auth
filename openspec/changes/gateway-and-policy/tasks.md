@@ -28,8 +28,8 @@
   - `scripts/create_users.py`: admin-creates the synthetic clinician and tenant users, with generated passwords stored in Secrets Manager and never printed or written to disk
 
   Done when unit tests with CDK assertions pass, including one asserting `AllowAdminCreateUserOnly = true`.
-- [x] 2.2 `tools/agent_tools.py`: one Lambda handler that dispatches the five tools by name. Four of them return synthetic stub results. Done when unit tests pass for each tool.
-- [x] 2.3 Approval service in `tools/agent_tools.py`:
+- [x] 2.2 `src/prior_auth/handlers/agent_tools.py`: one Lambda handler that dispatches the five tools by name. Four of them return synthetic stub results. Done when unit tests pass for each tool.
+- [x] 2.3 Approval service in `src/prior_auth/handlers/agent_tools.py`:
   - `record_approval(packet_id, packet_hash)` loads the packet from a bundled synthetic fixture (one passing packet, one failing packet)
   - it verifies the SHA-256 of the canonical JSON and re-runs the checks
   - it refuses with a reason on any failure
@@ -39,7 +39,7 @@
   - a hash mismatch is refused
   - an unknown `packet_id` is refused
   - a passing packet is recorded
-- [x] 2.4 `tools/reviewer_tools.py`: the `record_adverse_determination` stub. Done when its unit test passes.
+- [x] 2.4 `src/prior_auth/handlers/reviewer_tools.py`: the `record_adverse_determination` stub. Done when its unit test passes.
 - [x] 2.5 Tool schemas in code. `record_approval` declares `packet_id` and `packet_hash` as required strings and has no boolean inputs. Tests assert:
   - the exact five-tool set, with no denial tool present (B1, B2)
   - that schema

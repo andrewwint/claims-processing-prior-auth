@@ -4,8 +4,8 @@ import copy
 
 import pytest
 
-import checks
-from tools.approval import load_fixtures
+from prior_auth import checks
+from prior_auth.handlers.approval import load_fixtures
 
 TRUSTED, PACKETS = load_fixtures()
 REQUEST = TRUSTED["requests"]["SYN-CASE-PASS"]

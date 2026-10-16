@@ -29,7 +29,7 @@ The service constraints this design relies on are in [docs/contract-notes.md](..
 - **Input:** `packet_id` and `packet_hash` are required strings, and there are no booleans. The hash is SHA-256 over the packet's canonical JSON.
 - **Policy:** the permit names the agent principal and requires both fields to be present. That is all Cedar checks.
 - **Approval Lambda:** it loads the stored packet and verifies the hash. It then re-runs the checks: every criterion Met, and the schema, source-match and same-patient checks passing. If any step fails, it refuses and returns a reason, and it records nothing.
-- **Never trust the packet (PM, 2026-10-16).** The verdict is rebuilt by the shared `checks/` module from trusted sources:
+- **Never trust the packet (PM, 2026-10-16).** The verdict is rebuilt by the shared `src/prior_auth/checks/` module from trusted sources:
   - the request record (payer, CPT, patient)
   - the compiled criteria for that (payer, CPT)
   - the chart store and its index
@@ -108,7 +108,7 @@ Before anything is committed, redaction replaces ARNs, account IDs and Cognito c
 
 | Finding | Status |
 |---|---|
-| X1. Approval matched quotes, not meaning: any 4-character quote on the right patient's line counted for any criterion | Fixed in `checks/`: compiled evidence rules (document kind, pattern, numeric minimums, negation), one line per criterion, no rule means never Met. Tests reproduce the reviewer's probes. Carried into `case-packet-and-failure-routing` design D11. |
+| X1. Approval matched quotes, not meaning: any 4-character quote on the right patient's line counted for any criterion | Fixed in `src/prior_auth/checks/`: compiled evidence rules (document kind, pattern, numeric minimums, negation), one line per criterion, no rule means never Met. Tests reproduce the reviewer's probes. Carried into `case-packet-and-failure-routing` design D11. |
 | X2. E8 (direct Lambda invoke) | Accepted residual (above) |
 | X3. The Cedar clinician check was free text; the clinician permit's principal was unscoped | Fixed: the check is built in code from a recorded tag shape (`set` or `string`, exact membership, no `like`); the permit is scoped to `principal is AgentCore::OAuthUser`; `agent_sub` is validated against injection; one statement per policy |
 | X4. Redaction gaps: JWTs, UUIDs, emails, access keys, client secrets, gateway IDs | Fixed: generic patterns (SHA-256 hashes untouched), named placeholders from stack outputs, and a test that scans all committed evidence |

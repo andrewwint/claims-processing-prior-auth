@@ -558,7 +558,7 @@ wheels = [
 [[package]]
 name = "prior-auth-agentcore"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "aws-cdk-aws-bedrock-agentcore-alpha" },
     { name = "aws-cdk-lib" },

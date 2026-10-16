@@ -4,7 +4,7 @@ approval service's own target."""
 
 import logging
 
-from tools.schemas import CASE_TOOLS
+from prior_auth.handlers.schemas import CASE_TOOLS
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)

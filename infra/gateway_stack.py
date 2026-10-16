@@ -11,10 +11,12 @@ from aws_cdk import aws_cognito as cognito, aws_iam as iam, aws_lambda as lambda
 from constructs import Construct
 
 from infra.identity import RESOURCE_SERVER, SCOPE, Identity
-from tools.schemas import (APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
+from prior_auth.handlers.schemas import (APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
                            REVIEWER_TOOLS)
 
-ASSET_EXCLUDE = ["*", ".*", "**/.*", "!tools", "!tools/**", "!checks", "!checks/**", "**/__pycache__", "**/.*"]
+# Lambda code is bundled from src/: only the prior_auth package, no caches or dotfiles.
+ASSET_ROOT = "src"
+ASSET_EXCLUDE = ["*", ".*", "**/.*", "!prior_auth", "!prior_auth/**", "**/__pycache__", "**/.*"]
 
 
 # Layer 1 on the reviewer gateway: the clinician client AND pa_role == "clinician",
@@ -56,7 +58,7 @@ class GatewayStack(Stack):
         self.identity = Identity(self, "Identity", domain_prefix=domain_prefix)
         self.identity.pool.add_trigger(
             cognito.UserPoolOperation.PRE_TOKEN_GENERATION_CONFIG,
-            self._function("PreToken", "tools.pre_token.handler", "prior-auth-pre-token"),
+            self._function("PreToken", "prior_auth.handlers.pre_token.handler", "prior-auth-pre-token"),
             cognito.LambdaVersion.V2_0,
         )
         # Attached in ENFORCE mode from the first deploy. With no policies yet,
@@ -65,8 +67,8 @@ class GatewayStack(Stack):
         self.agent_gateway = self._gateway(
             "Agent", name="prior-auth-agent", allowed_clients=[self.identity.agent_client.user_pool_client_id],
             targets=[
-                ("AgentTools", CASE_TARGET, CASE_TOOLS, "tools.agent_tools.handler", "prior-auth-agent-tools"),
-                ("ApprovalService", APPROVAL_TARGET, APPROVAL_TOOLS, "tools.approval_service.handler",
+                ("AgentTools", CASE_TARGET, CASE_TOOLS, "prior_auth.handlers.agent_tools.handler", "prior-auth-agent-tools"),
+                ("ApprovalService", APPROVAL_TARGET, APPROVAL_TOOLS, "prior_auth.handlers.approval_service.handler",
                  "prior-auth-approval-service"),
             ],
             allowed_scopes=[f"{RESOURCE_SERVER}/{SCOPE}"],
@@ -79,7 +81,7 @@ class GatewayStack(Stack):
             reviewer_clients.append(self.identity.agent_client.user_pool_client_id)
         self.reviewer_gateway = self._gateway(
             "Reviewer", name="prior-auth-reviewer", allowed_clients=reviewer_clients,
-            targets=[("ReviewerTools", REVIEWER_TARGET, REVIEWER_TOOLS, "tools.reviewer_tools.handler",
+            targets=[("ReviewerTools", REVIEWER_TARGET, REVIEWER_TOOLS, "prior_auth.handlers.reviewer_tools.handler",
                       "prior-auth-reviewer-tools")],
             custom_claims=None if b4_layer2_test else [CLINICIAN_GROUP_CLAIM],
         )
@@ -130,7 +132,7 @@ class GatewayStack(Stack):
         fn = lambda_.Function(
             self, construct_id, function_name=function_name,
             runtime=lambda_.Runtime.PYTHON_3_13, architecture=lambda_.Architecture.ARM_64,
-            handler=handler, code=lambda_.Code.from_asset(".", exclude=ASSET_EXCLUDE),
+            handler=handler, code=lambda_.Code.from_asset(ASSET_ROOT, exclude=ASSET_EXCLUDE),
             timeout=Duration.seconds(15), memory_size=256, log_group=log_group,
         )
         self.functions[function_name] = fn

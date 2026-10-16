@@ -1,4 +1,4 @@
-from tools.pre_token import handler, scalar_claims
+from prior_auth.handlers.pre_token import handler, scalar_claims
 
 
 def _event(groups):

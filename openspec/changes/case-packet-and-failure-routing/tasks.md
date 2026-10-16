@@ -9,10 +9,10 @@ Delivers demo **beats 2 and 3**: a clean case approved by `decide()`, and a one-
 
 ## 1. Synthetic data, generated here
 
-- [ ] 1.1 One fictional payer (Larkspur Health Plan) and one procedure (lumbar discectomy, CPT number only, with our own description), plus a short synthetic policy whose criteria carry evidence rules. `policies/compile.py` produces the criteria with source locations. A test reproduces the committed output.
+- [ ] 1.1 One fictional payer (Larkspur Health Plan) and one procedure (lumbar discectomy, CPT number only, with our own description), plus a short synthetic policy whose criteria carry evidence rules. `data/policies/compile.py` produces the criteria with source locations. A test reproduces the committed output.
 - [ ] 1.2 Charts for about 6 synthetic patients in a single tenant: page- and line-addressable documents, each with a `kind`; a chart index; canaries in every chart. The harness cases are drawn from these.
 
-## 2. Checks and decision (most already built in `checks/`)
+## 2. Checks and decision (most already built in `src/prior_auth/checks/`)
 
 - [ ] 2.1 Move the fixture rules into compiled criteria. Done when the existing checks tests pass on the compiled policy.
 - [ ] 2.2 `decide(packet)`: the only caller of `record_approval` and `route_to_reviewer`. Tests:

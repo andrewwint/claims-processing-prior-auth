@@ -35,6 +35,6 @@ None.
 
 ## Impact
 
-- **New code:** `harness/` and tests.
+- **New code:** `evaluation/` and tests.
 - **AWS usage:** model and gateway calls only.
 - **Depends on** `case-packet-and-failure-routing`.

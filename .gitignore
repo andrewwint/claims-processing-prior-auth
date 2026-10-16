@@ -2,6 +2,7 @@
 # they carry endpoints, account identifiers and resource names.
 cdk.out/
 cdk.context.json
+*.template.json
 *outputs*.json
 .bedrock_agentcore/
 .bedrock_agentcore.yaml
@@ -18,5 +19,5 @@ __pycache__/
 .DS_Store
 
 # Raw run output stays local; reviewed reports are committed explicitly
-harness/results/raw/
+evaluation/results/raw/
 .local/

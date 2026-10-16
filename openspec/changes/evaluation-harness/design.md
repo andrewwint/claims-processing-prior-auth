@@ -29,7 +29,7 @@ They describe this harness's synthetic cases only.
 
 ### D2. Case generation and provenance
 
-- **Generator.** `harness/cases.py` builds every case from a parent by exactly one declared change. Each case file records:
+- **Generator.** `evaluation/cases.py` builds every case from a parent by exactly one declared change. Each case file records:
   - `parent_id`
   - `change`: the type, the target element, and the before and after values
   - `label`

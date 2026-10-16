@@ -66,7 +66,7 @@ None.
 
 ## Impact
 
-- **New code:** `infra/` (Python CDK), `tools/` (Lambda handlers and a synthetic packet fixture), `scripts/` (evidence capture and teardown), and `tests/`.
+- **New code:** `infra/` (Python CDK), `src/prior_auth/handlers/` (Lambda handlers and a synthetic packet fixture), `scripts/` (evidence capture and teardown), and `tests/`.
 - **AWS resources:**
   - Cognito: a user pool and two app clients.
   - Two AgentCore Gateways, plus a policy engine and its policies.

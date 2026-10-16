@@ -3,9 +3,9 @@ from types import SimpleNamespace
 
 import pytest
 
-import checks
-from tools import agent_tools, approval, approval_service, reviewer_tools
-from tools.schemas import (AGENT_TOOLS, APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
+from prior_auth import checks
+from prior_auth.handlers import agent_tools, approval, approval_service, reviewer_tools
+from prior_auth.handlers.schemas import (AGENT_TOOLS, APPROVAL_TARGET, APPROVAL_TOOLS, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET,
                            REVIEWER_TOOLS, TOOL_TARGETS)
 
 FIVE = {"check_eligibility", "fetch_policy_criteria", "extract_clinical_evidence", "record_approval", "route_to_reviewer"}

@@ -18,6 +18,23 @@ The agent's gateway has no tool for an adverse determination. That tool lives on
 - **A write-once evidence record** whose hash matches the trace.
 - **A pre-registered evaluation** that reports the false auto-approval rate on counterfactual cases, with every trial shown.
 
+## Repository map
+
+| Folder | What it holds | Demo beat / ledger rows |
+|---|---|---|
+| `infra/` | CDK app (`infra/app.py`): budgets, gateways, Cognito, policy engine, Cedar policies (`cedar.py`) | Beats 1, 4, 5 · B1–B6, A2–A4, M9 |
+| `src/prior_auth/checks/` | The four checks and `recompute()`, shared by `decide()` and the approval service | Beats 2, 3 · G4–G8, G11 |
+| `src/prior_auth/handlers/` | Lambda handlers: case tools, the approval service, reviewer tools, pre-token trigger | Beats 1, 2, 5 · B6, B8 |
+| `src/prior_auth/agent/` | The Strands agent and its session wrapper (in progress) | Beats 2, 3 · G10, F1–F7, A1 |
+| `workbench/` | The clinician's local page (in progress) | Beat 5 · B8, L3 |
+| `data/` | Synthetic policies, charts and cases; `SYNTHETIC.md` | Beats 2, 3, 6 · G1–G3 |
+| `evaluation/` | The harness and its one-page report (in progress) | Beat 6 · M1–M8 |
+| `scripts/` | Deploy guard, teardown and verifier, evidence recorders, `demo.py` | All beats · guardrails |
+| `evidence/` | Redacted, committed evidence from deployed runs | All proven ledger rows |
+| `docs/` | Principles, AgentCore contract notes, the article draft | B5, R1–R6 |
+| `openspec/` | The claims ledger and the OpenSpec changes | Definition of done |
+| `tests/` | The test suite, including the real-payer-name and evidence-redaction scans | All rows typed `test` |
+
 ## Principles
 
 See [docs/principles.md](docs/principles.md).

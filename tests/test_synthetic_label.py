@@ -2,7 +2,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
-DATA_DIRS = (DATA, ROOT / "tools" / "fixtures")
+DATA_DIRS = (DATA, ROOT / "src" / "prior_auth" / "handlers" / "fixtures")
 LABEL = "SYNTHETIC"
 
 

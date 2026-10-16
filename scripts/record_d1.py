@@ -123,8 +123,8 @@ def policies(session, out, named) -> None:
 
 
 def _approval_args(packet_id: str) -> dict:
-    from checks import packet_hash
-    from tools.approval import load_fixtures
+    from prior_auth.checks import packet_hash
+    from prior_auth.handlers.approval import load_fixtures
     _, packets = load_fixtures()
     return {"packet_id": packet_id, "packet_hash": packet_hash(packets[packet_id])}
 

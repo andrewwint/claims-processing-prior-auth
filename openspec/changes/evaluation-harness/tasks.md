@@ -3,7 +3,7 @@
 Delivers the one-page harness report in **beat 6**.
 
 - [ ] 1.1 Six cases, each with its provenance (parent plus change): 2 clean, 2 one-note-removed counterfactuals, 1 wrong patient, 1 forged document. A label-consistency test on gold extraction.
-- [ ] 1.2 `harness/PREREGISTRATION.md`, committed before the run: the cases, models (Nova Pro, Sonnet 4.6), 3 trials each, metrics, report wording, and prices with source and date.
+- [ ] 1.2 `evaluation/PREREGISTRATION.md`, committed before the run: the cases, models (Nova Pro, Sonnet 4.6), 3 trials each, metrics, report wording, and prices with source and date.
 - [ ] 1.3 Runner: the real agent code in-process, against the deployed gateways and approval service. Every trial records its sampling settings, stop reason, decision, latency and token counts.
 - [ ] 1.4 One-page report, per model:
   - false auto-approvals as "x of N" with the rule-of-three bound

@@ -15,7 +15,7 @@
   3. The decision record's recomputed hash equals the reviewer span attribute.
 - **Coverage.** L3 covers both records' fields. L6 covers every link.
 - **Reviewer identity comes from a request interceptor** on the reviewer gateway (PM, 2026-10-16; contract-read in `docs/contract-notes.md`). Gateway does not pass the caller's identity to Lambda targets, but a REQUEST interceptor receives the bearer token (`passRequestHeaders: true`) and can rewrite the `tools/call` arguments.
-  - **Validation.** `tools/reviewer_interceptor.py` validates the token itself with Cognito `GetUser`, a server-side check, so it relies neither on the authorizer having run first nor on a crypto library in the Lambda. It also requires the token's `client_id` to be the clinician client, and its groups to include `clinician` and exactly one tenant group.
+  - **Validation.** `src/prior_auth/handlers/reviewer_interceptor.py` validates the token itself with Cognito `GetUser`, a server-side check, so it relies neither on the authorizer having run first nor on a crypto library in the Lambda. It also requires the token's `client_id` to be the clinician client, and its groups to include `clinician` and exactly one tenant group.
   - **Overwrite.** It writes `reviewer_sub`, `reviewer_username` and `tenant` into the arguments, overwriting any caller-supplied values. It then returns the transformed request.
   - **On failure** it returns a `transformedGatewayResponse` error (a short-circuit), so the target is never called.
   - **No logging of credentials.** It never logs headers or the token.
@@ -89,7 +89,7 @@ The PM's rule is that the agent and tool roles may write only `recommendations/`
 1. It reads a synthetic clinician's password from Secrets Manager.
 2. It signs in through the clinician app client, using SRP.
 3. It calls `ReviewerTools___record_adverse_determination` on the reviewer gateway.
-4. The reviewer service, `tools/reviewer_tools.py` extended, writes the decision record and returns its hash.
+4. The reviewer service, `src/prior_auth/handlers/reviewer_tools.py` extended, writes the decision record and returns its hash.
 
 So decision records are produced through the real gateway, authorizer and Cedar path. The workbench later reuses the same tool.
 

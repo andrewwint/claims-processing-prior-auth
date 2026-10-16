@@ -1,6 +1,6 @@
 """The single checks module, imported by the agent's decision and by the approval service."""
 
-from checks.core import (  # noqa: F401
+from prior_auth.checks.core import (  # noqa: F401
     MIN_VALUE_CHARS,
     Verdict,
     packet_hash,

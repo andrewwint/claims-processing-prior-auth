@@ -3,7 +3,7 @@
 The article's snippet is copied from the deployed forbid text (B5), never typed.
 """
 
-from tools.schemas import APPROVAL_TARGET, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET
+from prior_auth.handlers.schemas import APPROVAL_TARGET, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET
 
 DELIMITER = "___"
 ROLE_CLAIM = "pa_role"

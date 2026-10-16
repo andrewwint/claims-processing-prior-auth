@@ -9,7 +9,7 @@ replace them in case-packet-and-failure-routing.
 import json
 from pathlib import Path
 
-import checks
+from prior_auth import checks
 
 FIXTURES = Path(__file__).parent / "fixtures"
 

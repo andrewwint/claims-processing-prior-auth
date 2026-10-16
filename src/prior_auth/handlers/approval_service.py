@@ -2,13 +2,13 @@
 
 It has its own function and role, separate from the agent's case tools, so
 that it alone (with the reviewer service) may later write decision records.
-It never trusts the caller or the packet; see tools/approval.py.
+It never trusts the caller or the packet; see prior_auth/handlers/approval.py.
 """
 
 import json
 import logging
 
-from tools import approval
+from prior_auth.handlers import approval
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
