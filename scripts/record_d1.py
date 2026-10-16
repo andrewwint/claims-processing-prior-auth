@@ -204,9 +204,13 @@ def beat1(session, out, named) -> None:
         "clinician_records_approval": gc.mcp(R, clinician, "tools/call",
             {"name": "ReviewerTools___record_clinician_approval", "arguments": {"case_id": "SYN-CASE-1"}}),
     }
-    save("beat1-and-approval-checks.json", results, named)
+    import subprocess
+    sha = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip()
+    results = {"deployed_sha": sha, "tree_clean": not subprocess.run(
+        ["git", "status", "--porcelain"], capture_output=True, text=True).stdout.strip(), **results}
+    save(f"beat1-and-approval-checks-{sha}.json", results, named)
     for k, v in results.items():
-        print(k, _summary(v))
+        print(k, _summary(v) if isinstance(v, dict) else v)
 
 
 def main() -> int:
