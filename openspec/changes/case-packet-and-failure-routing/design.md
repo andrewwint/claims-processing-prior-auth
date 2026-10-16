@@ -2,53 +2,135 @@
 
 ## Context
 
-This change depends on the gateways, the policies and the allow-list from `gateway-and-policy`. Runtime constraints, including metadata service v2, telemetry redaction and JWT invocation, are in [docs/contract-notes.md](../../../docs/contract-notes.md).
+This change depends on the gateways, the policies and the allow-list from `gateway-and-policy`. Runtime constraints are in [docs/contract-notes.md](../../../docs/contract-notes.md): metadata service v2, telemetry redaction, and JWT invocation.
+
+The rule underneath every decision here: **an approval is derived only from trusted sources.** The packet is a claim to be checked, never an input to be believed.
 
 ## Decisions
 
-### Deterministic steps vs model steps
+### D1. Trusted sources and the packet store
 
-Criteria lookup, the three checks and the approval rule are plain code. The model is used only for evidence extraction and for writing the packet's prose.
+| Source | Holds | Written by | Read by |
+|---|---|---|---|
+| Request records, `s3://prior-auth-cases/requests/<case_id>.json` | case ID, payer, CPT, patient ID, received time | the intake script, under the operator's credentials | runtime, approval service |
+| Compiled criteria, `policies/compiled/<payer>/<cpt>.json` | criterion ID, text, policy version, source location | the compile step, committed and bundled with the code | runtime, approval service |
+| Chart store, `s3://prior-auth-charts/docs/<doc_id>.json` | pages and lines of one synthetic document | `scripts/seed_charts.py`, under the operator's credentials | runtime, approval service |
+| Chart index, `s3://prior-auth-charts/index.json` | `doc_id` → owning patient ID | `scripts/seed_charts.py` | runtime, approval service |
+| **Packet store**, `s3://prior-auth-cases/packets/<packet_id>.json` | the packet (untrusted claims) | the runtime | approval service |
 
-Why: every safety-relevant decision is testable without a model, and the model can't move a case toward approval on its own.
+- **IAM.**
+  - The runtime role can write only `packets/`, and can only read the other sources.
+  - The approval service's role is read-only on both buckets.
+  - Neither role can write `requests/`, `docs/` or `index.json`.
+- **Bucket names.** The physical names carry a deploy-time suffix. The names above are logical.
 
-### Criteria compile
+### D2. One checks module
 
-- **Sources.** Synthetic payer policies live as source documents in `policies/source/`.
-- **Compiler.** `policies/compile.py` writes `policies/compiled/<payer>/<cpt>.json`.
-- **Each criterion** carries `id`, `text`, `policy_version` and `source_location`.
-- **Verification.** The compile step re-reads each criterion's text at its stated location and fails if it isn't there.
+`checks/` is a single package. The runtime's `decide()` and the approval service both import it, and a test asserts they reference the same module object. Another test asserts that the deployed Lambda bundle contains a byte-identical copy.
 
-### Evidence extraction
+- **Check 1, schema.** The packet has a `case_id` and a list of findings. Each finding has `criterion_id`, `doc_id`, `page`, `line` and `value`. Any finding for a criterion ID outside the compiled policy fails the check.
+- **Check 2, source match.** This is the strict rule:
+  - The `value` must occur as an exact substring of the text at (`doc_id`, `page`, `line`).
+  - Both strings are Unicode NFC-normalized first. Nothing else is normalized: no case folding, no whitespace collapsing, no fuzzy matching, no spans across lines.
+  - The value must have at least 4 non-whitespace characters, so an empty or trivial value never matches.
+  - A wrong line, a single changed character, or a change of case is a failure.
+- **Check 3, same patient.** The owning patient is looked up as `index[doc_id]` and compared with the request record's patient ID.
+  - The packet's `patient_id`, and any patient ID the model supplied, are ignored.
+  - A `doc_id` missing from the index fails the check.
+- **`recompute(packet, request, criteria, chart)`** rebuilds the verdict:
+  1. Run check 1.
+  2. Take the criteria from the compiled policy for the request's (payer, CPT), never from the packet.
+  3. Check every finding with checks 2 and 3.
+  4. A criterion is Met only if it has at least one finding and every finding for it verifies.
+  5. Return each criterion's status, all failures and the gaps.
 
-- **Input.** One synthetic chart per case, with documents identified by `patient_id`, `doc_id` and page/line.
-- **Output.** The model returns findings as structured output. Each finding carries `criterion_id`, `value`, `doc_id`, `location` and `patient_id`.
-- **Check 2 (source match)** confirms each `value` is present at the cited location.
-- **Check 3 (same patient)** compares each citation's `patient_id` with the case's.
+  Status labels in the packet are ignored.
 
-### Approval handler
+### D3. The decision is code; the model has no tools
 
-`record_approval(packet_id, packet_hash)` loads the stored packet, verifies the SHA-256 of its canonical JSON against `packet_hash`, and recomputes "all criteria Met and all checks passed" from the packet itself. The call carries no assertions. If the packet is missing, the hash does not match, or the recomputation fails, the service refuses, records nothing, and routes the case to a reviewer. This replaces the fixture-backed service from `gateway-and-policy`.
+- **The pipeline** in `agent/pipeline.py` is plain code:
+  1. eligibility
+  2. criteria lookup
+  3. extraction, per criterion (model)
+  4. build the packet
+  5. `decide(packet)`
+  6. act on the decision
+- **The model** is called only for structured extraction and for the summary. It gets no tool list, so it cannot call `record_approval`, `route_to_reviewer` or any gateway tool.
+- **`decide(packet)`** returns `Approve(packet_id, packet_hash)` or `Route(reason, gaps)`, computed by `checks.recompute()`. The wrapper then calls the matching gateway tool with the agent's client-credentials token. No other code path calls `record_approval`.
+- **The model summary** is stored under `model_summary` with `label: "Model summary. Not used for any decision."` Neither `decide()` nor `recompute()` reads it, and a test changes it and shows the decision does not change.
 
-### Failure routing
+### D4. The approval service never trusts the packet
 
-- **One wrapper per step.** Each step runs inside a wrapper that converts any exception or empty output into a typed `Outcome(kind="needs_review" | "operator_alert", reason=...)`.
-- **Access denied** raises `operator_alert`. This sets a CloudWatch alarm through a custom metric, and the alarm notifies an SNS topic.
-- **No defaults.** No wrapper returns a default value.
+`record_approval(packet_id, packet_hash)`:
+1. loads the stored packet (unknown → refuse)
+2. verifies the SHA-256 of its canonical JSON (mismatch → refuse; this proves integrity, not truth)
+3. loads the request record for the packet's `case_id` from the case store (missing → refuse)
+4. loads the compiled criteria for the request's (payer, CPT) (missing → refuse, "no verified policy")
+5. runs `checks.recompute()` against the chart store and index
+6. records the approval only if every criterion is Met and nothing failed
 
-### Runtime
+It writes nothing on refusal and returns the failures. This replaces the fixture-backed service from `gateway-and-policy`, which uses the same algorithm against fixture copies of the trusted sources.
 
-- **Hosting.** Python CDK `Runtime` with a CodeZip ARM64 build, HTTP protocol, JWT authorizer, public network mode, and model IDs from the allow-list.
-- **Metadata service v2.** `scripts/require_mmdsv2.py` runs after every deploy: it reads the runtime's configuration and calls `UpdateAgentRuntime` with `requireMMDSV2: true`.
-- **Session IDs.** Derived from the case ID.
+### D5. Session invariant
+
+- **Recorder.** `agent/session.py` holds a single-assignment outcome recorder.
+- **Terminal outcomes:** `approved`, `routed`, `operator_alert`.
+- **Ending without one.** If the session ends without a terminal outcome (an exception, a timeout, or a path that returns early), the wrapper's `finally` block records `needs_review` and routes the case with the reason "session ended without an outcome".
+- **Second attempt.** A second attempt to set a terminal outcome is refused and logged as an invariant violation, with a metric. The first outcome stands.
+
+### D6. Per-step empty-output table
+
+This replaces any global "empty output" rule.
+
+| Step | Condition | Outcome |
+|---|---|---|
+| Eligibility | lookup empty or failed | routed, "eligibility unknown" |
+| Criteria lookup | no compiled file, or the file has no criteria | routed, "no verified policy" (F3) |
+| Extraction | valid output with zero findings for a criterion | that criterion is "Not found"; the case continues and ends routed, with the gap |
+| Extraction | no text, malformed output, or truncated (`stopReason: max_tokens`) | routed, "extraction failed", with the stop reason (F1, F2) |
+| Extraction | throttled or timed out after retries | routed, "extraction failed", with the error class |
+| Extraction | access denied | `operator_alert`: metric, alarm, SNS (F4) |
+| Model summary | empty or failed | the packet stays valid, the summary is marked "missing", and the decision is unaffected |
+| Any step | unexpected exception | routed, "needs review", naming the step |
+
+The eligibility row and the last two extraction-adjacent rows (throttling and unexpected exceptions) go beyond the PM's four rows. They exist so that no step is left without a rule.
+
+### D7. Runtime and intake
+
+- **Hosting.** A Python CDK `Runtime`:
+  - CodeZip ARM64 build, HTTP protocol, public network mode
+  - a JWT authorizer whose allowed client is the `prior-auth-intake` app client only (client credentials)
+  - models from the allow-list
+- **Intake.** `scripts/intake.py` writes the request record, then invokes the runtime with a token from the intake client and a session ID derived from the case ID.
+- **Metadata service v2.** `scripts/require_mmdsv2.py` runs after every deploy.
 - **Telemetry.** Redaction is set through `OTEL_SEMCONV_STABILITY_OPT_IN`. `APPLICATION_LOGS` delivery is not enabled.
+- **Network.** Public network mode behind the JWT authorizer. VPC mode is not used: its network interfaces can remain for hours after deletion, which conflicts with same-day verified teardown. The README notes production uses VPC mode.
 
-### Network
+### D8. Extraction model and Regions
 
-Public network mode with a JWT authorizer. VPC mode is an option within budget but is not used here: its network interfaces can remain for hours after deletion, which conflicts with same-day verified teardown.
+- **Model.** Claude Sonnet 4.6 (`anthropic.claude-sonnet-4-6`), invoked through `us.anthropic.claude-sonnet-4-6`.
+- **Regions.** The profile routes across us-east-1, us-east-2 and us-west-2. This is an explicit, recorded opt-in, and the allow-list and IAM name exactly the profile and those three foundation-model ARNs.
+- **Sampling.** Temperature 0 only. The model rejects `temperature` and `topP` together (recorded).
+- **Alternative.** Amazon Nova Pro (`amazon.nova-pro-v1:0`) runs on demand in us-east-1 only and is also confirmed. It is the fallback if a strict single Region is required.
+- **Not available.** Claude 4.8 and every Claude 5.x model are refused for this account (recorded).
+
+### D9. Operator alerts
+
+- **Path.** Access denied emits a custom metric. A CloudWatch alarm notifies the SNS topic `prior-auth-operator-alerts`.
+- **Subscription.** The email subscription must be confirmed before the alarm test. The recorded `ListSubscriptionsByTopic` must show a confirmed ARN, not `PendingConfirmation`.
+- **Teardown** deletes the topic and its subscriptions, and the verifier checks that both are gone.
+
+### D10. Mutation testing
+
+- **Tool.** `mutmut` runs over `checks/`, the approval service and `agent/session.py` plus the pipeline wrapper.
+- **Report.** It lists every surviving mutant with a disposition: a test is added, or the mutant is equivalent with a reason.
+- **Target.** No unexplained survivors in `checks/` or the approval service.
 
 ## Risks / Trade-offs
 
-- [The model invents a citation] → Checks 2 and 3 catch it, and the case routes to a reviewer.
+- [The model invents a citation] → Checks 2 and 3 fail it, and the criterion is not Met.
+- [A forged or tampered packet reaches the approval service] → The hash catches tampering after storage. `recompute()` catches forged content, because it never reads statuses or patient IDs from the packet.
+- [Strict matching rejects true findings that the model paraphrased] → They route to a reviewer. That costs time, not safety. The extraction prompt asks for verbatim quotes.
+- [Cross-Region routing] → It is limited to three named US Regions by an explicit opt-in. Nova Pro is the single-Region fallback.
 - [Redaction misses error text] → `evidence-record-and-trace` adds the canary scan as a test.
-- [Metadata service v2 step forgotten] → The deploy script runs it, and a test asserts the deploy script calls it.
+- [Metadata service v2 step forgotten] → The deploy script runs it, and a test asserts that.

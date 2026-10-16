@@ -7,7 +7,7 @@ tools are synthetic stubs until case-packet-and-failure-routing.
 import json
 import logging
 
-from tools import packets
+from tools import approval
 from tools.schemas import AGENT_TOOLS
 
 logger = logging.getLogger()
@@ -15,14 +15,14 @@ logger.setLevel(logging.INFO)
 
 DELIMITER = "___"
 TOOL_NAMES = {t["name"] for t in AGENT_TOOLS}
-_PACKETS = None
+_STORES = None
 
 
-def _packets():
-    global _PACKETS
-    if _PACKETS is None:
-        _PACKETS = packets.load_fixture()
-    return _PACKETS
+def _stores():
+    global _STORES
+    if _STORES is None:
+        _STORES = approval.load_fixtures()
+    return _STORES
 
 
 def tool_name(context) -> str:
@@ -31,8 +31,9 @@ def tool_name(context) -> str:
 
 
 def record_approval(event: dict) -> dict:
-    packet_id, claimed = event.get("packet_id", ""), event.get("packet_hash", "")
-    failures = packets.verify_for_approval(_packets(), packet_id, claimed)
+    packet_id, claimed = event.get("packet_id"), event.get("packet_hash")
+    trusted, stored = _stores()
+    failures = approval.review(packet_id, claimed, packets=stored, trusted=trusted)
     # Identifiers and outcome only; never packet contents.
     logger.info(json.dumps({"tool": "record_approval", "packet_id": packet_id,
                             "packet_hash": claimed, "approved": not failures, "failure_count": len(failures)}))

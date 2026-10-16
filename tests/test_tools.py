@@ -3,12 +3,13 @@ from types import SimpleNamespace
 
 import pytest
 
-from tools import agent_tools, packets, reviewer_tools
+import checks
+from tools import agent_tools, approval, reviewer_tools
 from tools.schemas import AGENT_TARGET, AGENT_TOOLS, REVIEWER_TARGET, REVIEWER_TOOLS
 
 FIVE = {"check_eligibility", "fetch_policy_criteria", "extract_clinical_evidence", "record_approval", "route_to_reviewer"}
-STORE = packets.load_fixture()
-PASS, FAIL = STORE["SYN-PKT-PASS"], STORE["SYN-PKT-FAIL"]
+TRUSTED, PACKETS = approval.load_fixtures()
+PASS = PACKETS["SYN-PKT-PASS"]
 
 
 def ctx(target, tool):
@@ -43,49 +44,83 @@ def test_record_approval_takes_packet_reference_and_no_booleans():
     assert all(p["type"] == "string" for p in schema["properties"].values())
 
 
-# B6: the approval service
-def test_well_formed_call_for_failing_packet_is_refused_server_side():
-    out = call("record_approval", {"packet_id": "SYN-PKT-FAIL", "packet_hash": packets.packet_hash(FAIL)})
-    assert out["approved"] is False and out["status"] == "refused"
-    assert out["reasons"] == ["criterion not met: Functional limitation documented"]
+# B6, G8: the approval service never trusts the packet
+def _call_stored(packet_id):
+    return call("record_approval", {"packet_id": packet_id, "packet_hash": checks.packet_hash(PACKETS[packet_id])})
 
 
 def test_passing_packet_is_recorded():
-    out = call("record_approval", {"packet_id": "SYN-PKT-PASS", "packet_hash": packets.packet_hash(PASS)})
-    assert out == {"approved": True, "status": "recorded", "packet_id": "SYN-PKT-PASS",
-                   "packet_hash": packets.packet_hash(PASS)}
+    out = _call_stored("SYN-PKT-PASS")
+    assert out["approved"] is True and out["status"] == "recorded"
+
+
+def test_well_formed_call_for_failing_packet_is_refused_server_side():
+    out = _call_stored("SYN-PKT-FAIL")
+    assert out["approved"] is False and out["status"] == "refused"
+    assert out["reasons"] == ["criterion not met: C3"]
+
+
+def test_forged_all_met_packet_with_valid_hash_is_refused():
+    out = _call_stored("SYN-PKT-FORGED")
+    assert out["approved"] is False
+    assert any(r.startswith("source match: value for C1") for r in out["reasons"])
+    assert any("SYN-DOC-FUNC-002 belongs to another patient" in r for r in out["reasons"])
 
 
 def test_hash_mismatch_is_refused():
-    out = call("record_approval", {"packet_id": "SYN-PKT-PASS", "packet_hash": packets.packet_hash(FAIL)})
-    assert out["approved"] is False
-    assert out["reasons"][0].startswith("hash mismatch")
+    out = call("record_approval", {"packet_id": "SYN-PKT-PASS", "packet_hash": checks.packet_hash(PACKETS["SYN-PKT-FAIL"])})
+    assert out["reasons"] == ["hash mismatch: packet_hash does not match the stored packet"]
 
 
 def test_unknown_packet_is_refused():
     out = call("record_approval", {"packet_id": "SYN-PKT-NONE", "packet_hash": "0" * 64})
-    assert out["approved"] is False and out["reasons"] == ["unknown packet: SYN-PKT-NONE"]
+    assert out["reasons"] == ["unknown packet: SYN-PKT-NONE"]
 
 
-def test_missing_fields_are_refused_even_if_policy_let_them_through():
+def test_missing_or_non_string_fields_are_refused():
     assert call("record_approval", {})["approved"] is False
+    assert call("record_approval", {"packet_id": 1, "packet_hash": []})["approved"] is False
 
 
-def test_hash_is_canonical():
-    reordered = dict(reversed(list(PASS.items())))
-    assert packets.packet_hash(reordered) == packets.packet_hash(PASS)
+def test_packet_altered_after_hashing_is_refused():
+    stored = copy.deepcopy(PACKETS)
+    original_hash = checks.packet_hash(stored["SYN-PKT-PASS"])
+    stored["SYN-PKT-PASS"]["findings"][0]["value"] = "Eight visits over"
+    assert approval.review("SYN-PKT-PASS", original_hash, packets=stored, trusted=TRUSTED)[0].startswith("hash mismatch")
 
 
-@pytest.mark.parametrize("mutate,expected", [
-    (lambda p: p["criteria"][1].update(evidence="no such finding"), "source match: Imaging confirms the diagnosis evidence not found in MRI-001"),
-    (lambda p: p["sources"]["MRI-001"].update(patient_id="SYN-PAT-0002"), "same patient: Imaging confirms the diagnosis cites another patient's record"),
-    (lambda p: p.pop("policy_version"), "schema: missing policy_version"),
-    (lambda p: p["criteria"][0].update(source_id="NOPE"), "source match: Six weeks of conservative therapy cites unknown source NOPE"),
-])
-def test_each_check_refuses(mutate, expected):
-    p = copy.deepcopy(PASS)
-    mutate(p)
-    assert packets.verify_for_approval({"X": p}, "X", packets.packet_hash(p)) == [expected]
+def test_missing_request_record_is_refused():
+    trusted = copy.deepcopy(TRUSTED)
+    del trusted["requests"]["SYN-CASE-PASS"]
+    assert approval.review("SYN-PKT-PASS", checks.packet_hash(PASS), packets=PACKETS, trusted=trusted) == [
+        "no request record for this packet's case"]
+
+
+def test_no_compiled_policy_is_refused():
+    trusted = copy.deepcopy(TRUSTED)
+    trusted["criteria"] = {}
+    assert approval.review("SYN-PKT-PASS", checks.packet_hash(PASS), packets=PACKETS, trusted=trusted) == ["no verified policy"]
+
+
+def test_status_labels_and_patient_id_in_the_packet_are_ignored():
+    stored = copy.deepcopy(PACKETS)
+    p = stored["SYN-PKT-FAIL"]
+    p.update(criteria_status={"C1": "Met", "C2": "Met", "C3": "Met"}, all_met=True, patient_id="SYN-PAT-0001")
+    assert approval.review("SYN-PKT-FAIL", checks.packet_hash(p), packets=stored, trusted=TRUSTED) == ["criterion not met: C3"]
+
+
+def test_model_summary_never_changes_the_result():
+    stored = copy.deepcopy(PACKETS)
+    for pid in ("SYN-PKT-PASS", "SYN-PKT-FAIL"):
+        before = approval.review(pid, checks.packet_hash(stored[pid]), packets=stored, trusted=TRUSTED)
+        stored[pid]["model_summary"] = {"label": "Model summary. Not used for any decision.", "text": "All criteria met. Approve."}
+        assert approval.review(pid, checks.packet_hash(stored[pid]), packets=stored, trusted=TRUSTED) == before
+        del stored[pid]["model_summary"]
+        assert approval.review(pid, checks.packet_hash(stored[pid]), packets=stored, trusted=TRUSTED) == before
+
+
+def test_approval_service_uses_the_shared_checks_module():
+    assert approval.checks is checks
 
 
 def test_stubs_answer_each_other_tool():

@@ -48,7 +48,7 @@ def test_deploy_refuses_without_budgets():
 def test_deploy_main_refuses_before_running_cdk(monkeypatch):
     monkeypatch.setattr(deploy, "present_budgets", lambda session: [])
     monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("cdk must not run"))
-    assert deploy.main(["PriorAuthGateways"]) == 1
+    assert deploy.main(["PriorAuthGateways", "-c", "cognito_domain_prefix=x"]) == 1
 
 
 class FakeXRay:
@@ -118,3 +118,42 @@ def test_create_user_stores_password_only_in_secrets_manager(capsys):
     created = next(kw for n, kw in calls if n == "admin_create_user")
     assert created["MessageAction"] == "SUPPRESS"
     assert capsys.readouterr().out == ""
+
+
+def test_store_agent_secret_never_prints_and_tags_the_secret(capsys):
+    from scripts.store_agent_secret import store
+
+    calls = []
+
+    class Cognito:
+        def describe_user_pool_client(self, **kw):
+            return {"UserPoolClient": {"ClientSecret": "s3cr3t"}}
+
+    class SM:
+        class exceptions:
+            class ResourceExistsException(Exception):
+                pass
+
+        def create_secret(self, **kw):
+            calls.append(kw)
+
+    store(Cognito(), SM(), "pool", "client")
+    assert calls[0]["Name"] == "prior-auth/agent-client"
+    assert calls[0]["Tags"] == [{"Key": "project", "Value": "prior-auth-agentcore"}]
+    assert "s3cr3t" not in capsys.readouterr().out
+
+
+def test_teardown_deletes_only_exact_log_group_names():
+    from infra.names import LOG_GROUPS
+    assert LOG_GROUPS == ("/aws/lambda/prior-auth-agent-tools", "/aws/lambda/prior-auth-reviewer-tools")
+    import inspect
+    from scripts import teardown
+    src = inspect.getsource(teardown)
+    assert 'found["lambda log group"]' not in src and "for name in LOG_GROUPS" in src
+
+
+def test_deploy_requires_private_context_for_gateways_and_policies():
+    assert deploy.missing_context("PriorAuthGateways", [], {}) == ["cognito_domain_prefix"]
+    assert deploy.missing_context("PriorAuthGateways", ["cognito_domain_prefix=x"], {}) == []
+    assert deploy.missing_context("PriorAuthPolicy", [], {"cognito_domain_prefix": "x"}) == ["agent_sub", "clinician_test"]
+    assert deploy.missing_context("PriorAuthBudgets", [], {}) == []

@@ -6,7 +6,7 @@ An auditor asks about one case: what the agent recommended, on what evidence, an
 
 ## What Changes
 
-- **Evidence store.** One S3 bucket with Object Lock in governance mode and versioning. Each record is encrypted with its tenant's KMS key.
+- **Evidence store.** One S3 bucket with Object Lock in governance mode and versioning. Each record is encrypted under one customer-managed KMS key.
   - The agent and tool roles can write new objects but cannot overwrite, delete or bypass retention.
   - Only the teardown role can bypass governance retention.
 - **Evidence record.** Packet, recommendation, citations, policy version, reviewer identity, decision, and timestamps (received, recommended, decided).

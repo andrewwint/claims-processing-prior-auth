@@ -9,10 +9,21 @@ from aws_cdk import CfnOutput, Duration, RemovalPolicy, Stack, aws_bedrockagentc
 from aws_cdk import aws_iam as iam, aws_lambda as lambda_, aws_logs as logs
 from constructs import Construct
 
-from infra.identity import Identity
+from infra.identity import RESOURCE_SERVER, SCOPE, Identity
 from tools.schemas import AGENT_TARGET, AGENT_TOOLS, REVIEWER_TARGET, REVIEWER_TOOLS
 
-ASSET_EXCLUDE = ["*", ".*", "**/.*", "!tools", "!tools/**", "tools/**/__pycache__", "tools/**/.*"]
+ASSET_EXCLUDE = ["*", ".*", "**/.*", "!tools", "!tools/**", "!checks", "!checks/**", "**/__pycache__", "**/.*"]
+
+
+# Layer 1 on the reviewer gateway: the clinician client AND membership of the clinician group.
+CLINICIAN_GROUP_CLAIM = agentcore.CfnGateway.CustomClaimValidationTypeProperty(
+    inbound_token_claim_name="cognito:groups",
+    inbound_token_claim_value_type="STRING_ARRAY",
+    authorizing_claim_match_value=agentcore.CfnGateway.AuthorizingClaimMatchValueTypeProperty(
+        claim_match_operator="CONTAINS",
+        claim_match_value=agentcore.CfnGateway.ClaimMatchValueTypeProperty(match_value_string="clinician"),
+    ),
+)
 
 
 def _schema(d: dict) -> agentcore.CfnGatewayTarget.SchemaDefinitionProperty:
@@ -32,24 +43,32 @@ def _tool(t: dict) -> agentcore.CfnGatewayTarget.ToolDefinitionProperty:
 
 
 class GatewayStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, **kwargs):
+    def __init__(self, scope: Construct, construct_id: str, *, domain_prefix: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
-        self.identity = Identity(self, "Identity")
+        self.identity = Identity(self, "Identity", domain_prefix=domain_prefix)
+        # Attached in ENFORCE mode from the first deploy. With no policies yet,
+        # every tool call is denied by default until the policy stack (D2) lands.
+        self.engine = agentcore.CfnPolicyEngine(self, "PolicyEngine", name="prior_auth_engine")
         self.agent_gateway = self._gateway(
             "Agent", name="prior-auth-agent", allowed_client=self.identity.agent_client.user_pool_client_id,
             target=AGENT_TARGET, tools=AGENT_TOOLS, handler="tools.agent_tools.handler",
             function_name="prior-auth-agent-tools",
+            allowed_scopes=[f"{RESOURCE_SERVER}/{SCOPE}"],
         )
         self.reviewer_gateway = self._gateway(
             "Reviewer", name="prior-auth-reviewer", allowed_client=self.identity.clinician_client.user_pool_client_id,
             target=REVIEWER_TARGET, tools=REVIEWER_TOOLS, handler="tools.reviewer_tools.handler",
             function_name="prior-auth-reviewer-tools",
+            custom_claims=[CLINICIAN_GROUP_CLAIM],
         )
         for key, value in {
             "UserPoolId": self.identity.pool.user_pool_id,
             "AgentClientId": self.identity.agent_client.user_pool_client_id,
             "ClinicianClientId": self.identity.clinician_client.user_pool_client_id,
             "TokenDomain": self.identity.domain.base_url(),
+            "AgentGatewayId": self.agent_gateway.attr_gateway_identifier,
+            "PolicyEngineId": self.engine.attr_policy_engine_id,
+            "ReviewerGatewayId": self.reviewer_gateway.attr_gateway_identifier,
             "AgentGatewayUrl": self.agent_gateway.attr_gateway_url,
             "AgentGatewayArn": self.agent_gateway.attr_gateway_arn,
             "ReviewerGatewayUrl": self.reviewer_gateway.attr_gateway_url,
@@ -57,7 +76,8 @@ class GatewayStack(Stack):
         }.items():
             CfnOutput(self, key, value=value)
 
-    def _gateway(self, prefix, *, name, allowed_client, target, tools, handler, function_name):
+    def _gateway(self, prefix, *, name, allowed_client, target, tools, handler, function_name,
+                 allowed_scopes=None, custom_claims=None):
         log_group = logs.LogGroup(
             self, f"{prefix}ToolsLogs", log_group_name=f"/aws/lambda/{function_name}",
             retention=logs.RetentionDays.ONE_WEEK, removal_policy=RemovalPolicy.DESTROY,
@@ -72,15 +92,19 @@ class GatewayStack(Stack):
             self, f"{prefix}GatewayRole",
             assumed_by=iam.ServicePrincipal(
                 "bedrock-agentcore.amazonaws.com",
-                conditions={"StringEquals": {"aws:SourceAccount": self.account}},
+                conditions={
+                    "StringEquals": {"aws:SourceAccount": self.account},
+                    # Confused-deputy guard: only this project's named gateway may assume the role.
+                    "ArnLike": {"aws:SourceArn": f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{name}-*"},
+                },
             ),
         )
         fn.grant_invoke(role)
         role.add_to_policy(iam.PolicyStatement(
             actions=["bedrock-agentcore:AuthorizeAction", "bedrock-agentcore:PartiallyAuthorizeActions",
                      "bedrock-agentcore:GetPolicyEngine"],
-            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/*",
-                       f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:policy-engine/*"],
+            resources=[f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/{name}-*",
+                       self.engine.attr_policy_engine_arn],
         ))
         gateway = agentcore.CfnGateway(
             self, f"{prefix}Gateway", name=name, protocol_type="MCP", authorizer_type="CUSTOM_JWT",
@@ -88,7 +112,11 @@ class GatewayStack(Stack):
             authorizer_configuration=agentcore.CfnGateway.AuthorizerConfigurationProperty(
                 custom_jwt_authorizer=agentcore.CfnGateway.CustomJWTAuthorizerConfigurationProperty(
                     discovery_url=self.identity.discovery_url, allowed_clients=[allowed_client],
+                    allowed_scopes=allowed_scopes, custom_claims=custom_claims,
                 )
+            ),
+            policy_engine_configuration=agentcore.CfnGateway.GatewayPolicyEngineConfigurationProperty(
+                arn=self.engine.attr_policy_engine_arn, mode="ENFORCE",
             ),
         )
         gateway.node.add_dependency(role)

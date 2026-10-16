@@ -43,3 +43,20 @@ def test_find_unredacted_reports_leftovers():
 
 def test_longer_numbers_are_not_account_ids():
     assert redact("1234567890123") == "1234567890123"
+
+
+def test_unnamed_cognito_and_gateway_identifiers_are_replaced():
+    text = ('{"pool": "us-east-1_AbCdEf123", "client": "4f1k2l3m4n5o6p7q8r9s0t1u2v", '
+            '"url": "https://prior-auth-agent-x1y2z3.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp", '
+            '"domain": "prior-auth-x9.auth.us-east-1.amazoncognito.com"}')
+    out = redact(text)
+    assert find_unredacted(out) == []
+    for placeholder in ("<user-pool-id>", "<client-id>", "<gateway-host>", "<cognito-domain>"):
+        assert placeholder in out
+
+
+def test_generic_patterns_never_touch_action_names_or_hashes_of_other_length():
+    assert redact(ACTION) == ACTION
+    assert redact("AgentTools___record_approval") == "AgentTools___record_approval"
+    sha = "a" * 64
+    assert redact(sha) == sha

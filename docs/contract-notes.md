@@ -28,6 +28,9 @@ If a newer document disagrees with these notes, the newer document wins. Update 
 - **Policy checks the shape of a call, not its truth.** `context.input` is whatever the caller sends.
 - **What a denied call returns.** A normal JSON-RPC result with `isError: true` and the text "AuthorizeActionException - Tool Execution Denied…".
 - **Where decisions are recorded.** `DenyDecisions` and `AllowDecisions` metrics in `AWS/Bedrock-AgentCore`, plus spans carrying the decision, the determining policy IDs, and the effects (requires Transaction Search and gateway tracing).
+- **Principal tags.** JWT claims become tags on `AgentCore::OAuthUser`, read with `principal.hasTag("x")`, `principal.getTag("x") == "v"` and `like "*v*"`. The principal ID is the token's `sub`. The representation of array claims such as `cognito:groups` is not documented; it is recorded from a real token before policies use it. (Docs: policy conditions, read 2026-10-16.)
+- **Per-policy enforcement.** Each policy has its own `enforcementMode` (`ACTIVE` or `LOG_ONLY`), separate from the gateway's engine mode. Both must be enforcing.
+- **Names.** Policy engine and policy names match `[A-Za-z][A-Za-z0-9_]*`, at most 48 characters. Gateway names are letters, digits and single hyphens.
 - **Validation.** The default validation mode rejects policies with automated-reasoning findings, such as "overly restrictive" or "overly permissive".
 - **Deploy order.** Two passes: the gateway and its targets must be `READY` before the policies that reference them.
 

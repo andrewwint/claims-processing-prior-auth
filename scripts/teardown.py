@@ -10,7 +10,7 @@ import sys
 import boto3
 from botocore.exceptions import ClientError
 
-from infra.names import CDK_CLI, TEARDOWN_STACKS
+from infra.names import CDK_CLI, LOG_GROUPS, TEARDOWN_STACKS
 from scripts import inventory, transaction_search, verify_teardown
 
 
@@ -22,14 +22,20 @@ def main() -> int:
         return 2
     session = boto3.Session(region_name="us-east-1")
     for stack in TEARDOWN_STACKS:
-        subprocess.run(["npx", "-y", CDK_CLI, "destroy", stack, "--force"], check=False)
+        if subprocess.run(["npx", "-y", CDK_CLI, "destroy", stack, "--force"]).returncode != 0:
+            print(f"cdk destroy {stack} failed; stopping before any other deletion", file=sys.stderr)
+            return 1
     try:
         found = inventory.inventory(session)
         logs = session.client("logs")
-        for name in found["lambda log group"]:
-            logs.delete_log_group(logGroupName=f"/aws/lambda/{name}")
+        # Only the exact log groups this project names; never by pattern.
+        for name in LOG_GROUPS:
+            try:
+                logs.delete_log_group(logGroupName=name)
+            except logs.exceptions.ResourceNotFoundException:
+                pass
         secrets = session.client("secretsmanager")
-        for name in found["secret"]:
+        for name in found["secret"]:  # prefix AND project tag
             secrets.delete_secret(SecretId=name, ForceDeleteWithoutRecovery=True)
         transaction_search.restore(session.client("xray"))
     except ClientError as e:

@@ -2,7 +2,7 @@
 
 import boto3
 
-from infra.names import BUDGET_NAMES, BUDGET_STACK, SECRET_PREFIX, is_project_name
+from infra.names import BUDGET_NAMES, BUDGET_STACK, PROJECT_TAG, SECRET_PREFIX, is_project_name
 
 LIVE_STACK = {"CREATE_COMPLETE", "UPDATE_COMPLETE", "CREATE_IN_PROGRESS", "UPDATE_IN_PROGRESS",
               "DELETE_FAILED", "ROLLBACK_COMPLETE", "UPDATE_ROLLBACK_COMPLETE", "DELETE_IN_PROGRESS",
@@ -45,8 +45,9 @@ def inventory(session: boto3.Session) -> dict[str, list[str]]:
     found["log delivery source"] = _search(session.client("logs"), "describe_delivery_sources", "deliverySources[].name")
     found["iam role"] = _search(session.client("iam"), "list_roles", "Roles[].RoleName")
     found["secret"] = [
-        n for n in _search(session.client("secretsmanager"), "list_secrets", "SecretList[].Name")
-        if n.startswith(SECRET_PREFIX)
+        s["Name"] for s in _search(session.client("secretsmanager"), "list_secrets", "SecretList[]")
+        if s["Name"].startswith(SECRET_PREFIX)
+        and {"Key": PROJECT_TAG[0], "Value": PROJECT_TAG[1]} in s.get("Tags", [])
     ]
     return {kind: sorted(n for n in names if is_project_name(n) or kind in ("secret", "agentcore gateway target", "agentcore policy"))
             for kind, names in found.items()}

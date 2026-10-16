@@ -10,10 +10,11 @@
 - **How it's proven.** A recorded overwrite or delete attempt by the agent role (L4).
 - **Production note.** A production deployment would use compliance mode with the retention its records policy requires. The docs say this; the demo does not claim it.
 
-### Per-tenant keys
+### Customer-managed key
 
-- **Keys.** One customer-managed KMS key per synthetic tenant (`tenant-a`, `tenant-b`). Records are written with `SSEKMSKeyId` set to the tenant's key.
-- **Access.** Key policies allow encrypt only for the writer roles, and decrypt only for the reviewer roles of that tenant.
+- **Key.** One customer-managed KMS key for the evidence store. The bucket's default encryption is SSE-KMS with that key and a bucket key, and a bucket policy denies any `PutObject` that names a different key.
+- **Access.** The key policy allows encrypt only for the writer roles and decrypt only for the reviewer role.
+- **Not claimed.** Per-tenant keys. The article no longer makes that claim (PM, 2026-10-16).
 - **Teardown.** Keys are scheduled for deletion with the 7-day minimum, and the verifier accepts `PendingDeletion`.
 
 ### Hashes

@@ -29,7 +29,12 @@ The service constraints this design relies on are in [docs/contract-notes.md](..
 - **Input:** `packet_id` and `packet_hash` are required strings, and there are no booleans. The hash is SHA-256 over the packet's canonical JSON.
 - **Policy:** the permit names the agent principal and requires both fields to be present. That is all Cedar checks.
 - **Approval Lambda:** it loads the stored packet and verifies the hash. It then re-runs the checks: every criterion Met, and the schema, source-match and same-patient checks passing. If any step fails, it refuses and returns a reason, and it records nothing.
-- **Packet store:** in this change it is a synthetic fixture bundled with the Lambda, with one passing packet and one failing packet. `case-packet-and-failure-routing` replaces the fixture with the real packet store and the real checks.
+- **Never trust the packet (PM, 2026-10-16).** The verdict is rebuilt by the shared `checks/` module from trusted sources:
+  - the request record (payer, CPT, patient)
+  - the compiled criteria for that (payer, CPT)
+  - the chart store and its index
+
+  Status labels and patient IDs in the packet are ignored. In this change all of these, and the packet store, are synthetic fixtures bundled with the Lambda: a passing packet, a failing packet, and a forged packet marked all Met. `case-packet-and-failure-routing` replaces the fixtures with the real stores.
 - **Why.** Policy checks the shape of a call, and only the server can check its truth (B7). Nothing the agent asserts can produce an approval.
 - **Alternative considered.** A temporal policy that requires earlier passing check-tool responses in the same session. Deferred: it adds a session header to every call, extra IAM, and an unconfirmed detail about how tool output is matched.
 
@@ -42,14 +47,23 @@ The service constraints this design relies on are in [docs/contract-notes.md](..
   - The claim that carries group membership (`cognito:groups`) and how it maps to a principal tag are confirmed from a real token before policies are written.
   - Synthetic tenant users are in the `tenant-a` and `tenant-b` groups.
 - **User pool.** `AllowAdminCreateUserOnly` is true, so there is no self-signup. Synthetic users are created by an administrator script, and their passwords are generated into Secrets Manager. No password is ever written to the repository or to evidence.
+- **Hardening from the security review (2026-10-16):**
+  - The clinician client has OAuth disabled: no hosted-UI, implicit or code flow.
+  - The agent client's sign-in flows are pinned to `ALLOW_REFRESH_TOKEN_AUTH`, so it cannot mint a user-subject token.
+  - Both clients prevent user-existence errors.
+  - The agent gateway requires the `prior-auth/tools` scope.
+  - The reviewer gateway's layer 1 checks the clinician client **and** `cognito:groups` containing `clinician`.
+  - The Cognito domain prefix is a private deploy-time value.
+  - After D1, the agent client secret is copied into Secrets Manager (`prior-auth/agent-client`).
 - **Explicit principals.** Every permit names its principal: the agent's `sub`, or the clinician group tag. There is no permit for all principals.
 
 ### D4. Infrastructure as code
 
 - **Tools.** Python CDK. `aws-cdk-lib` stable constructs are used for Gateway and GatewayTarget. Policy uses the L1 `CfnPolicyEngine` and `CfnPolicy`.
 - **Two stacks** (the deploy has two passes):
-  1. Cognito, the Lambdas (each with an explicit log group), both gateways and their targets.
-  2. The policy engine and policies, attached through the L1 `CfnGateway.policyEngineConfiguration` with `mode: ENFORCE` set explicitly.
+  1. Cognito, the Lambdas (each with an explicit log group), **the policy engine**, and both gateways with their targets. Each gateway attaches the engine through `policyEngineConfiguration` with `mode: ENFORCE` from its first deploy. An engine with no policies denies every call, so between D1 and D2 the gateways fail closed: there is no window without Cedar.
+  2. The five policies (`CfnPolicy`), each with `enforcementMode: ACTIVE` set explicitly. A policy in `LOG_ONLY` enforces nothing, just as an engine attached in `LOG_ONLY` doesn't.
+- **Gateway role trust** is bound by `aws:SourceArn` to the gateway's own name prefix, and the policy-evaluation permissions are scoped to the one engine.
 - **Budgets** live in their own stack. It is deployed first and excluded from teardown. The account already had spend this month, so an account-wide budget's thresholds are offset by the month-to-date baseline. A second budget, filtered on the project tag, carries the exact tiers once the tag is active (task 1.2).
 - **Validation mode.** The default mode. An automated-reasoning finding is recorded, and work stops for a decision. The mode is never changed to get past a finding.
 - **Gateway role.** It includes `bedrock-agentcore:AuthorizeAction`, `PartiallyAuthorizeActions` and `GetPolicyEngine`. These are missing from default roles, and without them every call is denied.
@@ -76,12 +90,28 @@ Transaction Search and its span indexing percentage apply to the whole account, 
 
 Before anything is committed, redaction replaces ARNs, account IDs and Cognito client IDs with stable placeholders such as `<ACCOUNT_ID>`, `<GATEWAY_ARN:reviewer>` and `<CLIENT_ID:agent>`. Redaction never touches action names (`<target>___<tool>`). B5 compares the policy text character for character, so a test asserts that the redacted policy text keeps the exact action string.
 
+## Security review dispositions (independent lane, 2026-10-16)
+
+| Finding | Status |
+|---|---|
+| E1. Reviewer gateway admits every pool user | Fixed: a group claim check on the authorizer, plus the engine in ENFORCE from D1 |
+| E2. Clinician client OAuth defaults (implicit and code flows) | Fixed: OAuth disabled |
+| E3. Agent client falls back to Cognito's default sign-in flows | Fixed: refresh-token flow only |
+| E4. Gateway role trust has no `aws:SourceArn` | Fixed: bound to the gateway name prefix (ARN format confirmed live at D1; a wrong pattern fails closed) |
+| E5. Teardown deletes by name pattern | Fixed: exact log group names; secrets need the prefix and the project tag; teardown stops if `cdk destroy` fails |
+| E6. Agent client secret only in Cognito | Fixed: copied to Secrets Manager after D1. Reading it from Cognito by account administrators remains possible (residual) |
+| E7. Predictable Cognito domain prefix | Fixed: private deploy-time value |
+| E8. Account principals with `lambda:InvokeFunction` can call the tool Lambdas directly, bypassing both gateway layers | **Open: needs Andrew's decision.** Lambda resource policies cannot deny an account administrator. No project role is granted invoke except the gateway roles. |
+| E9. Redaction misses Cognito and gateway identifiers | Fixed: generic patterns, with tests that action names and hashes are untouched |
+
 ## Risks / Trade-offs
 
+- [The representation of the `cognito:groups` claim as a principal tag is not documented] → Task 3.2 records it from a real token and a test call. The clinician test expression is passed to D2 as context, never guessed.
+- [The service stores the policy text reformatted] → B5 compares the redacted deployed text. If it differs, the article copies the deployed text.
 - [Validation flags the overlapping forbids, the group-unless forbid and the agent-principal forbid, as redundant] → Record the finding and stop for a decision. The mode is not changed.
 - [The client-credentials token lacks a claim the policy needs] → Task 3.2 records the token before any policy is written. If the agent cannot be named as a principal, stop for a decision.
 - [The test configuration that admits the agent is left in place] → The revert is a scripted step. Evidence capture fails unless the final `get-gateway` shows the clinician client only.
 - [Eventual consistency after policy or authorizer changes] → The evidence script waits for `ACTIVE` or `READY`, then retries the test call with backoff.
-- [Enforcement silently set to LOG_ONLY] → Every evidence run captures `get-gateway` and fails if the mode isn't `ENFORCE`.
+- [Enforcement silently set to LOG_ONLY, at the engine or on a single policy] → Every evidence run captures `get-gateway` and fails if the mode isn't `ENFORCE`.
 - [Transaction Search left changed for the whole account] → The previous values are recorded before enabling. Teardown restores them, and the verifier compares the two.
 - [Leftover resources] → The teardown verifier lists Cognito pools, gateways, targets, policy engines, policies, Lambda functions, Lambda log groups, IAM roles and log deliveries.

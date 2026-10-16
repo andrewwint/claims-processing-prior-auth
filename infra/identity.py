@@ -11,7 +11,7 @@ SCOPE = "tools"
 
 
 class Identity(Construct):
-    def __init__(self, scope: Construct, construct_id: str):
+    def __init__(self, scope: Construct, construct_id: str, *, domain_prefix: str):
         super().__init__(scope, construct_id)
         self.pool = cognito.UserPool(
             self,
@@ -22,8 +22,10 @@ class Identity(Construct):
             password_policy=cognito.PasswordPolicy(min_length=16),
             removal_policy=RemovalPolicy.DESTROY,
         )
+        # The prefix is a deploy-time value kept out of the repository, so the
+        # public source does not reveal or pre-claim the token endpoint.
         self.domain = self.pool.add_domain(
-            "Domain", cognito_domain=cognito.CognitoDomainOptions(domain_prefix=f"prior-auth-{self.node.addr[:12]}")
+            "Domain", cognito_domain=cognito.CognitoDomainOptions(domain_prefix=domain_prefix)
         )
         tools_scope = cognito.ResourceServerScope(scope_name=SCOPE, scope_description="Call gateway tools")
         server = self.pool.add_resource_server(
@@ -39,13 +41,19 @@ class Identity(Construct):
                 scopes=[cognito.OAuthScope.resource_server(server, tools_scope)],
             ),
             access_token_validity=Duration.minutes(60),
+            prevent_user_existence_errors=True,
         )
+        # Client credentials only: no user sign-in flow, so the agent client can
+        # never mint a user-subject token (an empty AuthFlow falls back to Cognito defaults).
+        self.agent_client.node.default_child.add_property_override("ExplicitAuthFlows", ["ALLOW_REFRESH_TOKEN_AUTH"])
         self.clinician_client = self.pool.add_client(
             "ClinicianClient",
             user_pool_client_name="prior-auth-clinician",
             generate_secret=False,
             auth_flows=cognito.AuthFlow(user_password=True),
+            disable_o_auth=True,
             access_token_validity=Duration.minutes(60),
+            prevent_user_existence_errors=True,
         )
         for group in GROUPS:
             cognito.CfnUserPoolGroup(self, f"Group-{group}", user_pool_id=self.pool.user_pool_id, group_name=group)

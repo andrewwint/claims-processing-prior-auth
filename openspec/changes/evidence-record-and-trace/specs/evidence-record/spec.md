@@ -20,12 +20,16 @@ Evidence records SHALL be stored write-once under retention that the agent and t
 - **WHEN** the agent role attempts to overwrite or delete an existing record
 - **THEN** the request is refused
 
-### Requirement: Records use per-tenant keys
-Each record SHALL be encrypted with the key of the tenant that owns the case.
+### Requirement: Records are encrypted under a customer-managed key
+Each record SHALL be encrypted with SSE-KMS under the project's customer-managed KMS key. A write that names any other key SHALL be refused.
 
-#### Scenario: Two tenants
-- **WHEN** cases from two tenants complete
-- **THEN** each record is encrypted under its own tenant's key
+#### Scenario: Stored record
+- **WHEN** a record is written
+- **THEN** its object metadata names the customer-managed key
+
+#### Scenario: Wrong key
+- **WHEN** a writer attempts to store a record under a different key
+- **THEN** the request is refused
 
 ### Requirement: The trace carries the record's hash
 The trace SHALL carry the SHA-256 of the evidence record, and recomputing the hash from the stored record SHALL match it.

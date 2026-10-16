@@ -3,8 +3,8 @@
 ## 1. Evidence record
 
 - [ ] 1.1 Record schema, canonical JSON and hash function. Tests: field presence (L3), hash stability, and that a one-byte change alters the hash.
-- [ ] 1.2 Evidence stack: Object Lock bucket in governance mode, two tenant KMS keys, role policies as in design.md. CDK assertions test. **Deploy with approval.**
-- [ ] 1.3 Writer in the approval and routing paths. Recorded: two tenants' records with their key IDs (L5), plus a refused overwrite and a refused delete by the agent role (L4).
+- [ ] 1.2 Evidence stack: Object Lock bucket in governance mode, one customer-managed KMS key with a bucket policy pinning it, role policies as in design.md. CDK assertions test. **Deploy with approval.**
+- [ ] 1.3 Writer in the approval and routing paths. Recorded: a record's `head-object` showing the customer-managed key (L5), a refused write under another key, plus a refused overwrite and a refused delete by the agent role (L4).
 - [ ] 1.4 Clock calculation against the standard and expedited windows. Test (L7).
 
 ## 2. Trace

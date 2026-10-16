@@ -54,8 +54,11 @@
 
   A CDK assertions test checks it. **Deploy with approval**, then wait for `READY`.
 - [ ] 3.1a After D1, activate the `project` cost-allocation tag once billing has seen it (`ce update-cost-allocation-tags-status`), and record the activation. Until then, the account-wide budget is the alert of record.
+- [ ] 3.1b Copy the agent client secret into Secrets Manager (`scripts/store_agent_secret.py`). Create the synthetic users (`scripts/create_users.py`).
+- [ ] 3.1c Smoke test the fail-closed state: with the engine attached and no policies, a clinician's `tools/list` and `tools/call` are denied. Record the result.
 - [ ] 3.2 Get one real token for each client.
   - Record the agent token's `sub` and `client_id` format, and the clinician token's group claim.
+  - Record how `cognito:groups` appears as a principal tag. Derive the `clinician_test` expression from that record; it is passed to D2 as context.
   - Write the principal values used by the policies from these records.
   - Stop for a decision if the agent cannot be named as a principal.
 - [ ] 3.3 Policy stack: one engine attached to both gateways in `ENFORCE` mode, plus the five policies in proposal.md. Every permit names its principal.
@@ -75,7 +78,7 @@
   Done when the evidence directory exists (B1, B2, B3, A2, A3, A4).
 - [ ] 4.2 Recorded calls:
   - **B4, layer 1:** the agent calls `record_adverse_determination` on the reviewer gateway with its own token and is rejected by the inbound authorizer.
-  - **B4, layer 2:** add the agent client to the reviewer gateway's `allowedClients` in a test configuration, repeat the call, and record the policy denial. Then revert. Capture `get-gateway` before, during and after. Done only when the final state allows the clinician client only.
+  - **B4, layer 2:** in a test configuration, add the agent client to the reviewer gateway's `allowedClients` and drop the group-claim check, then repeat the call and record the policy denial. The agent token carries no clinician group, so both layer-1 checks must be relaxed for the call to reach Cedar. Then revert. Capture `get-gateway` before, during and after. Done only when the final state allows the clinician client only.
   - **B6:**
     - a well-formed `record_approval` call for the failing fixture packet, refused by the approval service
     - a well-formed call for the passing packet, approved

@@ -12,7 +12,7 @@ FIVE = ["check_eligibility", "fetch_policy_criteria", "extract_clinical_evidence
 @pytest.fixture(scope="module")
 def template():
     app = cdk.App()
-    return Template.from_stack(GatewayStack(app, "G", env=cdk.Environment(region="us-east-1")))
+    return Template.from_stack(GatewayStack(app, "G", env=cdk.Environment(region="us-east-1"), domain_prefix="prior-auth-test"))
 
 
 def _one(template, rtype, **match):
@@ -116,6 +116,52 @@ def test_lambda_asset_contains_only_the_tools_package(tmp_path):
     out = tmp_path / "asset"
     FileSystem.copy_directory(str(root), str(out), CopyOptions(exclude=ASSET_EXCLUDE))
     files = sorted(str(p.relative_to(out)) for p in out.rglob("*") if p.is_file())
-    assert files and all(f.startswith("tools/") for f in files), files
+    assert files and all(f.startswith(("tools/", "checks/")) for f in files), files
+    assert (out / "checks" / "core.py").read_bytes() == (root / "checks" / "core.py").read_bytes()
     assert not any("/." in f or f.startswith(".") for f in files)
     shutil.rmtree(out)
+
+
+# Security review fixes (E1-E4, E7, hardening)
+def test_reviewer_gateway_requires_the_clinician_group_claim(template):
+    jwt = _one(template, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-reviewer")["AuthorizerConfiguration"]["CustomJWTAuthorizer"]
+    assert jwt["CustomClaims"] == [{
+        "InboundTokenClaimName": "cognito:groups",
+        "InboundTokenClaimValueType": "STRING_ARRAY",
+        "AuthorizingClaimMatchValue": {"ClaimMatchOperator": "CONTAINS", "ClaimMatchValue": {"MatchValueString": "clinician"}},
+    }]
+
+
+def test_agent_gateway_requires_the_tools_scope(template):
+    jwt = _one(template, "AWS::BedrockAgentCore::Gateway", Name="prior-auth-agent")["AuthorizerConfiguration"]["CustomJWTAuthorizer"]
+    assert jwt["AllowedScopes"] == ["prior-auth/tools"]
+
+
+def test_clinician_client_has_no_oauth_flows(template):
+    clinician = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-clinician")
+    assert "AllowedOAuthFlows" not in clinician and "CallbackURLs" not in clinician
+    assert clinician["AllowedOAuthFlowsUserPoolClient"] is False
+
+
+def test_agent_client_has_no_user_sign_in_flow(template):
+    agent = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-agent")
+    assert agent["ExplicitAuthFlows"] == ["ALLOW_REFRESH_TOKEN_AUTH"]
+
+
+def test_clients_prevent_user_existence_errors(template):
+    for c in template.find_resources("AWS::Cognito::UserPoolClient").values():
+        assert c["Properties"]["PreventUserExistenceErrors"] == "ENABLED"
+
+
+def test_gateway_roles_are_bound_to_their_own_gateway(template):
+    roles = [r["Properties"]["AssumeRolePolicyDocument"]["Statement"][0] for r in template.find_resources("AWS::IAM::Role").values()
+             if r["Properties"]["AssumeRolePolicyDocument"]["Statement"][0]["Principal"].get("Service") == "bedrock-agentcore.amazonaws.com"]
+    assert len(roles) == 2
+    arns = sorted(json.dumps(s["Condition"]["ArnLike"]["aws:SourceArn"]) for s in roles)
+    assert "gateway/prior-auth-agent-*" in arns[0] and "gateway/prior-auth-reviewer-*" in arns[1]
+    assert all("aws:SourceAccount" in s["Condition"]["StringEquals"] for s in roles)
+
+
+def test_domain_prefix_comes_from_deploy_context(template):
+    domain = next(iter(template.find_resources("AWS::Cognito::UserPoolDomain").values()))
+    assert domain["Properties"]["Domain"] == "prior-auth-test"

@@ -1,89 +1,102 @@
 {
-  "_label": "SYNTHETIC DATA ONLY. Author-written fixture; not real patient data.",
+  "_label": "SYNTHETIC DATA ONLY. Stored packets are untrusted claims.",
   "packets": {
     "SYN-PKT-PASS": {
       "packet_id": "SYN-PKT-PASS",
       "case_id": "SYN-CASE-PASS",
-      "patient_id": "SYN-PAT-0001",
-      "cpt_code": "63030",
-      "payer_id": "SYN-PAYER-A",
-      "policy_version": "SYN-POLICY-LUMBAR-2026.1",
-      "criteria": [
+      "findings": [
         {
-          "criterion": "Six weeks of conservative therapy",
-          "status": "Met",
-          "evidence": "eight visits over seven weeks",
-          "source_id": "PT-NOTES-001"
+          "criterion_id": "C1",
+          "doc_id": "SYN-DOC-PT-001",
+          "page": 1,
+          "line": 3,
+          "value": "Eight visits over seven weeks"
         },
         {
-          "criterion": "Imaging confirms the diagnosis",
-          "status": "Met",
-          "evidence": "L4-L5 disc herniation with nerve root compression",
-          "source_id": "MRI-001"
+          "criterion_id": "C2",
+          "doc_id": "SYN-DOC-MRI-001",
+          "page": 1,
+          "line": 3,
+          "value": "L4-L5 disc herniation with nerve root compression"
         },
         {
-          "criterion": "Functional limitation documented",
-          "status": "Met",
-          "evidence": "Oswestry Disability Index 46 percent",
-          "source_id": "FUNC-001"
+          "criterion_id": "C3",
+          "doc_id": "SYN-DOC-FUNC-001",
+          "page": 1,
+          "line": 2,
+          "value": "Oswestry Disability Index 46 percent"
         }
       ],
-      "sources": {
-        "PT-NOTES-001": {
-          "patient_id": "SYN-PAT-0001",
-          "kind": "physical therapy notes",
-          "text": "SYNTHETIC. Physical therapy: eight visits over seven weeks for lumbar radiculopathy. Conservative therapy completed."
-        },
-        "MRI-001": {
-          "patient_id": "SYN-PAT-0001",
-          "kind": "radiology report",
-          "text": "SYNTHETIC. MRI lumbar spine: L4-L5 disc herniation with nerve root compression."
-        },
-        "FUNC-001": {
-          "patient_id": "SYN-PAT-0001",
-          "kind": "clinic note",
-          "text": "SYNTHETIC. Oswestry Disability Index 46 percent, severe functional limitation."
-        }
+      "model_summary": {
+        "label": "Model summary. Not used for any decision.",
+        "text": "SYNTHETIC summary."
       }
     },
     "SYN-PKT-FAIL": {
       "packet_id": "SYN-PKT-FAIL",
       "case_id": "SYN-CASE-FAIL",
-      "patient_id": "SYN-PAT-0001",
-      "cpt_code": "63030",
-      "payer_id": "SYN-PAYER-A",
-      "policy_version": "SYN-POLICY-LUMBAR-2026.1",
-      "criteria": [
+      "findings": [
         {
-          "criterion": "Six weeks of conservative therapy",
-          "status": "Met",
-          "evidence": "eight visits over seven weeks",
-          "source_id": "PT-NOTES-001"
+          "criterion_id": "C1",
+          "doc_id": "SYN-DOC-PT-001",
+          "page": 1,
+          "line": 3,
+          "value": "Eight visits over seven weeks"
         },
         {
-          "criterion": "Imaging confirms the diagnosis",
-          "status": "Met",
-          "evidence": "L4-L5 disc herniation with nerve root compression",
-          "source_id": "MRI-001"
-        },
-        {
-          "criterion": "Functional limitation documented",
-          "status": "Not found",
-          "evidence": "",
-          "source_id": ""
+          "criterion_id": "C2",
+          "doc_id": "SYN-DOC-MRI-001",
+          "page": 1,
+          "line": 3,
+          "value": "L4-L5 disc herniation with nerve root compression"
         }
       ],
-      "sources": {
-        "PT-NOTES-001": {
-          "patient_id": "SYN-PAT-0001",
-          "kind": "physical therapy notes",
-          "text": "SYNTHETIC. Physical therapy: eight visits over seven weeks for lumbar radiculopathy. Conservative therapy completed."
+      "criteria_status": {
+        "C1": "Met",
+        "C2": "Met",
+        "C3": "Not found"
+      },
+      "model_summary": {
+        "label": "Model summary. Not used for any decision.",
+        "text": "SYNTHETIC summary."
+      }
+    },
+    "SYN-PKT-FORGED": {
+      "packet_id": "SYN-PKT-FORGED",
+      "case_id": "SYN-CASE-FORGED",
+      "patient_id": "SYN-PAT-0001",
+      "findings": [
+        {
+          "criterion_id": "C1",
+          "doc_id": "SYN-DOC-PT-001",
+          "page": 1,
+          "line": 3,
+          "value": "Twelve visits over eight weeks"
         },
-        "MRI-001": {
-          "patient_id": "SYN-PAT-0001",
-          "kind": "radiology report",
-          "text": "SYNTHETIC. MRI lumbar spine: L4-L5 disc herniation with nerve root compression."
+        {
+          "criterion_id": "C2",
+          "doc_id": "SYN-DOC-MRI-001",
+          "page": 1,
+          "line": 3,
+          "value": "L4-L5 disc herniation with nerve root compression"
+        },
+        {
+          "criterion_id": "C3",
+          "doc_id": "SYN-DOC-FUNC-002",
+          "page": 1,
+          "line": 2,
+          "value": "Oswestry Disability Index 52 percent"
         }
+      ],
+      "criteria_status": {
+        "C1": "Met",
+        "C2": "Met",
+        "C3": "Met"
+      },
+      "all_met": true,
+      "model_summary": {
+        "label": "Model summary. Not used for any decision.",
+        "text": "SYNTHETIC summary."
       }
     }
   }

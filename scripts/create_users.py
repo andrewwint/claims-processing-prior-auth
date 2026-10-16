@@ -14,7 +14,7 @@ import sys
 import boto3
 from botocore.exceptions import ClientError
 
-from infra.names import SECRET_PREFIX
+from infra.names import PROJECT_TAG, SECRET_PREFIX
 
 USERS = {
     "syn-clinician-1": ["clinician", "tenant-a"],
@@ -46,7 +46,7 @@ def create_user(cognito, secrets_client, pool_id: str, username: str, groups: li
     value = json.dumps({"username": username, "password": password})
     try:
         secrets_client.create_secret(Name=name, SecretString=value,
-                                     Tags=[{"Key": "project", "Value": "prior-auth-agentcore"}])
+                                     Tags=[{"Key": PROJECT_TAG[0], "Value": PROJECT_TAG[1]}])
     except secrets_client.exceptions.ResourceExistsException:
         secrets_client.put_secret_value(SecretId=name, SecretString=value)
 

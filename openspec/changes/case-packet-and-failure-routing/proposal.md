@@ -2,40 +2,57 @@
 
 ## Why
 
-The agent has to hand a reviewer a case where every claim points at its source, and a failure must slow a case down without ever pushing it toward denial. This change turns the tool stubs into a working agent that builds a cited packet, runs the three checks, decides between approval and routing, and sends every failure to a person. It is priority 2.
+The agent has to hand a reviewer a case where every claim points at its source. A failure must slow a case down without ever pushing it toward denial, and an approval must not depend on anything the agent or the model says about the case. This change:
+
+- turns the tool stubs into a working pipeline that builds a cited packet
+- moves the approve-or-route decision into code that the model cannot reach
+- makes the approval service rebuild its verdict from trusted sources only
+
+It is priority 2.
 
 ## What Changes
 
-- **Compiled policy criteria.** Synthetic payer policies compile into one verified file per (payer, procedure). Each criterion carries its policy version and source location.
-- **Evidence extraction.** Each finding cites its source document, page or line, and patient ID.
-- **The case packet.** A checklist of criterion, evidence, source and status (Met / Not found).
-- **Three checks** run before the packet moves: schema, source match, and same patient.
-- **The decision.**
-  - All criteria met and all checks passed: the agent stores the packet and calls `record_approval` with `packet_id` and `packet_hash`.
-  - Anything else: `route_to_reviewer`, with the gaps marked.
-  - The approval service replaces the fixture from `gateway-and-policy` with the real packet store: it loads the stored packet, verifies the hash, and re-runs the checks before writing.
-- **Failure routing.** Each row of the article's failure table, plus a written empty-output rule for each step:
-  - extraction failed → reviewer
-  - no text → reviewer, with the stop reason
-  - no verified policy → reviewer
-  - model access denied → fail loudly and alert the operator
+- **Trusted sources.** Three sources are written only by trusted parties, and they are the only inputs to a decision:
+  - **Request records** in the case store, written by the intake client: case, payer, CPT and patient.
+  - **Compiled policy criteria**, bundled with the code.
+  - **The chart store and its index**: documents, plus the patient that owns each `doc_id`. Seeded by the operator.
+- **One checks module, `checks/`.** It is imported by both the runtime and the approval service, and it holds:
+  - check 1: schema
+  - check 2: exact source match, at the cited line
+  - check 3: the same patient, derived from the chart index
+  - `recompute()`, which rebuilds every criterion's status from trusted sources
+- **The decision is a code function.** `decide(packet)` returns approve or route. It calls `checks.recompute()`, and the runtime wrapper acts on its result.
+  - The model has no tools: it cannot call `record_approval` or `route_to_reviewer`.
+  - The model's prose is labeled a model summary, and no decision reads it.
+- **The approval service never trusts the packet.**
+  - It loads the stored packet and verifies the hash. The hash proves integrity, not truth.
+  - It then rebuilds the verdict: criteria come from the compiled policy for the request's (payer, CPT); each finding is re-verified against the chart, value at its cited location; the patient is derived from the chart index.
+  - Status labels and the `patient_id` in the packet are ignored.
+  - A forged packet marked all Met, with made-up findings and a valid hash, is refused.
+- **Session invariant.** Every session ends in exactly one terminal outcome: `approved`, `routed` or `operator_alert`. A session that ends without one becomes `needs_review` and is routed.
+- **Per-step empty-output table.** This replaces a global wrapper rule. Each row gets one test.
+- **Failure routing.** Each row of the article's failure table, with access-denied alerting an operator through an SNS topic. The topic's email subscription is confirmed before the alarm test.
 - **Agent runtime.**
-  - A Strands agent on AgentCore Runtime: HTTP protocol, JWT inbound authentication, one session per case.
+  - A Strands agent on AgentCore Runtime: HTTP protocol, a JWT authorizer that admits only the intake client, and one session per case.
   - A post-deploy step requires metadata service v2.
-  - Models come from the allow-list.
   - Telemetry content redaction is on from the first deploy.
+- **Extraction model:** Claude Sonnet 4.6.
+  - Model ID `anthropic.claude-sonnet-4-6`, invoked through the US inference profile `us.anthropic.claude-sonnet-4-6`.
+  - Sampling is temperature 0 only.
+  - The access call was made and recorded before any build (evidence `2026-10-16/model-access-extraction.json`).
+- **Mutation testing** over the checks module, the approval service and the runtime wrapper, with surviving mutants reported.
 
 ## Claims delivered
 
-B7, G1–G7, F1–F6, A1.
+B7, G1–G9, F1–F7, A1. M7 is advanced by the recorded access check for the extraction model.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `case-packet`: how criteria and evidence become a cited, checked packet, and when approval is allowed.
-- `failure-routing`: where every failure mode goes.
-- `agent-runtime`: how the agent is hosted, invoked and isolated per case.
+- `case-packet`: how criteria and evidence become a cited, checked packet; the decision function; and how approval is re-derived from trusted sources.
+- `failure-routing`: the per-step empty-output table, the failure destinations, and the session invariant.
+- `agent-runtime`: how the agent is hosted, invoked by the intake client, and isolated per case.
 
 ### Modified Capabilities
 
@@ -43,6 +60,20 @@ None.
 
 ## Impact
 
-- **New code:** `policies/` (synthetic source policies and compiled criteria files), `cases/` (synthetic charts), `agent/` (Strands agent), real logic in `tools/`, `infra/runtime_stack.py`, `scripts/require_mmdsv2.py`, and tests.
-- **AWS resources:** an AgentCore Runtime, plus an operator alarm and SNS topic.
+- **New code:**
+  - `checks/` (the single checks module)
+  - `policies/` (synthetic source policies and compiled criteria)
+  - `cases/` (synthetic charts and the chart index)
+  - `agent/` (pipeline, decision and runtime wrapper)
+  - the real approval service in `tools/`
+  - `scripts/intake.py`, `scripts/seed_charts.py` and `scripts/require_mmdsv2.py`
+  - `infra/runtime_stack.py`
+  - tests and the mutation-testing configuration
+- **AWS resources:**
+  - S3 buckets `prior-auth-cases` (request records and the packet store) and `prior-auth-charts` (chart documents and index)
+  - a Cognito app client `prior-auth-intake`
+  - an AgentCore Runtime
+  - an operator alarm and an SNS topic with a confirmed email subscription
+
+  All of them are removed by teardown.
 - **Depends on** `gateway-and-policy`.

@@ -1,0 +1,91 @@
+{
+  "_label": "SYNTHETIC DATA ONLY. Fixture copies of the trusted sources: request records, compiled criteria, chart store and index.",
+  "requests": {
+    "SYN-CASE-PASS": {
+      "case_id": "SYN-CASE-PASS",
+      "patient_id": "SYN-PAT-0001",
+      "payer_id": "SYN-PAYER-A",
+      "cpt_code": "63030"
+    },
+    "SYN-CASE-FAIL": {
+      "case_id": "SYN-CASE-FAIL",
+      "patient_id": "SYN-PAT-0001",
+      "payer_id": "SYN-PAYER-A",
+      "cpt_code": "63030"
+    },
+    "SYN-CASE-FORGED": {
+      "case_id": "SYN-CASE-FORGED",
+      "patient_id": "SYN-PAT-0001",
+      "payer_id": "SYN-PAYER-A",
+      "cpt_code": "63030"
+    }
+  },
+  "criteria": {
+    "SYN-PAYER-A": {
+      "63030": [
+        {
+          "id": "C1",
+          "text": "Six weeks of conservative therapy",
+          "policy_version": "SYN-LUMBAR-2026.1",
+          "source_location": "section 2.1"
+        },
+        {
+          "id": "C2",
+          "text": "Imaging confirms the diagnosis",
+          "policy_version": "SYN-LUMBAR-2026.1",
+          "source_location": "section 2.2"
+        },
+        {
+          "id": "C3",
+          "text": "Functional limitation documented",
+          "policy_version": "SYN-LUMBAR-2026.1",
+          "source_location": "section 2.3"
+        }
+      ]
+    }
+  },
+  "chart": {
+    "docs": {
+      "SYN-DOC-PT-001": {
+        "pages": [
+          [
+            "SYNTHETIC physical therapy notes.",
+            "Lumbar radiculopathy, left L5.",
+            "Eight visits over seven weeks; conservative therapy completed."
+          ]
+        ]
+      },
+      "SYN-DOC-MRI-001": {
+        "pages": [
+          [
+            "SYNTHETIC radiology report.",
+            "MRI lumbar spine without contrast.",
+            "Impression: L4-L5 disc herniation with nerve root compression."
+          ]
+        ]
+      },
+      "SYN-DOC-FUNC-001": {
+        "pages": [
+          [
+            "SYNTHETIC clinic note.",
+            "Oswestry Disability Index 46 percent, severe functional limitation."
+          ]
+        ]
+      },
+      "SYN-DOC-FUNC-002": {
+        "pages": [
+          [
+            "SYNTHETIC clinic note for another patient.",
+            "Oswestry Disability Index 52 percent, severe functional limitation."
+          ]
+        ]
+      }
+    },
+    "index": {
+      "SYN-DOC-PT-001": "SYN-PAT-0001",
+      "SYN-DOC-MRI-001": "SYN-PAT-0001",
+      "SYN-DOC-FUNC-001": "SYN-PAT-0001",
+      "SYN-DOC-FUNC-002": "SYN-PAT-0002"
+    }
+  }
+}
