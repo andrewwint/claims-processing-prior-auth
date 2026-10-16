@@ -1,2 +1,3 @@
 {"content_committed_in": "c202eef", "dirty_at_deploy": true, "event": "beat 1 combined deploy", "note": "backfilled 2026-10-16: deployed from an uncommitted tree; the deployed code was committed immediately after", "stack": "PriorAuthGateways+PriorAuthPolicy"}
 {"content_committed_in": "26c1a39", "dirty_at_deploy": true, "event": "real gathering tools", "note": "backfilled 2026-10-16: deployed with src/prior_auth/agent/strands_agent.py and a test uncommitted (the Lambdas never import that module); committed immediately after", "stack": "PriorAuthGateways"}
+{"at": "2026-10-16T23:23:26+00:00", "result": "deployed", "sha": "b2805665cf0ea13d316691c60bc5ec871a76cc6a", "stack": "PriorAuthGateways"}
