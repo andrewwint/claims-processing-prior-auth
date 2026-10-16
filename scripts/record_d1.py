@@ -105,11 +105,67 @@ def tokens(session, out, named) -> None:
     print("clinician token_use/scope:", clinician.get("token_use"), clinician.get("scope"))
 
 
+def policies(session, out, named) -> None:
+    """B3, B5: the deployed policy text and status, redacted to the article's placeholders."""
+    ac = session.client("bedrock-agentcore-control")
+    named = {**named, out["AgentClientId"]: "<agent-client-id>"}
+    rows = []
+    for p in ac.get_paginator("list_policies").paginate(policyEngineId=out["PolicyEngineId"]).search("policies[]"):
+        full = ac.get_policy(policyEngineId=out["PolicyEngineId"], policyId=p["policyId"])
+        rows.append({k: full.get(k) for k in ("name", "status", "enforcementMode", "definition")})
+    save("policies.json", sorted(rows, key=lambda r: r["name"]), named)
+    forbid = next(r for r in rows if "forbid" in r["name"])
+    text = redact(forbid["definition"]["cedar"]["statement"], named)
+    OUT.mkdir(parents=True, exist_ok=True)
+    (OUT / "forbid-deployed-redacted.cedar").write_text(text + "\n")
+    for r in rows:
+        print(r["name"], r["status"], r["enforcementMode"])
+
+
+def _approval_args(packet_id: str) -> dict:
+    from checks import packet_hash
+    from tools.approval import load_fixtures
+    _, packets = load_fixtures()
+    return {"packet_id": packet_id, "packet_hash": packet_hash(packets[packet_id])}
+
+
+def calls(session, out, named) -> None:
+    """Allowed, refused and denied calls through the live boundary."""
+    agent = gc.agent_token(out, session)
+    clinician = gc.user_token(out, session, "syn-clinician-1")
+    staff = gc.user_token(out, session, "syn-tenant-a-staff")
+    A, R = out["AgentGatewayUrl"], out["ReviewerGatewayUrl"]
+    deny_args = {"case_id": "SYN-CASE-1", "reason": "No functional limitation measure documented (synthetic)."}
+    results = {
+        "B1_B2_agent_tools_list": gc.mcp(A, agent, "tools/list"),
+        "agent_call_check_eligibility": gc.mcp(A, agent, "tools/call",
+            {"name": "AgentTools___check_eligibility", "arguments": {"member_id": "SYN-MBR-1", "cpt_code": "63030"}}),
+        "B6_record_approval_passing_packet": gc.mcp(A, agent, "tools/call",
+            {"name": "ApprovalService___record_approval", "arguments": _approval_args("SYN-PKT-PASS")}),
+        "B6_record_approval_failing_packet_refused_server_side": gc.mcp(A, agent, "tools/call",
+            {"name": "ApprovalService___record_approval", "arguments": _approval_args("SYN-PKT-FAIL")}),
+        "B6_record_approval_forged_packet_refused_server_side": gc.mcp(A, agent, "tools/call",
+            {"name": "ApprovalService___record_approval", "arguments": _approval_args("SYN-PKT-FORGED")}),
+        "B6_record_approval_missing_hash_denied_by_policy": gc.mcp(A, agent, "tools/call",
+            {"name": "ApprovalService___record_approval", "arguments": {"packet_id": "SYN-PKT-PASS"}}),
+        "B8_clinician_tools_list": gc.mcp(R, clinician, "tools/list"),
+        "B8_clinician_records_adverse_determination": gc.mcp(R, clinician, "tools/call",
+            {"name": "ReviewerTools___record_adverse_determination", "arguments": deny_args}),
+        "B4_layer1_agent_token_on_reviewer": gc.mcp(R, agent, "tools/call",
+            {"name": "ReviewerTools___record_adverse_determination", "arguments": deny_args}),
+        "layer1_non_clinician_staff_on_reviewer": gc.mcp(R, staff, "tools/call",
+            {"name": "ReviewerTools___record_adverse_determination", "arguments": deny_args}),
+    }
+    save("calls.json", results, named)
+    for k, v in results.items():
+        print(k, _summary(v))
+
+
 def main() -> int:
     session = boto3.Session(region_name="us-east-1")
     out = gc.outputs()
     named = known_values(out)
-    {"state": state, "smoke": smoke, "tokens": tokens}[sys.argv[1]](session, out, named)
+    {"state": state, "smoke": smoke, "tokens": tokens, "policies": policies, "calls": calls}[sys.argv[1]](session, out, named)
     return 0
 
 

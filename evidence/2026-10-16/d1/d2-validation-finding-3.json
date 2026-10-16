@@ -1,0 +1,26 @@
+{
+  "finding": "The merged forbid was validated before any permit existed, so it denied every request for OAuthUser and for IamEntity on the denial tool.",
+  "policy_events": [
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitagentcasetools",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitagentrecordapproval",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitcliniciandenial",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource handler returned message: \"Overly Restrictive: Policy Engine will deny every request for the specified principal (AgentCore::IamEntity), action (ReviewerTools___record_adverse_determination) and resource (<reviewer-gateway-arn>) combination if the policy is added or updated, Overly Restrictive: Policy Engine will deny every request for the specified principal (AgentCore::OAuthUser), action (ReviewerTools___record_adverse_determination) and resource (<reviewer-gateway-arn>) combination if the policy is added or updated\" (RequestToken: <uuid>, HandlerErrorCode: NotStabilized)",
+      "resource": "priorauthforbiddenial",
+      "status": "CREATE_FAILED"
+    }
+  ],
+  "response": "Permits are created first and the forbid depends on the clinician permit; the forbid is scoped to AgentCore::OAuthUser, the only principal type a CUSTOM_JWT gateway produces. Validation mode unchanged."
+}

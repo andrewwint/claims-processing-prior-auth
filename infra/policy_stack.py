@@ -20,8 +20,9 @@ class PolicyStack(Stack):
         agent_arn, reviewer_arn = prefix + agent_gateway_id, prefix + reviewer_gateway_id
         statements = all_policies(agent_sub=agent_sub, agent_arn=agent_arn, reviewer_arn=reviewer_arn,
                                   tag_shape=tag_shape)
+        created = {}
         for name, statement in statements.items():
-            agentcore.CfnPolicy(
+            created[name] = agentcore.CfnPolicy(
                 self, name, name=name, policy_engine_id=engine_id,
                 definition=agentcore.CfnPolicy.PolicyDefinitionProperty(
                     cedar=agentcore.CfnPolicy.CedarPolicyProperty(statement=statement)
@@ -31,3 +32,11 @@ class PolicyStack(Stack):
                 # validation_mode is left unset: the service default is FAIL_ON_ANY_FINDINGS,
                 # and findings are recorded, never bypassed.
             )
+        # Validation judges each policy against the engine's current contents, so
+        # forbids are created after every permit (an empty engine makes any forbid
+        # "deny every request").
+        for name, policy in created.items():
+            if statements[name].startswith("forbid("):
+                for other, permit in created.items():
+                    if statements[other].startswith("permit("):
+                        policy.add_dependency(permit)

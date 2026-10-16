@@ -2,32 +2,34 @@ import aws_cdk as cdk
 import pytest
 from aws_cdk.assertions import Template
 
-from infra.cedar import CLINICIAN_TESTS, all_policies, clinician_test, forbid_agent_denial
+from infra.cedar import CLINICIAN_TESTS, all_policies, clinician_test, forbid_denial
 from infra.gateway_stack import GatewayStack
 from infra.policy_stack import PolicyStack
 from scripts.redact import redact
 
-ARTICLE_SNIPPET = """forbid(
-  principal == AgentCore::OAuthUser::"<agent-client-id>",
+REDACTED_FORBID = """forbid(
+  principal is AgentCore::OAuthUser,
   action == AgentCore::Action::"ReviewerTools___record_adverse_determination",
   resource == AgentCore::Gateway::"<reviewer-gateway-arn>"
-);"""
+) when { principal == AgentCore::OAuthUser::"<agent-client-id>" || !(principal.hasTag("pa_role") && principal.getTag("pa_role") == "clinician") };"""
 TEST = CLINICIAN_TESTS["pa_role"]
 P = all_policies(agent_sub="AGENT", agent_arn="AGENT_ARN", reviewer_arn="REVIEWER_ARN", tag_shape="pa_role")
 
 
-def test_agent_forbid_matches_the_article_snippet_after_redaction():
+def test_forbid_redacts_to_the_form_the_article_will_copy():
     sub = "4f1k2l3m4n5o6p7q8r9s0t1u2v"
     arn = "arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/prior-auth-reviewer-abc123"
-    deployed = forbid_agent_denial(sub, arn)
-    assert redact(deployed, {sub: "<agent-client-id>", arn: "<reviewer-gateway-arn>"}) == ARTICLE_SNIPPET
+    deployed = forbid_denial(sub, arn, TEST)
+    assert redact(deployed, {sub: "<agent-client-id>", arn: "<reviewer-gateway-arn>"}) == REDACTED_FORBID
 
 
-def test_five_policies_two_forbids_on_the_denial_tool():
-    assert len(P) == 5
+def test_four_policies_one_forbid_naming_the_agent():
+    assert len(P) == 4
     forbids = [s for s in P.values() if s.startswith("forbid(")]
-    assert len(forbids) == 2
-    assert all("ReviewerTools___record_adverse_determination" in s for s in forbids)
+    assert len(forbids) == 1
+    f = forbids[0]
+    assert "ReviewerTools___record_adverse_determination" in f
+    assert 'principal == AgentCore::OAuthUser::"AGENT"' in f and f"!({TEST})" in f
 
 
 def test_every_permit_constrains_its_principal():
@@ -81,7 +83,7 @@ def test_both_gateways_attach_the_engine_in_enforce_mode(stacks):
 def test_policies_are_active_and_use_default_validation(stacks):
     _, p = stacks
     pols = p.find_resources("AWS::BedrockAgentCore::Policy").values()
-    assert len(pols) == 5
+    assert len(pols) == 4
     for pol in pols:
         assert pol["Properties"]["EnforcementMode"] == "ACTIVE"
         assert "ValidationMode" not in pol["Properties"]
@@ -121,3 +123,13 @@ def test_policy_stack_has_no_cross_stack_imports(stacks):
     text = json.dumps(p.to_json())
     assert "Fn::ImportValue" not in text
     assert "gateway/prior-auth-agent-abc" in text and "gateway/prior-auth-reviewer-def" in text
+
+
+
+def test_forbid_is_created_after_every_permit(stacks):
+    _, p = stacks
+    pols = p.find_resources("AWS::BedrockAgentCore::Policy")
+    forbid = next(r for k, r in pols.items() if "forbid" in k)
+    permits = [k for k in pols if "permit" in k]
+    assert len(permits) == 3
+    assert sorted(forbid["DependsOn"]) == sorted(permits)

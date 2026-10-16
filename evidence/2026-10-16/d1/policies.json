@@ -1,0 +1,42 @@
+[
+  {
+    "definition": {
+      "cedar": {
+        "statement": "forbid(\n  principal is AgentCore::OAuthUser,\n  action == AgentCore::Action::\"ReviewerTools___record_adverse_determination\",\n  resource == AgentCore::Gateway::\"<reviewer-gateway-arn>\"\n) when { principal == AgentCore::OAuthUser::\"<agent-client-id>\" || !(principal.hasTag(\"pa_role\") && principal.getTag(\"pa_role\") == \"clinician\") };"
+      }
+    },
+    "enforcementMode": "ACTIVE",
+    "name": "prior_auth_forbid_denial",
+    "status": "ACTIVE"
+  },
+  {
+    "definition": {
+      "cedar": {
+        "statement": "permit(\n  principal == AgentCore::OAuthUser::\"<agent-client-id>\",\n  action in [AgentCore::Action::\"AgentTools___check_eligibility\", AgentCore::Action::\"AgentTools___fetch_policy_criteria\", AgentCore::Action::\"AgentTools___extract_clinical_evidence\", AgentCore::Action::\"AgentTools___route_to_reviewer\"],\n  resource == AgentCore::Gateway::\"<agent-gateway-arn>\"\n);"
+      }
+    },
+    "enforcementMode": "ACTIVE",
+    "name": "prior_auth_permit_agent_case_tools",
+    "status": "ACTIVE"
+  },
+  {
+    "definition": {
+      "cedar": {
+        "statement": "permit(\n  principal == AgentCore::OAuthUser::\"<agent-client-id>\",\n  action == AgentCore::Action::\"ApprovalService___record_approval\",\n  resource == AgentCore::Gateway::\"<agent-gateway-arn>\"\n) when { context.input has packet_id && context.input has packet_hash };"
+      }
+    },
+    "enforcementMode": "ACTIVE",
+    "name": "prior_auth_permit_agent_record_approval",
+    "status": "ACTIVE"
+  },
+  {
+    "definition": {
+      "cedar": {
+        "statement": "permit(\n  principal is AgentCore::OAuthUser,\n  action == AgentCore::Action::\"ReviewerTools___record_adverse_determination\",\n  resource == AgentCore::Gateway::\"<reviewer-gateway-arn>\"\n) when { principal.hasTag(\"pa_role\") && principal.getTag(\"pa_role\") == \"clinician\" };"
+      }
+    },
+    "enforcementMode": "ACTIVE",
+    "name": "prior_auth_permit_clinician_denial",
+    "status": "ACTIVE"
+  }
+]

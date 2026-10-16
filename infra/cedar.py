@@ -1,7 +1,6 @@
 """Cedar policy text. Pure functions, so the exact text is testable.
 
-The agent-principal forbid is formatted exactly like the article's snippet:
-B5 compares the redacted deployed text with it character for character.
+The article's snippet is copied from the deployed forbid text (B5), never typed.
 """
 
 from tools.schemas import APPROVAL_TARGET, CASE_TARGET, CASE_TOOLS, REVIEWER_TARGET
@@ -36,25 +35,22 @@ def gateway(arn: str) -> str:
     return f'AgentCore::Gateway::"{arn}"'
 
 
-def forbid_agent_denial(agent_sub: str, reviewer_arn: str) -> str:
-    """The article's snippet."""
+def forbid_denial(agent_sub: str, reviewer_arn: str, clinician_test: str) -> str:
+    """The one forbid on the denial tool: the agent, or anyone who is not a clinician.
+
+    The validator rejected a separate, unconditional agent forbid as "Overly
+    Restrictive" (it denies every request for that principal, which was its
+    point). Merged, the forbid still names the agent explicitly, needs no
+    validation bypass, and is what the article's snippet copies (B5).
+    """
+    # Scoped to OAuthUser: a CUSTOM_JWT gateway produces no other principal type,
+    # and an unscoped forbid was flagged for IAM principals nothing permits.
     return (
         "forbid(\n"
-        f"  principal == {oauth_user(agent_sub)},\n"
+        "  principal is AgentCore::OAuthUser,\n"
         f"  action == {action(REVIEWER_TARGET, DENIAL_TOOL)},\n"
         f"  resource == {gateway(reviewer_arn)}\n"
-        ");"
-    )
-
-
-def forbid_non_clinician_denial(reviewer_arn: str, clinician_test: str) -> str:
-    # Unscoped on purpose: the forbid must cover every principal type.
-    return (
-        "forbid(\n"
-        "  principal,\n"
-        f"  action == {action(REVIEWER_TARGET, DENIAL_TOOL)},\n"
-        f"  resource == {gateway(reviewer_arn)}\n"
-        f") unless {{ {clinician_test} }};"
+        f") when {{ principal == {oauth_user(agent_sub)} || !({clinician_test}) }};"
     )
 
 
@@ -101,6 +97,5 @@ def all_policies(*, agent_sub: str, agent_arn: str, reviewer_arn: str, tag_shape
         "prior_auth_permit_agent_case_tools": permit_agent_case_tools(agent_sub, agent_arn),
         "prior_auth_permit_agent_record_approval": permit_agent_record_approval(agent_sub, agent_arn),
         "prior_auth_permit_clinician_denial": permit_clinician_denial(reviewer_arn, clinician_test_expr),
-        "prior_auth_forbid_non_clinician_denial": forbid_non_clinician_denial(reviewer_arn, clinician_test_expr),
-        "prior_auth_forbid_agent_denial": forbid_agent_denial(agent_sub, reviewer_arn),
+        "prior_auth_forbid_denial": forbid_denial(agent_sub, reviewer_arn, clinician_test_expr),
     }
