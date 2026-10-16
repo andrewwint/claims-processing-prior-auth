@@ -43,6 +43,25 @@ This repository is a reference implementation that can be torn down the same day
 - **Reviewer identity.** A request interceptor on the reviewer gateway validates the clinician's token and overwrites the reviewer identity and tenant in each call, so a client cannot claim to be someone else. That holds only for calls through the gateway; the direct-invocation risk above still applies.
 - **Governance mode.** The evidence store uses Object Lock in governance mode, and only the teardown role may bypass it. Production would use compliance mode.
 
+## Known limitations
+
+This repository is built backwards from a five-minute demo. These are deliberately out of scope, and each one is tracked as an issue.
+
+- **Reviewer identity is asserted, not verified.** Decision records label the reviewer "as asserted by the clinician app". A gateway request interceptor that validates the clinician's token and overwrites the identity is designed but not built.
+- **One tenant.** There are no tenant groups in use, no cross-tenant tests, and no per-tenant keys. The workbench page reads the review queue with the operator's local AWS credentials. Only decisions go through the reviewer gateway under the clinician's token.
+- **Evidence rules are narrow.** They cover the demo cases. Adversarial review found further gaps that would let a negated or hedged line count as support:
+  - negators outside the list ("w/o", "neg.", "cannot confirm", typographic apostrophes, fullwidth or zero-width characters)
+  - negation in a section header above the line
+  - planned or ordered therapy counted as completed
+
+  The fix is an allow-list design: whole-line templates in allowed sections, NFKC normalization and invisible-character removal.
+- **Operator alerting is a metric only.** There is no deployed alarm or SNS topic.
+- **Memory is not used,** and no Memory evidence is recorded. **No Knowledge Base:** policy lookup is an exact match on (payer, CPT).
+- **The decision clock** is tested against the 7-day and 72-hour windows only, not edge cases.
+- **No redeploy-from-scratch test.** One verified teardown is recorded.
+- **No mutation testing** of the checks module.
+- **Direct Lambda invocation** by account administrators bypasses both gateway layers (see the threat model above).
+
 ## Data
 
 This repository uses synthetic data only. It contains no real patient data, and it must never be used with any.

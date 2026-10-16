@@ -14,11 +14,7 @@ The case set, models, trials per case, metric definitions, scoring rules, stoppi
 - **THEN** it names the pre-registration commit, and the run started after it
 
 ### Requirement: Every case records its provenance
-Each case SHALL record its parent case and the one change made. Change types SHALL cover:
-- single-element counterfactuals
-- forged documents
-- wrong patient
-- wrong plan
+Each case SHALL record its parent case and the one change made. The demo set SHALL be six cases: 2 clean, 2 single-element counterfactuals, 1 wrong patient and 1 forged document.
 
 #### Scenario: One change from the parent
 - **WHEN** a case is compared with its parent

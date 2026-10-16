@@ -38,7 +38,7 @@ Each step SHALL follow its own row of the per-step table in `docs/empty-output-r
 - **THEN** the case routes to a reviewer labeled "eligibility unknown"
 
 ### Requirement: Denied model access alerts an operator
-A denied model call SHALL end the session with an operator alert. The alert SHALL emit a metric that drives an alarm on an SNS topic with a confirmed subscription.
+A denied model call SHALL end the session with an operator alert and emit an operator metric. A deployed alarm and SNS topic are deferred (README "Known limitations").
 
 #### Scenario: Model access denied
 - **WHEN** the model call is denied access

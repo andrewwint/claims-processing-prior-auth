@@ -1,24 +1,21 @@
-# Tasks
+# Tasks (demo scope, PM 2026-10-16)
 
-- [ ] 1.1 Queue writer in `route_to_reviewer`: `queue/<tenant>/<case_id>.json`, with the tenant from the request record. Tests:
-  - a model-supplied tenant is ignored
-  - the case-tool role cannot write outside `queue/` and `recommendations/`
-- [ ] 1.2 Reviewer tools `list_queue`, `get_case` and `record_clinician_approval` on `ReviewerTools`.
-  - Cedar: a permit for the clinician group on each, and an explicit forbid on the agent principal for `record_clinician_approval`.
-  - Tests for each tool.
-  - Recorded: the agent identity is denied `record_clinician_approval`, and a clinician is allowed.
-- [ ] 1.3 Denial reason enforced server-side. Done when tests pass for an empty, whitespace-only or missing reason, each refused by the Lambda, plus the schema marking it required.
-- [ ] 1.4 Tenant isolation. Done when unit tests pass and the cross-tenant refusal is recorded: clinician A (tenant-a) calls `get_case` with an exact tenant-b case ID and is refused.
-- [ ] 1.5 Workbench app.
-  - Code + PKCE sign-in, with an SRP fallback.
-  - Queue list and packet view through the reviewer gateway only.
-  - Distinct labels for "Not found", "extraction failed" and "no verified policy".
-  - The model summary marked as such.
+Delivers **beat 5**: a clinician decides on the routed case. It is demoed right after **beat 4**, in which the agent is refused the same tool.
 
-  Done when rendering tests pass for each label and for the summary box.
-- [ ] 1.6 Decisions through the reviewer gateway. Recorded: one clinician adverse determination and one clinician approval, each with its decision record showing the interceptor-supplied reviewer identity and decision time (B8, L3, L7).
-- [ ] 1.7 A screenshot of the workbench on a synthetic case, for the article.
+- [ ] 1.1 Reviewer gateway: add `record_clinician_approval` next to `record_adverse_determination`, with a Cedar permit for clinicians only. Beat 1 shows both gateways' `tools/list` side by side.
+- [ ] 1.2 Reviewer Lambda:
+  - the denial reason is required (schema plus server-side check; empty and whitespace-only are refused)
+  - each decision writes a decision record chained to the recommendation record
+  - the reviewer identity is labeled "as asserted by the clinician app"
+- [ ] 1.3 A single local page:
+  - hosted-UI sign-in through a standard OAuth library that handles PKCE and `state`, bound to 127.0.0.1
+  - the queue
+  - the packet view, with "Not found", "extraction failed" and "no verified policy" labeled distinctly and the model summary marked
+  - approve, or deny with a required reason, through the reviewer gateway under the clinician's token
 
-## Workflow follow-up
-
-- Update the claims ledger for B8.
+  The queue and packets are read with the operator's local AWS credentials (single tenant, demo only; a README limitation).
+- [ ] 1.4 Recorded:
+  - beat 4: the agent refused at the authorizer and by Cedar (from D4)
+  - beat 5: the clinician succeeds with the same tool
+  - the decision record and its chain
+  - a screenshot

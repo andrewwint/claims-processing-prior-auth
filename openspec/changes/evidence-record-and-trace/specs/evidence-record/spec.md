@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Keeps a complete, tamper-evident account of each case outside the agent's control: a recommendation record and a decision record, chained by hash to each other and to the trace.
+Keeps a tamper-evident account of each case outside the agent's control: a recommendation record and a decision record, chained by hash to each other and to the trace.
 
 ## ADDED Requirements
 
@@ -13,78 +13,45 @@ The agent runtime SHALL write one recommendation record per case at the end of i
 - **WHEN** an agent session ends
 - **THEN** a recommendation record with every listed field exists, and the final span carries its hash
 
-### Requirement: Reviewer identity comes from the validated token
-The reviewer gateway's request interceptor SHALL validate the caller's token and overwrite the reviewer identity and tenant in the tool arguments. The decision record SHALL take its reviewer identity from those values.
-
-#### Scenario: Spoofed reviewer name
-- **WHEN** a clinician's call carries a `reviewer_username` that is not theirs
-- **THEN** the interceptor overwrites it, and the decision record shows the validated username
-
-#### Scenario: Invalid token
-- **WHEN** the interceptor cannot validate the caller's token
-- **THEN** the call is answered with an error and the target is not invoked
-
-### Requirement: A decision record is written by the reviewer service
-The reviewer service SHALL write one decision record per decision. The record SHALL hold the reviewer identity, the decision, the reason, the recommendation record's hash, and a server-generated decision timestamp. Its hash SHALL be set on the reviewer call's span.
-
-#### Scenario: Scripted clinician decision
-- **WHEN** a synthetic clinician records a decision through the reviewer gateway
-- **THEN** a decision record exists that references the recommendation record's hash, and the reviewer span carries the decision record's hash
-
-### Requirement: The records and the trace form a verifiable chain
-Recomputing each record's hash from its stored object SHALL match the hash referenced by the next link: decision record → recommendation record → trace.
+### Requirement: Decision records chain to the recommendation
+The reviewer and approval services SHALL write one decision record per decision. The record SHALL hold the decision, the reason, the reviewer identity, the recommendation record's hash and a server-generated decision time. The reviewer identity SHALL be labeled as asserted by the clinician app.
 
 #### Scenario: Chain check
 - **WHEN** the chain verifier runs on a decided case
-- **THEN** every recomputed hash matches its reference
+- **THEN** every hash recomputed from the stored objects matches its reference
 
 #### Scenario: Broken link
 - **WHEN** any stored record differs from the hash that references it
 - **THEN** the verifier reports the broken link
 
-### Requirement: Hashes use one canonical-JSON function
-The writer, the trace, and the verifier SHALL use the same canonical-JSON hash function, and the stored object's bytes SHALL hash to the record's hash.
+### Requirement: One canonical-JSON hash function
+The writer, the trace and the verifier SHALL use the same canonical-JSON hash function.
 
 #### Scenario: Hash from storage
 - **WHEN** a stored record is downloaded and hashed
 - **THEN** the hash equals the one the writer computed
 
-### Requirement: The agent cannot write or rewrite decision records
-The agent runtime and case-tool roles SHALL be able to write only under `recommendations/`. Only the reviewer service and the approval service SHALL write under `decisions/`.
+### Requirement: The agent cannot rewrite evidence or write decisions
+Records SHALL be write-once under governance retention. The agent role SHALL be able to write only under `recommendations/`.
+
+#### Scenario: Overwrite attempt
+- **WHEN** the agent role attempts to overwrite an existing record
+- **THEN** the request is refused
 
 #### Scenario: Agent writes a decision
 - **WHEN** the agent role attempts to write under `decisions/`
 - **THEN** the request is refused
 
-### Requirement: The agent cannot rewrite evidence
-Records SHALL be stored write-once, under governance retention. No role other than the teardown role SHALL be able to overwrite, delete, or bypass that retention.
-
-#### Scenario: Overwrite or delete attempt
-- **WHEN** the agent role attempts to overwrite or delete an existing record
-- **THEN** the request is refused
-
-#### Scenario: Governance bypass attempt
-- **WHEN** a principal other than the teardown role attempts to bypass governance retention
-- **THEN** the request is refused
-
 ### Requirement: Records are encrypted under a customer-managed key
-Each record SHALL be encrypted with SSE-KMS under the project's single customer-managed KMS key. A write that names any other key SHALL be refused.
+Each record SHALL be encrypted with SSE-KMS under the project's single customer-managed key.
 
 #### Scenario: Stored record
 - **WHEN** a record is written
 - **THEN** its object metadata names the customer-managed key
 
-#### Scenario: Wrong key
-- **WHEN** a writer attempts to store a record under a different key
-- **THEN** the request is refused
-
 ### Requirement: Timestamps are server-generated and answer the decision clock
-Received, recommended, and decided timestamps SHALL be generated by the system at intake, at the runtime and at the reviewer service. They SHALL never be taken from the model or the packet. Elapsed time SHALL be checked against the 7-day standard and 72-hour expedited windows.
+Received and decided timestamps SHALL be generated by the system and never taken from the model or the packet. Elapsed time SHALL be checked against the 7-day standard and 72-hour expedited windows.
 
 #### Scenario: Model-supplied timestamp
 - **WHEN** a packet or model output contains a timestamp field
 - **THEN** the record ignores it
-
-#### Scenario: Window boundary
-- **WHEN** elapsed time equals a window, or exceeds it by one second
-- **THEN** the case is reported as within, or outside, that window
