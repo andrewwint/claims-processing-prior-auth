@@ -1,0 +1,65 @@
+{
+  "_label": "SYNTHETIC DATA ONLY. Compiled from a synthetic policy.",
+  "policy_id": "SYN-LARKSPUR-SPINE-01",
+  "policy_version": "SYN-LARKSPUR-SPINE-01 v2026.1",
+  "payer_id": "SYN-PAYER-LARKSPUR",
+  "cpt_code": "63030",
+  "criteria": [
+    {
+      "id": "C1",
+      "text": "At least six weeks of conservative therapy, documented as completed visits.",
+      "policy_version": "SYN-LARKSPUR-SPINE-01 v2026.1",
+      "source_location": {
+        "file": "larkspur-lumbar-discectomy.md",
+        "line": 15,
+        "section": "2.1"
+      },
+      "evidence_rule": {
+        "doc_kinds": [
+          "physical therapy notes"
+        ],
+        "pattern": "(?i:\\b(?P<visits>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) visits over (?P<weeks>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) weeks\\b)",
+        "minimums": {
+          "visits": 1,
+          "weeks": 6
+        }
+      }
+    },
+    {
+      "id": "C2",
+      "text": "Imaging confirms the diagnosis: disc herniation with nerve root compression.",
+      "policy_version": "SYN-LARKSPUR-SPINE-01 v2026.1",
+      "source_location": {
+        "file": "larkspur-lumbar-discectomy.md",
+        "line": 20,
+        "section": "2.2"
+      },
+      "evidence_rule": {
+        "doc_kinds": [
+          "radiology report"
+        ],
+        "pattern": "\\bdisc herniation with nerve root compression\\b",
+        "minimums": {}
+      }
+    },
+    {
+      "id": "C3",
+      "text": "Functional limitation documented with an Oswestry Disability Index of at least 40 percent.",
+      "policy_version": "SYN-LARKSPUR-SPINE-01 v2026.1",
+      "source_location": {
+        "file": "larkspur-lumbar-discectomy.md",
+        "line": 25,
+        "section": "2.3"
+      },
+      "evidence_rule": {
+        "doc_kinds": [
+          "clinic note"
+        ],
+        "pattern": "\\bOswestry Disability Index (?P<odi>\\d+) percent\\b",
+        "minimums": {
+          "odi": 40
+        }
+      }
+    }
+  ]
+}
