@@ -32,6 +32,16 @@
   {
     "definition": {
       "cedar": {
+        "statement": "permit(\n  principal is AgentCore::OAuthUser,\n  action == AgentCore::Action::\"ReviewerTools___record_clinician_approval\",\n  resource == AgentCore::Gateway::\"<reviewer-gateway-arn>\"\n) when { principal.hasTag(\"pa_role\") && principal.getTag(\"pa_role\") == \"clinician\" };"
+      }
+    },
+    "enforcementMode": "ACTIVE",
+    "name": "prior_auth_permit_clinician_approval",
+    "status": "ACTIVE"
+  },
+  {
+    "definition": {
+      "cedar": {
         "statement": "permit(\n  principal is AgentCore::OAuthUser,\n  action == AgentCore::Action::\"ReviewerTools___record_adverse_determination\",\n  resource == AgentCore::Gateway::\"<reviewer-gateway-arn>\"\n) when { principal.hasTag(\"pa_role\") && principal.getTag(\"pa_role\") == \"clinician\" };"
       }
     },

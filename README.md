@@ -15,7 +15,7 @@ If you have ten minutes, read in this order:
 
    | Beat | What it shows | Status |
    |---|---|---|
-   | 1 | Both gateways side by side: the agent's five case-building tools and no denial tool; the reviewer gateway's clinician-only tools | Live (adding `record_clinician_approval`) |
+   | 1 | Both gateways side by side: the agent's five case-building tools and no denial tool; the reviewer gateway's clinician-only tools | **Proven** |
    | 2 | The Strands agent (three gathering tools, Nova Pro) builds a cited packet; `decide()` approves | In progress |
    | 3 | One note removed: routed to the reviewer, gap marked | In progress |
    | 4 | The agent refused at the reviewer gateway, first by the authorizer, then by Cedar | **Proven** |
@@ -27,7 +27,7 @@ If you have ten minutes, read in this order:
 3. **The claims ledger:** [openspec/claims-ledger.md](openspec/claims-ledger.md). One row per article claim, with the evidence that proves it and its status.
 4. **The evidence:** [evidence/](evidence/). Redacted records from deployed runs: gateway configuration, policy text, live allowed and denied calls, and validation findings.
 
-**Status:** the gateways and Cedar policies are deployed and proven (beats 1 and 4). Beats 2, 3 and 5 are being built. The article is published only after every ledger row is green.
+**Status:** the gateways and Cedar policies are deployed and proven (beats 1 and 4). Beats 2, 3, 5 and 6 are being built. The article is published only after every ledger row is green.
 
 ## What this repository demonstrates
 

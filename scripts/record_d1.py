@@ -183,6 +183,32 @@ def b4_call(session, out, named) -> None:
     print("B4 layer 2 agent call:", _summary(r))
 
 
+def beat1(session, out, named) -> None:
+    """Beat 1 plus the approval-service checks, after the combined deploy."""
+    agent = gc.agent_token(out, session)
+    clinician = gc.user_token(out, session, "syn-clinician-1")
+    A, R = out["AgentGatewayUrl"], out["ReviewerGatewayUrl"]
+    approve = lambda pid: gc.mcp(A, agent, "tools/call", {"name": "ApprovalService___record_approval",
+                                                           "arguments": _approval_args(pid)})
+    deny_args = {"case_id": "SYN-CASE-1", "reason": "No functional limitation measure documented (synthetic)."}
+    results = {
+        "beat1_agent_gateway_tools_list": gc.mcp(A, agent, "tools/list"),
+        "beat1_reviewer_gateway_tools_list_clinician": gc.mcp(R, clinician, "tools/list"),
+        "approval_passing_packet_approved": approve("SYN-PKT-PASS"),
+        "approval_failing_packet_refused": approve("SYN-PKT-FAIL"),
+        "approval_forged_value_packet_refused": approve("SYN-PKT-FORGED-VALUE"),
+        "agent_rejected_at_reviewer_denial_tool": gc.mcp(R, agent, "tools/call",
+            {"name": "ReviewerTools___record_adverse_determination", "arguments": deny_args}),
+        "agent_rejected_at_reviewer_approval_tool": gc.mcp(R, agent, "tools/call",
+            {"name": "ReviewerTools___record_clinician_approval", "arguments": {"case_id": "SYN-CASE-1"}}),
+        "clinician_records_approval": gc.mcp(R, clinician, "tools/call",
+            {"name": "ReviewerTools___record_clinician_approval", "arguments": {"case_id": "SYN-CASE-1"}}),
+    }
+    save("beat1-and-approval-checks.json", results, named)
+    for k, v in results.items():
+        print(k, _summary(v))
+
+
 def main() -> int:
     session = boto3.Session(region_name="us-east-1")
     out = gc.outputs()
@@ -197,7 +223,7 @@ def main() -> int:
         calls(session, out, named, sys.argv[2])
         return 0
     {"state": state, "smoke": smoke, "tokens": tokens, "policies": policies, "calls": calls,
-     "b4call": b4_call}[sys.argv[1]](session, out, named)
+     "b4call": b4_call, "beat1": beat1}[sys.argv[1]](session, out, named)
     return 0
 
 

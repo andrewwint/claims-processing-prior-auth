@@ -52,7 +52,7 @@ def test_no_denial_tool_on_the_agent_target():
 
 
 def test_denial_tool_lives_only_on_the_reviewer_target():
-    assert [t["name"] for t in REVIEWER_TOOLS] == ["record_adverse_determination"]
+    assert [t["name"] for t in REVIEWER_TOOLS] == ["record_adverse_determination", "record_clinician_approval"]
     assert REVIEWER_TARGET == "ReviewerTools"
 
 
@@ -174,3 +174,22 @@ def test_packet_missing_from_the_index_is_refused():
     del trusted["packet_index"]["SYN-PKT-PASS"]
     assert approval.review("SYN-PKT-PASS", checks.packet_hash(PASS), packets=PACKETS, trusted=trusted) == [
         "packet SYN-PKT-PASS is not in the packet store's index"]
+
+
+
+def test_forged_value_packet_is_refused_by_source_match():
+    out = _call_stored("SYN-PKT-FORGED-VALUE")
+    assert out["approved"] is False
+    assert any(r.startswith("source match: value for C2") for r in out["reasons"])
+
+
+def test_reviewer_denial_reason_required_server_side():
+    c = ctx(REVIEWER_TARGET, "record_adverse_determination")
+    for bad in ({"case_id": "C"}, {"case_id": "C", "reason": ""}, {"case_id": "C", "reason": "   "}, {"case_id": "C", "reason": 5}):
+        assert reviewer_tools.handler(bad, c)["recorded"] is False
+
+
+def test_clinician_approval_tool():
+    c = ctx(REVIEWER_TARGET, "record_clinician_approval")
+    assert reviewer_tools.handler({"case_id": "SYN-CASE-1"}, c)["decision"] == "clinician_approval"
+    assert reviewer_tools.handler({"case_id": " "}, c)["recorded"] is False

@@ -21,6 +21,7 @@ def clinician_test(tag_shape: str) -> str:
         raise ValueError(f"unknown tag shape {tag_shape!r}; record it from a real token first")
     return CLINICIAN_TESTS[tag_shape]
 DENIAL_TOOL = "record_adverse_determination"
+CLINICIAN_APPROVAL_TOOL = "record_clinician_approval"
 
 
 def action(target: str, tool: str) -> str:
@@ -88,6 +89,16 @@ def permit_agent_record_approval(agent_sub: str, agent_arn: str) -> str:
     )
 
 
+def permit_clinician_approval(reviewer_arn: str, clinician_test: str) -> str:
+    return (
+        "permit(\n"
+        "  principal is AgentCore::OAuthUser,\n"
+        f"  action == {action(REVIEWER_TARGET, CLINICIAN_APPROVAL_TOOL)},\n"
+        f"  resource == {gateway(reviewer_arn)}\n"
+        f") when {{ {clinician_test} }};"
+    )
+
+
 def all_policies(*, agent_sub: str, agent_arn: str, reviewer_arn: str, tag_shape: str) -> dict[str, str]:
     """Policy name -> Cedar statement. Every permit constrains its principal."""
     if not agent_sub or any(c in agent_sub for c in '"\\;{}() \n'):
@@ -97,5 +108,6 @@ def all_policies(*, agent_sub: str, agent_arn: str, reviewer_arn: str, tag_shape
         "prior_auth_permit_agent_case_tools": permit_agent_case_tools(agent_sub, agent_arn),
         "prior_auth_permit_agent_record_approval": permit_agent_record_approval(agent_sub, agent_arn),
         "prior_auth_permit_clinician_denial": permit_clinician_denial(reviewer_arn, clinician_test_expr),
+        "prior_auth_permit_clinician_approval": permit_clinician_approval(reviewer_arn, clinician_test_expr),
         "prior_auth_forbid_denial": forbid_denial(agent_sub, reviewer_arn, clinician_test_expr),
     }

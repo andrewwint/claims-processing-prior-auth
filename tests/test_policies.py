@@ -24,7 +24,7 @@ def test_forbid_redacts_to_the_form_the_article_will_copy():
 
 
 def test_four_policies_one_forbid_naming_the_agent():
-    assert len(P) == 4
+    assert len(P) == 5
     forbids = [s for s in P.values() if s.startswith("forbid(")]
     assert len(forbids) == 1
     f = forbids[0]
@@ -83,7 +83,7 @@ def test_both_gateways_attach_the_engine_in_enforce_mode(stacks):
 def test_policies_are_active_and_use_default_validation(stacks):
     _, p = stacks
     pols = p.find_resources("AWS::BedrockAgentCore::Policy").values()
-    assert len(pols) == 4
+    assert len(pols) == 5
     for pol in pols:
         assert pol["Properties"]["EnforcementMode"] == "ACTIVE"
         assert "ValidationMode" not in pol["Properties"]
@@ -131,5 +131,13 @@ def test_forbid_is_created_after_every_permit(stacks):
     pols = p.find_resources("AWS::BedrockAgentCore::Policy")
     forbid = next(r for k, r in pols.items() if "forbid" in k)
     permits = [k for k in pols if "permit" in k]
-    assert len(permits) == 3
+    assert len(permits) == 4
     assert sorted(forbid["DependsOn"]) == sorted(permits)
+
+
+
+def test_clinician_approval_permit_is_clinician_only_and_forbid_is_unchanged():
+    s = P["prior_auth_permit_clinician_approval"]
+    assert 'ReviewerTools___record_clinician_approval' in s and "principal is AgentCore::OAuthUser" in s and TEST in s
+    forbid = P["prior_auth_forbid_denial"]
+    assert "record_clinician_approval" not in forbid

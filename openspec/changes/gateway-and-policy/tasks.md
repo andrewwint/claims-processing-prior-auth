@@ -108,5 +108,5 @@
 
 Delivers demo **beats 1 and 4**. Beat 4 is already proven (task 4.2 and the D4 evidence); beat 1 needs the tasks below.
 
-- [ ] 6.1 Add `record_clinician_approval` to the reviewer target, next to `record_adverse_determination`, with a Cedar permit for clinicians only. **Deploy with approval.**
-- [ ] 6.2 Record both gateways' `tools/list` side by side: the agent gateway's five case-building tools with no denial tool, and the reviewer gateway's two clinician tools. Shown by `python -m scripts.demo 1`.
+- [x] 6.1 Add `record_clinician_approval` to the reviewer target, next to `record_adverse_determination`, with a Cedar permit for clinicians only. **Deploy with approval.**
+- [x] 6.2 (done 2026-10-16: `evidence/2026-10-16/d1/beat1-and-approval-checks.json`) Record both gateways' `tools/list` side by side: the agent gateway's five case-building tools with no denial tool, and the reviewer gateway's two clinician tools. Shown by `python -m scripts.demo 1`.

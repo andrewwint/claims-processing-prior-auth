@@ -18,6 +18,12 @@
       "patient_id": "SYN-PAT-0001",
       "payer_id": "SYN-PAYER-A",
       "cpt_code": "63030"
+    },
+    "SYN-CASE-FV": {
+      "case_id": "SYN-CASE-FV",
+      "patient_id": "SYN-PAT-0001",
+      "payer_id": "SYN-PAYER-A",
+      "cpt_code": "63030"
     }
   },
   "criteria": {
@@ -121,6 +127,7 @@
   "packet_index": {
     "SYN-PKT-PASS": "SYN-CASE-PASS",
     "SYN-PKT-FAIL": "SYN-CASE-FAIL",
-    "SYN-PKT-FORGED": "SYN-CASE-FORGED"
+    "SYN-PKT-FORGED": "SYN-CASE-FORGED",
+    "SYN-PKT-FORGED-VALUE": "SYN-CASE-FV"
   }
 }

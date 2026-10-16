@@ -93,7 +93,8 @@ def test_approval_service_has_its_own_function_and_role(template):
 
 
 def test_reviewer_target_is_named_for_the_article_snippet(template):
-    assert _tools(_one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="ReviewerTools")) == ["record_adverse_determination"]
+    assert _tools(_one(template, "AWS::BedrockAgentCore::GatewayTarget", Name="ReviewerTools")) == [
+        "record_adverse_determination", "record_clinician_approval"]
 
 
 def test_record_approval_schema_has_no_booleans(template):

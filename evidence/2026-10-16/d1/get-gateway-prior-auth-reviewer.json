@@ -39,7 +39,8 @@
       "name": "ReviewerTools",
       "status": "READY",
       "tools": [
-        "record_adverse_determination"
+        "record_adverse_determination",
+        "record_clinician_approval"
       ]
     }
   ]
