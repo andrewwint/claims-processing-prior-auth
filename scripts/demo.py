@@ -44,6 +44,18 @@ def beat4(session, out) -> None:
     print("Layer 2 (Cedar forbid) evidence: evidence/2026-10-16/d1/b4-layer2-agent-call.json")
 
 
+def _run_case(case_id: str):
+    def run(session, out) -> None:
+        import json as _json
+        from pathlib import Path as _Path
+
+        from scripts.intake import intake_token, invoke
+        arn = _json.loads(_Path(".local/runtime.json").read_text())["arn"]
+        result = invoke(case_id, arn, intake_token(out, session))
+        print(f"{case_id} -> {result['outcome']}" + (f" (gaps: {', '.join(result['gaps'])})" if result.get("gaps") else ""))
+    return run
+
+
 def not_built(beat: int, change: str):
     def run(session, out) -> None:
         print(f"Beat {beat} is delivered by `{change}` and is not built yet.")
@@ -52,8 +64,8 @@ def not_built(beat: int, change: str):
 
 BEATS = {
     "1": beat1,
-    "2": not_built(2, "case-packet-and-failure-routing"),
-    "3": not_built(3, "case-packet-and-failure-routing"),
+    "2": _run_case("SYN-CASE-CLEAN-1"),
+    "3": _run_case("SYN-CASE-CF-1"),
     "4": beat4,
     "5": not_built(5, "clinician-workbench"),
     "6": not_built(6, "evidence-record-and-trace"),

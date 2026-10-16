@@ -48,7 +48,7 @@ If a newer document disagrees with these notes, the newer document wins. Update 
 - **Protocol.** HTTP: `POST /invocations` and `GET /ping` on port 8080. Each request carries a session ID, which gives one isolated session per case.
 - **Inbound authentication.** SigV4 or a JWT authorizer, never both. JWT runtimes are invoked over HTTPS with a bearer token.
 - **Network mode.** `PUBLIC` or `VPC`. VPC mode requires subnets in specific us-east-1 Availability Zone IDs, and its network interfaces can remain for hours after deletion.
-- **Metadata service v2.** Runtimes must require IMDS/MMDS v2 or invocations fail. The setting is applied with `UpdateAgentRuntime` after creation; it is not available on create or in CloudFormation.
+- **Metadata service v2.** Runtimes must require IMDS/MMDS v2. Observed 2026-10-16: a runtime created through CloudFormation already had `requireMMDSV2: true`. `scripts/require_mmdsv2.py` checks and only updates if needed; an update must copy every field, because `UpdateAgentRuntime` replaces the configuration.
 - **Logs.** Container output goes to a per-runtime log group that is created on the first invocation. The opt-in `APPLICATION_LOGS` delivery includes the request payload.
 
 ## Observability
