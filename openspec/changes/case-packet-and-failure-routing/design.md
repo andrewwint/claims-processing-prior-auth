@@ -8,22 +8,32 @@ The rule underneath every decision here: **an approval is derived only from trus
 
 ## Decisions
 
-### D1. Trusted sources and the packet store
+### D1. Trusted sources and the stores (as built, PM 2026-10-16)
 
-| Source | Holds | Written by | Read by |
+**Read-only, bundled at build time.** `scripts/stage_bundle.py` copies the committed synthetic data into the Lambda and Runtime packages (`prior_auth/trusted/`). The stores are immutable at run time: no role, model or tool can write them. They are read through `prior_auth.stores`.
+
+| Source | Holds | Built from | Read by |
 |---|---|---|---|
-| Request records, `s3://prior-auth-cases/requests/<case_id>.json` | case ID, payer, CPT, patient ID, received time | the intake script, under the operator's credentials | runtime, approval service |
-| Compiled criteria, `data/policies/compiled/<payer>/<cpt>.json` | criterion ID, text, policy version, source location | the compile step, committed and bundled with the code | runtime, approval service |
-| Chart store, `s3://prior-auth-charts/docs/<doc_id>.json` | pages and lines of one synthetic document | `scripts/seed_charts.py`, under the operator's credentials | runtime, approval service |
-| Chart index, `s3://prior-auth-charts/index.json` | `doc_id` → owning patient ID | `scripts/seed_charts.py` | runtime, approval service |
-| Eligibility records, `data/cases/eligibility.json` (synthetic, bundled with the case tools) | member ID → payer, plan, coverage dates, covered CPT codes | committed with the synthetic data | `check_eligibility` |
-| **Packet store**, `s3://prior-auth-cases/packets/<packet_id>.json` | the packet (untrusted claims) | the runtime | approval service |
+| Compiled criteria, `trusted/policies/<payer>/<cpt>.json` | criterion ID, text, policy version, source location, evidence rule | `data/policies/compile.py` from `data/policies/source/` | case tools, runtime, approval service |
+| Chart documents, `trusted/charts/<doc_id>.json` | the pages and lines of one synthetic document, and its kind | `data/cases/generate.py` | case tools, runtime, approval service |
+| Chart index, `trusted/charts/index.json` | `doc_id` → owning patient ID | `data/cases/generate.py` | runtime, approval service |
+| Request records, `trusted/cases/cases.json` | case ID, member, payer, CPT, patient, tenant, the case's documents | `data/cases/generate.py` | case tools, runtime, approval service |
+| Eligibility, `trusted/cases/eligibility.json` | member → payer, plan, coverage dates, covered CPT codes | `data/cases/generate.py` | `check_eligibility` |
+
+**Written at run time, in the evidence bucket** (`evidence-record-and-trace`):
+
+| Prefix | Holds | Written by | Read by |
+|---|---|---|---|
+| `packets/<packet_id>.json` | the packet (untrusted claims); `packet_id` is `PKT-<case_id>`, so a packet cannot choose its case | the runtime role | the approval service role |
+| `queue/<case_id>.json` | routed cases for the reviewer | the case-tool role (`route_to_reviewer`) | the workbench (operator credentials, demo only) |
+| `recommendations/<case_id>.json` | the recommendation record | the runtime role | the reviewer service, the verifier |
+| `decisions/<case_id>.json` | the decision record | the reviewer and approval service roles | the verifier |
 
 - **IAM.**
-  - The runtime role can write only `packets/`, and can only read the other sources.
-  - The approval service's role is read-only on both buckets.
-  - Neither role can write `requests/`, `docs/` or `index.json`.
-- **Bucket names.** The physical names carry a deploy-time suffix. The names above are logical.
+  - Each role can write only its own prefixes, and the bucket policy denies everything else (`evidence-record-and-trace` D3).
+  - No role has write access to the bundled stores, because they are not stored anywhere writable.
+  - The runtime role has no permission for `record_approval` outside the gateway.
+- **Changing the data** means a commit, a rebuild and a deploy. Each deploy is recorded with its SHA in `evidence/deploys.jsonl`.
 
 ### D2. One checks module
 
@@ -73,9 +83,9 @@ The rule underneath every decision here: **an approval is derived only from trus
 `record_approval(packet_id, packet_hash)`:
 1. loads the stored packet (unknown → refuse)
 2. verifies the SHA-256 of its canonical JSON (mismatch → refuse; this proves integrity, not truth)
-3. loads the request record for the packet's `case_id` from the case store (missing → refuse)
+3. derives the case from the packet ID (`PKT-<case_id>`) and loads its request record from the bundled stores (missing → refuse)
 4. loads the compiled criteria for the request's (payer, CPT) (missing → refuse, "no verified policy")
-5. runs `checks.recompute()` against the chart store and index
+5. runs `checks.recompute()` against the bundled chart documents and index
 6. records the approval only if every criterion is Met and nothing failed
 
 It writes nothing on refusal and returns the failures. This replaces the fixture-backed service from `gateway-and-policy`, which uses the same algorithm against fixture copies of the trusted sources.
@@ -112,7 +122,7 @@ The eligibility row and the last two extraction-adjacent rows (throttling and un
   - CodeZip ARM64 build, HTTP protocol, public network mode
   - a JWT authorizer whose allowed client is the `prior-auth-intake` app client only (client credentials)
   - models from the allow-list
-- **Intake.** `scripts/intake.py` writes the request record, then invokes the runtime with a token from the intake client and a session ID derived from the case ID.
+- **Intake.** `scripts/intake.py` names a case from the bundled request records, then invokes the runtime with a token from the intake client and a session ID derived from the case ID.
 - **Session IDs.** `runtimeSessionId` must be 33–256 characters, and it doubles as an idempotency token (contract notes). The ID is `prior-auth-case-<case_id>-<first 16 hex of sha256(case_id)>`: deterministic per case, and always at least 33 characters. A test checks the length for the shortest possible case ID.
 - **Agent token without a secret (PM, 2026-10-16; contract-read in the notes).**
   - An AgentCore Identity OAuth2 credential provider (vendor `CognitoOauth2`, client credentials) holds the agent client's secret in the token vault.

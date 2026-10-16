@@ -1,0 +1,191 @@
+{
+  "model": "amazon.nova-pro-v1:0",
+  "tools_given": [
+    "AgentTools___check_eligibility",
+    "AgentTools___extract_clinical_evidence",
+    "AgentTools___fetch_policy_criteria"
+  ],
+  "sha": "3b5b81d",
+  "date": "2026-10-16",
+  "all_pass": true,
+  "cases": [
+    {
+      "case_id": "SYN-CASE-CF-1",
+      "label": "needs review",
+      "expected": "routed",
+      "outcome": "routed",
+      "reason": "criteria not met",
+      "gaps": [
+        "C3"
+      ],
+      "citations": [
+        [
+          "C1",
+          "SYN-DOC-103-PT",
+          1,
+          3
+        ],
+        [
+          "C2",
+          "SYN-DOC-103-MRI",
+          1,
+          3
+        ]
+      ],
+      "seconds": 7.2,
+      "pass": true
+    },
+    {
+      "case_id": "SYN-CASE-CF-2",
+      "label": "needs review",
+      "expected": "routed",
+      "outcome": "routed",
+      "reason": "criteria not met",
+      "gaps": [
+        "C2"
+      ],
+      "citations": [
+        [
+          "C1",
+          "SYN-DOC-104-PT",
+          1,
+          3
+        ],
+        [
+          "C3",
+          "SYN-DOC-104-FUNC",
+          1,
+          3
+        ]
+      ],
+      "seconds": 6.2,
+      "pass": true
+    },
+    {
+      "case_id": "SYN-CASE-CLEAN-1",
+      "label": "approve",
+      "expected": "approved",
+      "outcome": "approved",
+      "reason": null,
+      "gaps": null,
+      "citations": [
+        [
+          "C1",
+          "SYN-DOC-101-PT",
+          1,
+          3
+        ],
+        [
+          "C2",
+          "SYN-DOC-101-MRI",
+          1,
+          3
+        ],
+        [
+          "C3",
+          "SYN-DOC-101-FUNC",
+          1,
+          3
+        ]
+      ],
+      "seconds": 6.3,
+      "pass": true
+    },
+    {
+      "case_id": "SYN-CASE-CLEAN-2",
+      "label": "approve",
+      "expected": "approved",
+      "outcome": "approved",
+      "reason": null,
+      "gaps": null,
+      "citations": [
+        [
+          "C1",
+          "SYN-DOC-102-PT",
+          1,
+          3
+        ],
+        [
+          "C2",
+          "SYN-DOC-102-MRI",
+          1,
+          3
+        ],
+        [
+          "C3",
+          "SYN-DOC-102-FUNC",
+          1,
+          3
+        ]
+      ],
+      "seconds": 6.7,
+      "pass": true
+    },
+    {
+      "case_id": "SYN-CASE-FORGED",
+      "label": "needs review",
+      "expected": "routed",
+      "outcome": "routed",
+      "reason": "checks failed",
+      "gaps": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "citations": [
+        [
+          "C1",
+          "SYN-DOC-106-PT",
+          3,
+          3
+        ],
+        [
+          "C2",
+          "SYN-DOC-106-MRI",
+          3,
+          3
+        ],
+        [
+          "C3",
+          "SYN-DOC-106-FUNC-FORGED",
+          3,
+          3
+        ]
+      ],
+      "seconds": 6.3,
+      "pass": true
+    },
+    {
+      "case_id": "SYN-CASE-WRONG-PATIENT",
+      "label": "needs review",
+      "expected": "routed",
+      "outcome": "routed",
+      "reason": "checks failed",
+      "gaps": [
+        "C3"
+      ],
+      "citations": [
+        [
+          "C1",
+          "SYN-DOC-105-PT",
+          1,
+          3
+        ],
+        [
+          "C2",
+          "SYN-DOC-105-MRI",
+          1,
+          3
+        ],
+        [
+          "C3",
+          "SYN-DOC-102-FUNC",
+          1,
+          3
+        ]
+      ],
+      "seconds": 5.9,
+      "pass": true
+    }
+  ]
+}

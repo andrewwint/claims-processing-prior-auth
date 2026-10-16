@@ -41,5 +41,5 @@ None.
 ## Impact
 
 - **New code:** `data/policies/`, `data/cases/`, `src/prior_auth/agent/`, the real tools, `infra/runtime_stack.py`, `scripts/intake.py`, and tests.
-- **AWS resources:** an AgentCore Runtime, the intake app client, and the case and chart stores in the evidence bucket's account. All of them are removed by teardown.
+- **AWS resources:** an AgentCore Runtime and the intake app client. Trusted stores are bundled into the packages; packets go to the evidence bucket's account. All of them are removed by teardown.
 - **Depends on** `gateway-and-policy`.
