@@ -41,6 +41,7 @@ The service constraints this design relies on are in [docs/contract-notes.md](..
 - **Clinician.** A separate app client used by synthetic users in the `clinician` group.
   - The claim that carries group membership (`cognito:groups`) and how it maps to a principal tag are confirmed from a real token before policies are written.
   - Synthetic tenant users are in the `tenant-a` and `tenant-b` groups.
+- **User pool.** `AllowAdminCreateUserOnly` is true, so there is no self-signup. Synthetic users are created by an administrator script, and their passwords are generated into Secrets Manager. No password is ever written to the repository or to evidence.
 - **Explicit principals.** Every permit names its principal: the agent's `sub`, or the clinician group tag. There is no permit for all principals.
 
 ### D4. Infrastructure as code
@@ -49,10 +50,18 @@ The service constraints this design relies on are in [docs/contract-notes.md](..
 - **Two stacks** (the deploy has two passes):
   1. Cognito, the Lambdas (each with an explicit log group), both gateways and their targets.
   2. The policy engine and policies, attached through the L1 `CfnGateway.policyEngineConfiguration` with `mode: ENFORCE` set explicitly.
-- **Budgets** live in their own stack. It is deployed first and excluded from teardown.
+- **Budgets** live in their own stack. It is deployed first and excluded from teardown. The account already had spend this month, so an account-wide budget's thresholds are offset by the month-to-date baseline. A second budget, filtered on the project tag, carries the exact tiers once the tag is active (task 1.2).
 - **Validation mode.** The default mode. An automated-reasoning finding is recorded, and work stops for a decision. The mode is never changed to get past a finding.
 - **Gateway role.** It includes `bedrock-agentcore:AuthorizeAction`, `PartiallyAuthorizeActions` and `GetPolicyEngine`. These are missing from default roles, and without them every call is denied.
 - **No secrets in the agent.** Both Lambda targets use `GATEWAY_IAM_ROLE` as their credential. The agent's client secret is stored in Secrets Manager for the caller that obtains tokens. It is never placed in tool configuration (A4).
+
+### D6. Transaction Search is account-wide
+
+Transaction Search and its span indexing percentage apply to the whole account, not just this project.
+
+- **Before enabling (task 3.4):** the script records the current state and the indexing percentage to `evidence/`.
+- **Teardown:** restores both values.
+- **Verifier:** reports the restored values next to the recorded ones, and fails if they differ.
 
 ### D5. Evidence is captured by scripts, not by hand
 
@@ -65,7 +74,7 @@ The service constraints this design relies on are in [docs/contract-notes.md](..
 - raw responses for each allowed, rejected, denied and refused call
 - matching span records and `DenyDecisions` and `AllowDecisions` datapoints
 
-Account identifiers and ARNs are redacted before anything is committed.
+Before anything is committed, redaction replaces ARNs, account IDs and Cognito client IDs with stable placeholders such as `<ACCOUNT_ID>`, `<GATEWAY_ARN:reviewer>` and `<CLIENT_ID:agent>`. Redaction never touches action names (`<target>___<tool>`). B5 compares the policy text character for character, so a test asserts that the redacted policy text keeps the exact action string.
 
 ## Risks / Trade-offs
 
@@ -74,4 +83,5 @@ Account identifiers and ARNs are redacted before anything is committed.
 - [The test configuration that admits the agent is left in place] → The revert is a scripted step. Evidence capture fails unless the final `get-gateway` shows the clinician client only.
 - [Eventual consistency after policy or authorizer changes] → The evidence script waits for `ACTIVE` or `READY`, then retries the test call with backoff.
 - [Enforcement silently set to LOG_ONLY] → Every evidence run captures `get-gateway` and fails if the mode isn't `ENFORCE`.
+- [Transaction Search left changed for the whole account] → The previous values are recorded before enabling. Teardown restores them, and the verifier compares the two.
 - [Leftover resources] → The teardown verifier lists Cognito pools, gateways, targets, policy engines, policies, Lambda functions, Lambda log groups, IAM roles and log deliveries.

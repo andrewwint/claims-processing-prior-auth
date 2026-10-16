@@ -9,6 +9,7 @@ If a newer document disagrees with these notes, the newer document wins. Update 
 - **Creation.** Gateways are created with `CreateGateway` (asynchronous). Status values are `CREATING`, `READY`, `FAILED`, and others. Inbound authorizer types are `CUSTOM_JWT`, `AWS_IAM`, `AUTHENTICATE_ONLY`, and `NONE`.
 - **Targets.** A target exposes exactly the tools in its schema. An inline Lambda `toolSchema` is the most explicit option.
 - **Tool names.** Tools are named `<target>___<tool>`, with three underscores. (Docs: gateway tool naming.)
+- **Lambda target invocation.** The event is the map of tool arguments from the `inputSchema`. The tool name arrives in `context.client_context.custom["bedrockAgentCoreToolName"]` as `<target>___<tool>`, and the handler strips the prefix itself. Gateway, target and message IDs are in the same map. The function must return valid JSON. The docs' prose renders the delimiter as one underscore, but their code uses three, so the deployed `tools/list` is the authority. (Docs: Lambda function targets, read 2026-10-16.)
 - **Outbound credentials.** Each target takes exactly one credential provider. Lambda targets support only the gateway IAM role. Per-target API key or OAuth providers need OpenAPI or MCP targets. (Docs: gateway outbound auth.)
 - **Evidence of the exposed tools.** `ListGatewayTargets` and `GetGatewayTarget` show the full registered tool set. With a policy engine attached, `tools/list` is filtered by policy, so it is not proof on its own.
 

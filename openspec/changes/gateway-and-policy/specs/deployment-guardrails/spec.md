@@ -28,6 +28,20 @@ A teardown script SHALL remove every resource this project deploys, including La
 - **WHEN** a Lambda log group for a project function still exists after teardown
 - **THEN** verification fails and names the log group
 
+### Requirement: Account-wide settings are restored
+Before changing an account-wide setting such as Transaction Search, the project SHALL record its current values. Teardown SHALL restore those values, and verification SHALL report them.
+
+#### Scenario: Transaction Search restored
+- **WHEN** teardown runs after Transaction Search was enabled for this project
+- **THEN** the recorded state and indexing percentage are restored, and the verifier reports both next to the recorded values
+
+### Requirement: Synthetic users have no committed credentials
+The user pool SHALL disable self-signup. Synthetic users SHALL be created by an administrator, and their passwords SHALL be held only in Secrets Manager.
+
+#### Scenario: Self-signup disabled
+- **WHEN** the Cognito stack is synthesized
+- **THEN** `AllowAdminCreateUserOnly` is true
+
 ### Requirement: Data is synthetic
 Every document, member, and case used by this project SHALL be synthetic and labeled as synthetic.
 

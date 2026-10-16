@@ -16,7 +16,7 @@ The agent may submit an approval, but only by naming a stored packet. The approv
   - AWS Budgets alerts at USD 20, USD 50 and USD 100, plus a USD 500 alarm. The budgets persist across teardowns until the project ends.
   - A teardown script with a verification step. It lists every resource type, including the Lambda log groups, and fails if anything remains.
   - Every deploy is gated on Andrew's explicit approval.
-- **Identity** (one Cognito user pool, synthetic data):
+- **Identity** (one Cognito user pool, synthetic data; self-signup disabled, so only an administrator can create users; synthetic users' passwords live in Secrets Manager, never in the repository):
   - **Agent:** a Cognito app client that uses the client-credentials grant. It is not a user. The format of its token's `sub` and `client_id` is recorded from a real token and used as the forbid principal.
   - **Clinician:** a separate app client used by synthetic clinician users in the `clinician` group.
   - **Tenants:** synthetic users in the groups `tenant-a` and `tenant-b`.
@@ -41,6 +41,8 @@ The agent may submit an approval, but only by naming a stored packet. The approv
   - policy listings and their validation findings
   - `get-gateway`, showing `ENFORCE` and each gateway's allowed clients
   - allowed, denied and refused calls, with their spans, metrics and log lines
+- **Transaction Search** is an account-wide setting. Its current state and indexing percentage are recorded before it is enabled, and teardown restores them.
+- **Evidence redaction** replaces ARNs, account IDs and client IDs with placeholders. It never changes action names.
 - **Model allow-list:** one list in code and the matching IAM policy, with the Region pinned to us-east-1.
 - **Out of scope:** the agent runtime, real tool logic (apart from the approval service's checks against a fixture), the evidence store, the workbench and the harness.
 
