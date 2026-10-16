@@ -1,0 +1,94 @@
+{
+  "agent": {
+    "client_id": {
+      "type": "str",
+      "value": "<agent-client-id>"
+    },
+    "iss": {
+      "type": "str",
+      "value": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>"
+    },
+    "other_claims": [],
+    "scope": {
+      "type": "str",
+      "value": "prior-auth/tools"
+    },
+    "sub": {
+      "type": "str",
+      "value": "<agent-client-id>"
+    },
+    "token_use": {
+      "type": "str",
+      "value": "access"
+    }
+  },
+  "agent_sub_equals_client_id": true,
+  "clinician": {
+    "client_id": {
+      "type": "str",
+      "value": "<clinician-client-id>"
+    },
+    "cognito:groups": {
+      "type": "list",
+      "value": [
+        "clinician",
+        "tenant-a"
+      ]
+    },
+    "iss": {
+      "type": "str",
+      "value": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>"
+    },
+    "other_claims": [],
+    "scope": {
+      "type": "str",
+      "value": "aws.cognito.signin.user.admin"
+    },
+    "sub": {
+      "type": "str",
+      "value": "<uuid>"
+    },
+    "token_use": {
+      "type": "str",
+      "value": "access"
+    },
+    "username": {
+      "type": "str",
+      "value": "syn-clinician-1"
+    }
+  },
+  "groups_claim_is_json_array": true,
+  "tenant_staff": {
+    "client_id": {
+      "type": "str",
+      "value": "<clinician-client-id>"
+    },
+    "cognito:groups": {
+      "type": "list",
+      "value": [
+        "tenant-a"
+      ]
+    },
+    "iss": {
+      "type": "str",
+      "value": "https://cognito-idp.us-east-1.amazonaws.com/<user-pool-id>"
+    },
+    "other_claims": [],
+    "scope": {
+      "type": "str",
+      "value": "aws.cognito.signin.user.admin"
+    },
+    "sub": {
+      "type": "str",
+      "value": "<uuid>"
+    },
+    "token_use": {
+      "type": "str",
+      "value": "access"
+    },
+    "username": {
+      "type": "str",
+      "value": "syn-tenant-a-staff"
+    }
+  }
+}

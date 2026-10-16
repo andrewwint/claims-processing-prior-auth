@@ -1,10 +1,7 @@
 """Record the deployed D1 state as redacted evidence.
 
 Usage:
-    python -m scripts.record_d1 state
-    asm-exec -- env AGENT_CLIENT_SECRET=... SYN_CLINICIAN_1_PASSWORD=... python -m scripts.record_d1 smoke
-    asm-exec -- env AGENT_CLIENT_SECRET=... SYN_CLINICIAN_1_PASSWORD=... SYN_TENANT_A_STAFF_PASSWORD=... \
-        python -m scripts.record_d1 tokens
+    python -m scripts.record_d1 state|smoke|tokens
 """
 
 import json
@@ -62,7 +59,7 @@ def _summary(response: dict) -> str:
 
 def smoke(session, out, named) -> None:
     """Fail-closed check: with the engine attached and no policies, every call is denied."""
-    agent = gc.agent_token(out)
+    agent = gc.agent_token(out, session)
     clinician = gc.user_token(out, session, "syn-clinician-1")
     results = {
         "agent_tools_list": gc.mcp(out["AgentGatewayUrl"], agent, "tools/list"),
@@ -90,7 +87,7 @@ def _shape(c: dict) -> dict:
 
 def tokens(session, out, named) -> None:
     """Task 3.2: record the agent and clinician token formats (never the tokens)."""
-    agent = gc.claims(gc.agent_token(out))
+    agent = gc.claims(gc.agent_token(out, session))
     clinician = gc.claims(gc.user_token(out, session, "syn-clinician-1"))
     staff = gc.claims(gc.user_token(out, session, "syn-tenant-a-staff"))
     record = {

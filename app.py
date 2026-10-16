@@ -35,15 +35,17 @@ def main() -> None:
         "prior-auth-reviewer": app.node.try_get_context("reviewer_gateway_id"),
     }.items() if v}
     gateways = GatewayStack(app, "PriorAuthGateways", env=env, domain_prefix=domain_prefix, gateway_ids=gateway_ids)
-    # D2 needs the principal values recorded from real tokens after D1 (task 3.2).
+    # D2 takes D1's recorded values explicitly (no cross-stack exports, which would
+    # also lock the gateway stack against updates): the engine ID, the exact gateway
+    # IDs, and the principal values recorded from real tokens (task 3.2).
     agent_sub = app.node.try_get_context("agent_sub")
     tag_shape = app.node.try_get_context("clinician_tag_shape")
-    if agent_sub and tag_shape:
+    engine_id = app.node.try_get_context("policy_engine_id")
+    if agent_sub and tag_shape and engine_id and len(gateway_ids) == 2:
         PolicyStack(
-            app, "PriorAuthPolicy", env=env,
-            engine_id=gateways.engine.attr_policy_engine_id,
-            agent_arn=gateways.agent_gateway.attr_gateway_arn,
-            reviewer_arn=gateways.reviewer_gateway.attr_gateway_arn,
+            app, "PriorAuthPolicy", env=env, engine_id=engine_id,
+            agent_gateway_id=gateway_ids["prior-auth-agent"],
+            reviewer_gateway_id=gateway_ids["prior-auth-reviewer"],
             agent_sub=agent_sub, tag_shape=tag_shape,
         )
     cdk.Tags.of(app).add(PROJECT_TAG_KEY, PROJECT_TAG_VALUE)

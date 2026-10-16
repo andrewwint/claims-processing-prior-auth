@@ -1,0 +1,32 @@
+{
+  "failed_events": [
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitagentcasetools",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthpermitagentrecordapproval",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "<client-id>",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource creation cancelled",
+      "resource": "priorauthforbidnoncliniciandenial",
+      "status": "CREATE_FAILED"
+    },
+    {
+      "reason": "Resource handler returned message: \"for policy `prior_auth_permit_clinician_denial_ri9dm26tsi_0`, unexpected type: expected Set<__cedar::internal::Any> but saw String\nfor policy `prior_auth_permit_clinician_denial_ri9dm26tsi_0`, unexpected type: expected Set<__cedar::internal::Any> but saw String at line 5, column 48:\n4   resource == AgentCore::Gateway::\"<reviewer-gateway-arn>\"\n5 ) when { principal.hasTag(\"cognito:groups\") && principal.getTag(\"cognito:groups\").contains(\"clinician\") };\ntry using `like` to examine the contents of a string\n\" (RequestToken: <uuid>, HandlerErrorCode: NotStabilized)",
+      "resource": "priorauthpermitcliniciandenial",
+      "status": "CREATE_FAILED"
+    }
+  ],
+  "finding": "Cedar validation rejected the clinician group test: the cognito:groups principal tag is a String, not a Set",
+  "policies_left_in_engine": 0,
+  "validation_mode": "default (FAIL_ON_ANY_FINDINGS), unchanged"
+}

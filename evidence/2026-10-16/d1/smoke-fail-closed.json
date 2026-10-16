@@ -1,0 +1,66 @@
+{
+  "agent_call_check_eligibility": {
+    "body": {
+      "error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "id": 1,
+      "jsonrpc": "2.0"
+    },
+    "http_status": 200
+  },
+  "agent_token_on_reviewer_gateway": {
+    "body": {
+      "error": {
+        "code": -32002,
+        "message": "insufficient_scope - The request requires higher privileges than provided by the access token."
+      },
+      "id": 0,
+      "jsonrpc": "2.0"
+    },
+    "http_status": 403
+  },
+  "agent_tools_list": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "tools": []
+      }
+    },
+    "http_status": 200
+  },
+  "clinician_call_denial_tool": {
+    "body": {
+      "error": {
+        "code": -32002,
+        "message": "Tool Execution Denied: Tool call not allowed due to policy enforcement [No policy applies to the request (denied by default).]"
+      },
+      "id": 1,
+      "jsonrpc": "2.0"
+    },
+    "http_status": 200
+  },
+  "clinician_tools_list": {
+    "body": {
+      "id": 1,
+      "jsonrpc": "2.0",
+      "result": {
+        "tools": []
+      }
+    },
+    "http_status": 200
+  },
+  "no_token_on_agent_gateway": {
+    "body": {
+      "error": {
+        "code": -32001,
+        "message": "Missing Bearer token"
+      },
+      "id": 0,
+      "jsonrpc": "2.0"
+    },
+    "http_status": 401
+  }
+}

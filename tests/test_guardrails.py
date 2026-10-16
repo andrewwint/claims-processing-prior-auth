@@ -171,10 +171,10 @@ def test_teardown_deletes_only_exact_log_group_names():
 
 def test_deploy_requires_private_context_for_gateways_and_policies():
     assert deploy.missing_context("PriorAuthGateways", [], {}) == ["cognito_domain_prefix"]
-    assert deploy.missing_context("PriorAuthGateways", ["cognito_domain_prefix=x"], {}) == []
+    assert deploy.missing_context("PriorAuthGateways", ["-c", "cognito_domain_prefix=x"], {}) == []
     assert deploy.missing_context("PriorAuthPolicy", [], {"cognito_domain_prefix": "x"}) == [
-        "agent_sub", "clinician_tag_shape", "agent_gateway_id", "reviewer_gateway_id"]
-    assert deploy.missing_context("PriorAuthGateways", ["cognito_domain_prefix="], {}) == ["cognito_domain_prefix"]
+        "agent_sub", "clinician_tag_shape", "policy_engine_id", "agent_gateway_id", "reviewer_gateway_id"]
+    assert deploy.missing_context("PriorAuthGateways", ["-c", "cognito_domain_prefix="], {}) == ["cognito_domain_prefix"]
     assert deploy.missing_context("PriorAuthGateways", [], {"cognito_domain_prefix": ""}) == ["cognito_domain_prefix"]
     assert deploy.missing_context("PriorAuthBudgets", [], {}) == []
 
@@ -189,7 +189,7 @@ def test_redeploying_existing_gateways_without_exact_ids_is_refused():
     saved = {"cognito_domain_prefix": "x"}
     assert deploy.refuses_gateway_revert("PriorAuthGateways", [], saved, stack_exists=True)
     assert not deploy.refuses_gateway_revert("PriorAuthGateways", [], saved, stack_exists=False)
-    ids = ["agent_gateway_id=a", "reviewer_gateway_id=b"]
+    ids = ["-c", "agent_gateway_id=a", "--context", "reviewer_gateway_id=b"]
     assert not deploy.refuses_gateway_revert("PriorAuthGateways", ids, saved, stack_exists=True)
 
 
@@ -202,3 +202,50 @@ def test_deploy_fails_cleanly_when_credentials_are_expired(monkeypatch):
     monkeypatch.setattr(deploy, "present_budgets", expired)
     monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("cdk must not run"))
     assert deploy.main(["PriorAuthGateways", "-c", "cognito_domain_prefix=x"]) == 1
+
+
+
+# Targeted review, E4: deploy-guard bypasses
+def test_unknown_or_glob_stack_names_are_refused():
+    with pytest.raises(deploy.Refused):
+        deploy.check("PriorAuthGate*", [], {"cognito_domain_prefix": "x"}, stack_exists=True)
+
+
+def test_only_context_flags_count_as_context():
+    args = ["--tags", "agent_gateway_id=a", "--parameters", "reviewer_gateway_id=b"]
+    assert deploy.cli_context(args) == {}
+    assert deploy.refuses_gateway_revert("PriorAuthGateways", args, {"cognito_domain_prefix": "x"}, stack_exists=True)
+
+
+def test_empty_cli_value_overrides_saved_ids():
+    saved = {"cognito_domain_prefix": "x", "agent_gateway_id": "a", "reviewer_gateway_id": "b"}
+    assert not deploy.refuses_gateway_revert("PriorAuthGateways", [], saved, stack_exists=True)
+    assert deploy.refuses_gateway_revert("PriorAuthGateways", ["-c", "agent_gateway_id="], saved, stack_exists=True)
+
+
+def test_describe_errors_other_than_missing_stack_refuse(monkeypatch):
+    from botocore.exceptions import ClientError
+
+    class CFN:
+        def describe_stacks(self, StackName):
+            raise ClientError({"Error": {"Code": "AccessDenied", "Message": "denied"}}, "DescribeStacks")
+
+    class S:
+        def __init__(self, **kw):
+            pass
+
+        def client(self, name):
+            return CFN()
+
+    monkeypatch.setattr(deploy.boto3, "Session", S)
+    with pytest.raises(ClientError):
+        deploy._stack_exists("PriorAuthGateways")
+
+
+def test_wildcard_trust_is_detected_in_a_template():
+    tpl = {"Resources": {"R": {"Type": "AWS::IAM::Role", "Properties": {"AssumeRolePolicyDocument": {"Statement": [
+        {"Condition": {"ArnLike": {"aws:SourceArn": "arn:aws:bedrock-agentcore:us-east-1:1:gateway/prior-auth-agent-*"}}}]}}}}}
+    assert deploy.wildcard_trust(tpl) == ["R"]
+    tpl["Resources"]["R"]["Properties"]["AssumeRolePolicyDocument"]["Statement"][0]["Condition"]["ArnLike"]["aws:SourceArn"] = \
+        "arn:aws:bedrock-agentcore:us-east-1:1:gateway/prior-auth-agent-abc123"
+    assert deploy.wildcard_trust(tpl) == []

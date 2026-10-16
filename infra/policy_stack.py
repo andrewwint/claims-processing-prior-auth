@@ -13,9 +13,11 @@ from infra.cedar import all_policies
 
 
 class PolicyStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, *, engine_id: str, agent_arn: str, reviewer_arn: str,
-                 agent_sub: str, tag_shape: str, **kwargs):
+    def __init__(self, scope: Construct, construct_id: str, *, engine_id: str, agent_gateway_id: str,
+                 reviewer_gateway_id: str, agent_sub: str, tag_shape: str, **kwargs):
         super().__init__(scope, construct_id, **kwargs)
+        prefix = f"arn:aws:bedrock-agentcore:{self.region}:{self.account}:gateway/"
+        agent_arn, reviewer_arn = prefix + agent_gateway_id, prefix + reviewer_gateway_id
         statements = all_policies(agent_sub=agent_sub, agent_arn=agent_arn, reviewer_arn=reviewer_arn,
                                   tag_shape=tag_shape)
         for name, statement in statements.items():

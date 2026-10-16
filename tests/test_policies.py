@@ -63,8 +63,8 @@ def stacks():
     app = cdk.App()
     env = cdk.Environment(region="us-east-1")
     g = GatewayStack(app, "G", env=env, domain_prefix="prior-auth-test")
-    p = PolicyStack(app, "P", env=env, engine_id=g.engine.attr_policy_engine_id,
-                    agent_arn=g.agent_gateway.attr_gateway_arn, reviewer_arn=g.reviewer_gateway.attr_gateway_arn,
+    p = PolicyStack(app, "P", env=env, engine_id="prior_auth_engine-abc",
+                    agent_gateway_id="prior-auth-agent-abc", reviewer_gateway_id="prior-auth-reviewer-def",
                     agent_sub="AGENT", tag_shape="set")
     return Template.from_stack(g), Template.from_stack(p)
 
@@ -110,3 +110,12 @@ def test_each_policy_is_a_single_statement():
 def test_record_approval_permit_names_the_approval_service_action():
     s = P["prior_auth_permit_agent_record_approval"]
     assert 'action == AgentCore::Action::"ApprovalService___record_approval"' in s
+
+
+
+def test_policy_stack_has_no_cross_stack_imports(stacks):
+    import json
+    _, p = stacks
+    text = json.dumps(p.to_json())
+    assert "Fn::ImportValue" not in text
+    assert "gateway/prior-auth-agent-abc" in text and "gateway/prior-auth-reviewer-def" in text
