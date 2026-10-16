@@ -1,0 +1,21 @@
+# Deployment outputs and local configuration never belong in the repository:
+# they carry endpoints, account identifiers and resource names.
+cdk.out/
+cdk.context.json
+*outputs*.json
+.bedrock_agentcore/
+.bedrock_agentcore.yaml
+.env
+.env.*
+*.pem
+
+# Local tooling state
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.agents/
+.DS_Store
+
+# Raw run output stays local; reviewed reports are committed explicitly
+harness/results/raw/

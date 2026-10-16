@@ -1,0 +1,32 @@
+schema: spec-driven
+
+context: |
+  Reference implementation for the article "Build the Case, Let the Clinician Decide".
+  Done means every row of openspec/claims-ledger.md has evidence (test, deployed resource,
+  recorded call, report, or citation). If a row can't be proven, the article changes;
+  never stretch the evidence to fit.
+  Synthetic data only. Never real patient data.
+  Platform: Amazon Bedrock AgentCore (Runtime, Gateway, Policy with Cedar, Identity,
+  Observability) in a pinned Region (us-east-1). Memory is not used for patient data.
+  Guardrails: a budget alert before the first deploy, explicit approval for every deploy,
+  a teardown script whose result is verified.
+  Budget: target under USD 100 total; AWS Budgets alerts at USD 20, USD 50 and USD 100,
+  plus a USD 500 alarm; budgets persist across teardowns until the project ends; USD 1,000
+  is the absolute ceiling. VPC networking is
+  allowed (and preferred for Runtime) within this budget.
+  Before the first build on any AWS service, read its documented contract and record it
+  (contract-read).
+  The repository may be public. Docs and specs state general principles only: no account
+  identifiers, endpoints, or deployment outputs.
+  docs/principles.md is the design standard.
+  Language: Python throughout (one toolchain): AWS CDK in Python (aws-cdk-lib and
+  aws-cdk.aws-bedrock-agentcore-alpha, pinned to the same release; Policy constructs are
+  alpha, so attach the policy engine via the L1 CfnGateway with mode set explicitly to
+  ENFORCE), agent and tool code with Strands Agents, tests with pytest.
+
+rules:
+  proposal:
+    - Name the claims-ledger rows the change delivers.
+  tasks:
+    - Each task names the ledger row(s) it proves and the evidence artifact it produces.
+    - Any deploy task states the approval gate and the teardown step.
