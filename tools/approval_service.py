@@ -33,7 +33,8 @@ def record_approval(event: dict) -> dict:
                             "packet_hash": claimed, "approved": not failures, "failure_count": len(failures)}))
     if failures:
         return {"approved": False, "status": "refused", "packet_id": packet_id, "reasons": failures}
-    return {"approved": True, "status": "recorded", "packet_id": packet_id, "packet_hash": claimed}
+    return {"approved": True, "status": "recorded", "packet_id": packet_id, "packet_hash": claimed,
+            "case_id": approval.case_for(packet_id, trusted)}
 
 
 def handler(event, context):

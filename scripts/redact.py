@@ -23,7 +23,8 @@ COGNITO_CLIENT_ID = re.compile(r"(?<![A-Za-z0-9_])[a-z0-9]{26}(?![A-Za-z0-9_])")
 COGNITO_DOMAIN = re.compile(r"\b[a-z0-9-]+\.auth\.[a-z0-9-]+\.amazoncognito\.com\b")
 GATEWAY_HOST = re.compile(r"\b[a-z0-9-]+\.gateway\.bedrock-agentcore\.[a-z0-9-]+\.amazonaws\.com\b")
 ARN = re.compile(r"arn:aws[a-z-]*:[a-z0-9-]*:[a-z0-9-]*:\d{12}:[A-Za-z0-9_/:.+=@-]+")
-ACCOUNT_ID = re.compile(r"(?<!\d)\d{12}(?!\d)")
+# Non-hex lookarounds, so a 12-digit run inside a SHA-256 hash is never touched.
+ACCOUNT_ID = re.compile(r"(?<![0-9A-Fa-f])\d{12}(?![0-9A-Fa-f])")
 
 
 def redact(text: str, named: dict[str, str] | None = None) -> str:

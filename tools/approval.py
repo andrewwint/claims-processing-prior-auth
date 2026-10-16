@@ -20,6 +20,10 @@ def load_fixtures() -> tuple[dict, dict]:
     return trusted, packets
 
 
+def case_for(packet_id: str, trusted: dict) -> str | None:
+    return trusted.get("packet_index", {}).get(packet_id)
+
+
 def review(packet_id, claimed_hash, *, packets: dict, trusted: dict) -> list[str]:
     """Every reason not to approve. Empty means approve."""
     if not isinstance(packet_id, str) or not isinstance(claimed_hash, str):
@@ -29,7 +33,14 @@ def review(packet_id, claimed_hash, *, packets: dict, trusted: dict) -> list[str
         return [f"unknown packet: {packet_id}"]
     if checks.packet_hash(packet) != claimed_hash:
         return ["hash mismatch: packet_hash does not match the stored packet"]
-    request = trusted["requests"].get(packet.get("case_id")) if isinstance(packet, dict) else None
+    # The packet store's own index, written server-side, says which case a packet
+    # belongs to. The packet's claimed case must agree; the packet never chooses.
+    case_id = trusted.get("packet_index", {}).get(packet_id)
+    if case_id is None:
+        return [f"packet {packet_id} is not in the packet store's index"]
+    if not isinstance(packet, dict) or packet.get("packet_id") != packet_id or packet.get("case_id") != case_id:
+        return ["packet identity does not match the packet store's index"]
+    request = trusted["requests"].get(case_id)
     if request is None:
         return ["no request record for this packet's case"]
     criteria = trusted["criteria"].get(request["payer_id"], {}).get(request["cpt_code"], [])

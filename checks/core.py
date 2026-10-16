@@ -13,8 +13,16 @@ import unicodedata
 from dataclasses import dataclass, field
 
 MIN_VALUE_CHARS = 4
-NEGATORS = ("no", "not", "without", "denies", "denied", "negative for", "absence of", "absent", "never", "ruled out")
-NEGATION_WINDOW_WORDS = 4
+# Any of these anywhere on the cited line disqualifies it. The list errs strict:
+# a line that merely mentions a plan, a goal, a history or a doubt routes to a
+# reviewer instead of supporting a criterion.
+DISQUALIFYING_TERMS = (
+    "no", "not", "none", "nor", "without", "denies", "denied", "negative", "absence", "absent", "never",
+    "ruled out", "rule out", "r/o", "evaluate for", "evaluation for", "excluded", "exclude", "unlikely",
+    "possible", "possibly", "probable", "suspected", "suspect", "questionable", "query", "history of",
+    "plan", "planned", "goal", "goals", "missed", "cancelled", "canceled", "declined", "refused",
+    "pending", "recommend", "recommended", "consider", "if", "zero", "resolved", "prior", "previous",
+)
 NUMBER_WORDS = {w: i for i, w in enumerate(
     "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen "
     "sixteen seventeen eighteen nineteen twenty".split())}
@@ -91,8 +99,11 @@ def satisfies_rule(finding: dict, criterion: dict, docs: dict) -> str | None:
     doc = docs[finding["doc_id"]]
     if doc.get("kind") not in rule["doc_kinds"]:
         return f"evidence rule: {cid} cannot be supported by a {doc.get('kind', 'unknown')} document"
+    groups = set(re.compile(rule["pattern"]).groupindex)
+    if groups != set(rule.get("minimums", {})):
+        return f"evidence rule: {cid} rule must set a minimum for every number it captures"
     value = _nfc(finding["value"])
-    match = re.search(rule["pattern"], value)
+    match = re.fullmatch(rule["pattern"], value)
     if match is None:
         return f"evidence rule: value for {cid} does not state what the criterion requires"
     for group, minimum in rule.get("minimums", {}).items():
@@ -100,11 +111,26 @@ def satisfies_rule(finding: dict, criterion: dict, docs: dict) -> str | None:
         if n is None or n < minimum:
             return f"evidence rule: value for {cid} is below the required {group} of {minimum}"
     line = _nfc(_cited_line(finding, docs))
-    before = line[: line.index(value)].lower().split()[-NEGATION_WINDOW_WORDS:]
-    window = " ".join(before)
-    if any(re.search(rf"\b{re.escape(n)}\b", window) for n in NEGATORS):
-        return f"evidence rule: value for {cid} is negated on its line"
+    if not any(_bounded(line, i, len(value)) for i in _occurrences(line, value)):
+        return f"evidence rule: value for {cid} is not a whole phrase on its line"
+    lowered = line.lower()
+    if "n't" in lowered or any(re.search(rf"(?<![a-z]){re.escape(t)}(?![a-z])", lowered) for t in DISQUALIFYING_TERMS):
+        return f"evidence rule: the line cited for {cid} negates, hedges or plans rather than states"
     return None
+
+
+def _occurrences(line: str, value: str) -> list[int]:
+    out, i = [], line.find(value)
+    while i != -1:
+        out.append(i)
+        i = line.find(value, i + 1)
+    return out
+
+
+def _bounded(line: str, start: int, length: int) -> bool:
+    before = line[start - 1] if start > 0 else " "
+    after = line[start + length] if start + length < len(line) else " "
+    return not before.isalnum() and not after.isalnum()
 
 
 def same_patient(finding: dict, index: dict, patient_id: str) -> str | None:

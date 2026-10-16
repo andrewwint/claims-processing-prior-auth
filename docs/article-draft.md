@@ -6,7 +6,7 @@ Most agentic prior authorization designs start with a model. Pick one, prompt it
 
 That is the wrong place to start. The hard part is not what the agent can decide. It is the one thing it may not decide.
 
-An agent can check eligibility. It can assemble the packet, read the clinical notes, match them to policy criteria, and recommend. It cannot deny care on its own. That line is now law in a growing list of states.
+An agent can check eligibility. It can assemble the packet, read the clinical notes, match them to policy criteria, and recommend. It cannot deny care on its own. That line is now written into state law, starting with Washington and Colorado.
 
 This article designs a prior authorization agent on Amazon Bedrock AgentCore from that line outward. The agent builds the case. The clinician decides.
 
@@ -20,7 +20,7 @@ Two sets of rules now frame those decisions.
 
 | Rule | What it requires | What it means for an agent |
 | --- | --- | --- |
-| State AI laws, 2026 to 2027 (Washington E2SSB 5395, Colorado HB26-1139, among others) | AI may assist review but cannot be the sole basis to deny care. Washington's law also covers delaying or modifying it | The agent recommends. A licensed clinician owns every adverse decision |
+| State AI laws, 2026 to 2027 (Washington E2SSB 5395, Colorado HB26-1139) | AI may assist review but cannot be the sole basis to deny care. Washington's law also covers delaying or modifying it | The agent recommends. A licensed clinician owns every adverse decision |
 | CMS-0057-F, decision timeframes (Jan 2026) | Standard decisions in 7 calendar days, expedited in 72 hours, a specific reason on every denial | Speed matters, and every denial needs a reason a person can read |
 | CMS-0057-F, Prior Authorization API (Jan 2027) | Payers expose prior authorization through a FHIR API | Requests arrive as structured data, ready for an agent to work |
 
@@ -73,7 +73,7 @@ A reviewer under a 72-hour clock should not search the chart. The agent should h
 
 Payer medical policies are long PDFs that change. Chunking them into a vector store and hoping retrieval finds the right criterion is the weak link. In Beyond the Vector DB: Grounded, Auditable Agents with Amazon Bedrock AgentCore and OKF, I argued for a compile step instead. Verify the source once, upstream, and ship focused concept files the agent can cite. [Orchestrating the Upstream OKF Compiler](https://medium.com/towards-aws/orchestrating-the-upstream-okf-compiler-scaling-context-verification-with-aws-mwaa-and-sagemaker-5ba25b348e2b) showed how to run that compile at scale.
 
-For prior authorization, each payer policy compiles into one verified file per procedure. Each criterion carries its policy version and its location in the source.
+For prior authorization, each payer policy compiles into one verified file per procedure. Each criterion carries its policy version, its location in the source, and a rule for what evidence can satisfy it.
 
 The packet then reads like a checklist.
 
@@ -83,9 +83,11 @@ The packet then reads like a checklist.
 | Imaging confirms the diagnosis | MRI report names the finding | Radiology report, line cited | Met |
 | Functional limitation documented | No measure found | None | Not found |
 
-Three checks run before the packet moves. Output must match its schema. Every extracted value must appear in the source it cites. Every citation must come from this patient's record.
+Four checks run before the packet moves. Output must match its schema. Every extracted value must appear in the source it cites. The cited text must satisfy the criterion's evidence rule, because a real quote on the right line can still prove nothing. Every citation must come from this patient's record.
 
 All criteria met, every citation verified, and every check passed means the agent may call `record_approval`. Anything else goes to a clinician, with the gaps marked.
+
+Inside the agent, that decision is code. The model reads the chart and writes the summary. It never chooses which tool ends the case.
 
 ## Fail toward a human
 
@@ -117,7 +119,7 @@ The answer is two records with two jobs.
 | Record | Holds | Lives in |
 | --- | --- | --- |
 | Trace | Case ID, step, model ID, token counts, latency, stop reason, content hashes | AgentCore Observability, exported over OpenTelemetry |
-| Evidence record | The packet, the recommendation, citations, policy version, reviewer identity, decision, timestamps | Encrypted, write-once storage with per-tenant keys |
+| Evidence record | The packet, the recommendation, citations, policy version, reviewer identity, decision, timestamps | Encrypted, write-once storage under customer-managed keys |
 
 The trace answers "what happened" without holding a word of the chart. The hash in the trace proves the evidence record was not changed after the fact. The timestamps answer the CMS clock.
 

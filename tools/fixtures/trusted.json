@@ -32,8 +32,9 @@
             "doc_kinds": [
               "physical therapy notes"
             ],
-            "pattern": "\\b(?P<visits>\\d+|[A-Za-z]+) visits over (?P<weeks>\\d+|[A-Za-z]+) weeks\\b",
+            "pattern": "(?i:(?P<visits>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) visits over (?P<weeks>\\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty) weeks)",
             "minimums": {
+              "visits": 1,
               "weeks": 6
             }
           }
@@ -47,7 +48,8 @@
             "doc_kinds": [
               "radiology report"
             ],
-            "pattern": "\\bdisc herniation with nerve root compression\\b"
+            "pattern": "(?:L\\d-[LS]\\d )?disc herniation with nerve root compression",
+            "minimums": {}
           }
         },
         {
@@ -59,7 +61,7 @@
             "doc_kinds": [
               "clinic note"
             ],
-            "pattern": "\\bOswestry Disability Index (?P<odi>\\d+) percent\\b",
+            "pattern": "Oswestry Disability Index (?P<odi>\\d+) percent",
             "minimums": {
               "odi": 40
             }
@@ -115,5 +117,10 @@
       "SYN-DOC-FUNC-001": "SYN-PAT-0001",
       "SYN-DOC-FUNC-002": "SYN-PAT-0002"
     }
+  },
+  "packet_index": {
+    "SYN-PKT-PASS": "SYN-CASE-PASS",
+    "SYN-PKT-FAIL": "SYN-CASE-FAIL",
+    "SYN-PKT-FORGED": "SYN-CASE-FORGED"
   }
 }

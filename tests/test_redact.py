@@ -97,3 +97,13 @@ def test_committed_evidence_has_no_unredacted_identifiers():
     root = Path(__file__).resolve().parent.parent / "evidence"
     leaks = {str(p): find_unredacted(p.read_text()) for p in root.rglob("*") if p.is_file()}
     assert {k: v for k, v in leaks.items() if v} == {}
+
+
+
+# Third security review, finding 4
+def test_random_sha256_hashes_are_never_altered():
+    import hashlib
+    for i in range(20000):
+        h = hashlib.sha256(str(i).encode()).hexdigest()
+        assert redact(h) == h, h
+        assert find_unredacted(h) == [], h

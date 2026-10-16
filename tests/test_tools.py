@@ -70,7 +70,7 @@ def _call_stored(packet_id):
 
 def test_passing_packet_is_recorded():
     out = _call_stored("SYN-PKT-PASS")
-    assert out["approved"] is True and out["status"] == "recorded"
+    assert out["approved"] is True and out["status"] == "recorded" and out["case_id"] == "SYN-CASE-PASS"
 
 
 def test_well_formed_call_for_failing_packet_is_refused_server_side():
@@ -156,3 +156,21 @@ def test_reviewer_tool_records_with_reason_and_refuses_without():
     c = ctx(REVIEWER_TARGET, "record_adverse_determination")
     assert reviewer_tools.handler({"case_id": "C", "reason": "No functional measure"}, c)["recorded"] is True
     assert reviewer_tools.handler({"case_id": "C", "reason": " "}, c)["recorded"] is False
+
+
+
+# Third security review, finding 6: the packet never chooses its case
+def test_packet_claiming_another_case_is_refused():
+    stored = copy.deepcopy(PACKETS)
+    stored["SYN-PKT-FAIL"] = copy.deepcopy(PACKETS["SYN-PKT-PASS"])
+    stored["SYN-PKT-FAIL"]["packet_id"] = "SYN-PKT-FAIL"
+    h = checks.packet_hash(stored["SYN-PKT-FAIL"])
+    assert approval.review("SYN-PKT-FAIL", h, packets=stored, trusted=TRUSTED) == [
+        "packet identity does not match the packet store's index"]
+
+
+def test_packet_missing_from_the_index_is_refused():
+    trusted = copy.deepcopy(TRUSTED)
+    del trusted["packet_index"]["SYN-PKT-PASS"]
+    assert approval.review("SYN-PKT-PASS", checks.packet_hash(PASS), packets=PACKETS, trusted=trusted) == [
+        "packet SYN-PKT-PASS is not in the packet store's index"]

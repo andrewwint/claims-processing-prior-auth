@@ -47,6 +47,7 @@ def test_deploy_refuses_without_budgets():
 
 def test_deploy_main_refuses_before_running_cdk(monkeypatch):
     monkeypatch.setattr(deploy, "present_budgets", lambda session: [])
+    monkeypatch.setattr(deploy, "_stack_exists", lambda name: False)
     monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("cdk must not run"))
     assert deploy.main(["PriorAuthGateways", "-c", "cognito_domain_prefix=x"]) == 1
 
@@ -171,7 +172,22 @@ def test_teardown_deletes_only_exact_log_group_names():
 def test_deploy_requires_private_context_for_gateways_and_policies():
     assert deploy.missing_context("PriorAuthGateways", [], {}) == ["cognito_domain_prefix"]
     assert deploy.missing_context("PriorAuthGateways", ["cognito_domain_prefix=x"], {}) == []
-    assert deploy.missing_context("PriorAuthPolicy", [], {"cognito_domain_prefix": "x"}) == ["agent_sub", "clinician_tag_shape"]
+    assert deploy.missing_context("PriorAuthPolicy", [], {"cognito_domain_prefix": "x"}) == [
+        "agent_sub", "clinician_tag_shape", "agent_gateway_id", "reviewer_gateway_id"]
     assert deploy.missing_context("PriorAuthGateways", ["cognito_domain_prefix="], {}) == ["cognito_domain_prefix"]
     assert deploy.missing_context("PriorAuthGateways", [], {"cognito_domain_prefix": ""}) == ["cognito_domain_prefix"]
     assert deploy.missing_context("PriorAuthBudgets", [], {}) == []
+
+
+
+# Third security review, finding 5
+def test_deploys_are_exclusive():
+    assert deploy.cdk_args("PriorAuthPolicy", [])[:3] == ["deploy", "PriorAuthPolicy", "--exclusively"]
+
+
+def test_redeploying_existing_gateways_without_exact_ids_is_refused():
+    saved = {"cognito_domain_prefix": "x"}
+    assert deploy.refuses_gateway_revert("PriorAuthGateways", [], saved, stack_exists=True)
+    assert not deploy.refuses_gateway_revert("PriorAuthGateways", [], saved, stack_exists=False)
+    ids = ["agent_gateway_id=a", "reviewer_gateway_id=b"]
+    assert not deploy.refuses_gateway_revert("PriorAuthGateways", ids, saved, stack_exists=True)

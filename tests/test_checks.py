@@ -171,7 +171,7 @@ def test_negated_finding_is_refused():
     chart = copy.deepcopy(CHART)
     chart["docs"]["SYN-DOC-MRI-001"]["pages"][0][2] = "Impression: no disc herniation with nerve root compression."
     v = verdict(lambda p: finding(p, "C2").update(value="disc herniation with nerve root compression"), chart=chart)
-    assert any("negated on its line" in f for f in v.failures)
+    assert any("negates, hedges or plans" in f for f in v.failures)
 
 
 def test_same_line_cannot_support_two_criteria():
@@ -187,3 +187,40 @@ def test_criterion_without_a_rule_is_never_met():
     del criteria[2]["evidence_rule"]
     v = checks.recompute(PACKETS["SYN-PKT-PASS"], REQUEST, criteria, CHART)
     assert "evidence rule: C3 has no compiled evidence rule" in v.failures
+
+
+# Third security review: each probe below was approved before the fix and must be refused.
+@pytest.mark.parametrize("cid,doc,line_text,value", [
+    ("C2", "SYN-DOC-MRI-001", "No disc herniation with nerve root compression.", "No disc herniation with nerve root compression"),
+    ("C1", "SYN-DOC-PT-001", "Patient never completed eight visits over seven weeks.", "never completed eight visits over seven weeks"),
+    ("C1", "SYN-DOC-PT-001", "No visits over seven weeks.", "No visits over seven weeks"),
+    ("C1", "SYN-DOC-PT-001", "Zero visits over seven weeks.", "Zero visits over seven weeks"),
+    ("C1", "SYN-DOC-PT-001", "Missed visits over eight weeks.", "Missed visits over eight weeks"),
+    ("C2", "SYN-DOC-MRI-001", "L4-L5 disc herniation with nerve root compression excluded.", "L4-L5 disc herniation with nerve root compression"),
+    ("C2", "SYN-DOC-MRI-001", "No evidence of significant central canal disc herniation with nerve root compression.", "disc herniation with nerve root compression"),
+    ("C1", "SYN-DOC-PT-001", "Patient didn't attend eight visits over seven weeks.", "eight visits over seven weeks"),
+    ("C2", "SYN-DOC-MRI-001", "Indication: rule out disc herniation with nerve root compression.", "disc herniation with nerve root compression"),
+    ("C2", "SYN-DOC-MRI-001", "Evaluate for disc herniation with nerve root compression.", "disc herniation with nerve root compression"),
+    ("C1", "SYN-DOC-PT-001", "Plan: eight visits over seven weeks.", "eight visits over seven weeks"),
+    ("C3", "SYN-DOC-FUNC-001", "Goal: reduce Oswestry Disability Index 46 percent.", "Oswestry Disability Index 46 percent"),
+    ("C2", "SYN-DOC-MRI-001", "Prior report: disc herniation with nerve root compression; current: no disc herniation with nerve root compression.", "disc herniation with nerve root compression"),
+    ("C3", "SYN-DOC-FUNC-001", "Oswestry Disability Index 46 percentile.", "Oswestry Disability Index 46 percent"),
+])
+def test_reviewer_probes_are_refused(cid, doc, line_text, value):
+    chart = copy.deepcopy(CHART)
+    page = chart["docs"][doc]["pages"][0]
+    line_no = len(page) + 1
+    page.append(line_text)
+    v = verdict(lambda p: finding(p, cid).update(doc_id=doc, line=line_no, value=value), chart=chart)
+    assert v.statuses[cid] != "Met" and not v.approvable
+
+
+def test_rule_without_minimum_for_a_captured_number_is_invalid():
+    criteria = copy.deepcopy(CRITERIA)
+    criteria[0]["evidence_rule"]["minimums"] = {"weeks": 6}
+    v = checks.recompute(PACKETS["SYN-PKT-PASS"], REQUEST, criteria, CHART)
+    assert "evidence rule: C1 rule must set a minimum for every number it captures" in v.failures
+
+
+def test_the_passing_fixture_still_approves_after_tightening():
+    assert verdict().approvable
