@@ -95,7 +95,7 @@ Before anything is committed, redaction replaces ARNs, account IDs and Cognito c
 | Finding | Status |
 |---|---|
 | E1. Reviewer gateway admits every pool user | Fixed: a group claim check on the authorizer, plus the engine in ENFORCE from D1 |
-| E2. Clinician client OAuth defaults (implicit and code flows) | Fixed: OAuth disabled |
+| E2. Clinician client OAuth defaults (implicit and code flows) | Fixed: OAuth disabled. **Superseded (PM, 2026-10-16)**: authorization code with PKCE, localhost callback only, scopes `openid` and `aws.cognito.signin.user.admin`, no implicit grant, no write attributes, and SRP as the only password flow. The E2 risk (implicit tokens to a third-party callback) does not return. Applied before the first deploy. |
 | E3. Agent client falls back to Cognito's default sign-in flows | Fixed: refresh-token flow only |
 | E4. Gateway role trust has no `aws:SourceArn` | Fixed: bound to the gateway name prefix (ARN format confirmed live at D1; a wrong pattern fails closed) |
 | E5. Teardown deletes by name pattern | Fixed: exact log group names; secrets need the prefix and the project tag; teardown stops if `cdk destroy` fails |

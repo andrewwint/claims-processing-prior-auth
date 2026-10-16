@@ -12,7 +12,7 @@ The agent's gateway has no tool for an adverse determination. That tool lives on
 
 - **Two gateways.** The agent's gateway has no denial tool. The reviewer gateway rejects the agent's token at sign-in, and a Cedar `forbid` stands behind that. Both layers are shown with recorded denied calls.
 - **Server-verified auto-approval:** `record_approval` takes a packet reference, and the approval service re-runs the checks on the stored packet before recording anything.
-- **A cited case packet**, with three checks run before anyone sees it: schema, source match, and same patient.
+- **A cited case packet**, with four checks run before anyone sees it: schema, source match, the criterion's evidence rule, and same patient.
 - **Failure routing:** every failure mode goes to a human reviewer, never to a default.
 - **Clean telemetry:** traces hold identifiers, timings, and hashes, and a scan shows they contain no chart text.
 - **A write-once evidence record** whose hash matches the trace.
@@ -40,7 +40,7 @@ This repository is a reference implementation that can be torn down the same day
 
 **Residual risks, stated plainly:**
 - **Direct Lambda invocation.** A principal in the account allowed to call `lambda:InvokeFunction` can invoke the tool Lambdas directly and skip both gateway layers. Gateway does not pass the caller's identity to Lambda targets, so the denial Lambda cannot verify the clinician itself. This does not let anyone forge an approval: `record_approval` rebuilds every verdict from trusted sources, whatever the call path.
-- **Reviewer identity.** Until the clinician workbench verifies a token, a decision record names the reviewer from a tool argument. The record labels that source.
+- **Reviewer identity.** A request interceptor on the reviewer gateway validates the clinician's token and overwrites the reviewer identity and tenant in each call, so a client cannot claim to be someone else. That holds only for calls through the gateway; the direct-invocation risk above still applies.
 - **Governance mode.** The evidence store uses Object Lock in governance mode, and only the teardown role may bypass it. Production would use compliance mode.
 
 ## Data

@@ -164,10 +164,23 @@ def test_agent_gateway_requires_the_tools_scope(template):
     assert jwt["AllowedScopes"] == ["prior-auth/tools"]
 
 
-def test_clinician_client_has_no_oauth_flows(template):
+def test_clinician_client_uses_code_flow_with_localhost_callback_only(template):
     clinician = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-clinician")
-    assert "AllowedOAuthFlows" not in clinician and "CallbackURLs" not in clinician
-    assert clinician["AllowedOAuthFlowsUserPoolClient"] is False
+    assert clinician["AllowedOAuthFlows"] == ["code"]
+    assert clinician["CallbackURLs"] == ["http://localhost:8765/callback"]
+    assert sorted(clinician["AllowedOAuthScopes"]) == ["aws.cognito.signin.user.admin", "openid"]
+    assert "GenerateSecret" not in clinician or clinician["GenerateSecret"] is False
+
+
+def test_clinician_password_fallback_is_srp_only(template):
+    clinician = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-clinician")
+    assert "ALLOW_USER_PASSWORD_AUTH" not in clinician["ExplicitAuthFlows"]
+    assert "ALLOW_USER_SRP_AUTH" in clinician["ExplicitAuthFlows"]
+
+
+def test_clinician_client_cannot_write_user_attributes(template):
+    clinician = _one(template, "AWS::Cognito::UserPoolClient", ClientName="prior-auth-clinician")
+    assert clinician["WriteAttributes"] == []
 
 
 def test_agent_client_has_no_user_sign_in_flow(template):

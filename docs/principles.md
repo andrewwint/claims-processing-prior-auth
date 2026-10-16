@@ -10,7 +10,7 @@ These principles govern every design and code decision in this repository. Each 
 
 ## Evidence
 
-4. **Every statement in a packet cites its source.** Three checks run before a packet is shown: the packet matches its schema, each cited value matches its source, and every source belongs to the same patient.
+4. **Every statement in a packet cites its source.** Four checks run before a packet is shown: the packet matches its schema, each cited value matches its source, the cited text satisfies the criterion's compiled evidence rule, and every source belongs to the same patient. A real quote on the right line can still prove nothing; the evidence rule is what makes it count.
 5. **Evidence records are write-once.** Each decision writes a tamper-evident record whose hash is also carried in the trace, so the two can be checked against each other.
 6. **Telemetry carries identifiers, timings, and hashes, not clinical text.** A scan of traces and logs is part of the test suite.
 

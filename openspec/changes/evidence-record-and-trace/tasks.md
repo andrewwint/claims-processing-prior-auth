@@ -26,7 +26,10 @@
   - the reviewer service writes the decision record and puts its hash on the reviewer span
 
   Done when the unit tests pass.
-- [ ] 2.4 `scripts/clinician_decide.py` (design D7). Record one clinician decision through the reviewer gateway.
+- [ ] 2.4 `tools/reviewer_interceptor.py` on the reviewer gateway (REQUEST, `passRequestHeaders: true`).
+  - It validates the token with `GetUser`, checks the client ID and groups, and overwrites `reviewer_sub`, `reviewer_username` and `tenant`.
+  - Unit tests: a spoofed name is overwritten; an invalid token is short-circuited; there is no logging of headers.
+- [ ] 2.5 `scripts/clinician_decide.py` (design D7), signing in with SRP. Record one clinician decision through the reviewer gateway with a spoofed `reviewer_username` in the arguments. The decision record must show the validated username. If the transformed body does not reach the Lambda, record that, and flag the article's evidence-record row.
 
 ## 3. Recorded proofs
 

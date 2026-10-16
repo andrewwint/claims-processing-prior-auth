@@ -2,17 +2,29 @@
 
 ## Why
 
-The article's design ends at a person: the clinician sees the case the agent built and makes the decision, and only the clinician's app holds the denial tool. A minimal workbench makes that real and lets the ledger prove the clinician-side half of the boundary. It is priority 4.
+The article's design ends at a person: the clinician sees the case the agent built and makes the decision, and only the clinician's side holds the denial tool. A minimal workbench makes that real and lets the ledger prove the clinician-side half of the boundary. It is priority 4.
 
 ## What Changes
 
-- **Review queue.** `route_to_reviewer` writes a queue entry (case ID, tenant, reason, gaps) next to the evidence record.
-- **The workbench.** A minimal local web app that signs the clinician in through Cognito and lists queued cases for the clinician's tenant. It shows the packet checklist with sources, failure labels and gaps. It records one of two decisions:
-  - approve
-  - adverse determination, with a required reason
-
-  Both go through the reviewer gateway under the clinician's own token.
-- **Reviewer identity and decision time** are written to the evidence record.
+- **Sign-in.** Authorization code with PKCE, through the Cognito hosted UI, with a localhost callback only. The only password fallback is SRP, never `USER_PASSWORD_AUTH`.
+- **Identity and tenant come only from the validated token.**
+  - The reviewer gateway's request interceptor (from `evidence-record-and-trace`) validates the clinician's token.
+  - It overwrites the reviewer `sub`, username and tenant in every tool call's arguments.
+  - The tenant comes from the clinician's tenant group claim, never from a request parameter or the model.
+- **Reviewer-gateway tools.** All are on the `ReviewerTools` target, and each is permitted by Cedar for the clinician group only:
+  - `ReviewerTools___list_queue`: the clinician's tenant queue.
+  - `ReviewerTools___get_case`: one case, looked up by exact ID within the clinician's tenant. Another tenant's case is refused.
+  - `ReviewerTools___record_adverse_determination`: requires a reason, enforced by the schema and by the Lambda. Writes a decision record.
+  - `ReviewerTools___record_clinician_approval`: a separate tool. Writes a decision record.
+- **Review queue.**
+  - `route_to_reviewer` writes only under `queue/<tenant>/<case_id>.json`.
+  - The tenant is taken from the request record, never from the model.
+- **The workbench** is a minimal local web app.
+  - **Queue:** shows the clinician's tenant queue.
+  - **Packet:** shows the packet checklist with sources.
+  - **Labels:** "Not found", "extraction failed" and "no verified policy" are labeled distinctly.
+  - **Summary:** the model summary is marked as a model summary.
+  - **Data access:** every read and write goes through the reviewer gateway under the clinician's own token. The app holds no AWS credentials.
 - **No public endpoint.** The workbench runs locally against the deployed gateways.
 
 ## Claims delivered
@@ -31,6 +43,13 @@ None.
 
 ## Impact
 
-- **New code:** `workbench/` (Python web app) and tests.
-- **AWS resources:** none new beyond the queue storage.
-- **Depends on** `evidence-record-and-trace`.
+- **New code:**
+  - `workbench/` (Python web app)
+  - the reviewer tools `list_queue`, `get_case` and `record_clinician_approval`
+  - the queue writer in `route_to_reviewer`
+  - tests
+- **AWS changes:**
+  - the reviewer gateway target gains three tools
+  - three Cedar permits for the clinician group
+  - no new resources beyond the queue prefix in the evidence bucket
+- **Depends on** `evidence-record-and-trace` (the request interceptor and decision records).

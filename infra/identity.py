@@ -7,6 +7,9 @@ from constructs import Construct
 
 GROUPS = ("clinician", "tenant-a", "tenant-b")
 RESOURCE_SERVER = "prior-auth"
+# The workbench runs locally; its OAuth callback is the only redirect allowed.
+WORKBENCH_CALLBACK = "http://localhost:8765/callback"
+WORKBENCH_LOGOUT = "http://localhost:8765/"
 SCOPE = "tools"
 
 
@@ -46,12 +49,23 @@ class Identity(Construct):
         # Client credentials only: no user sign-in flow, so the agent client can
         # never mint a user-subject token (an empty AuthFlow falls back to Cognito defaults).
         self.agent_client.node.default_child.add_property_override("ExplicitAuthFlows", ["ALLOW_REFRESH_TOKEN_AUTH"])
+        # Clinician sign-in (PM, 2026-10-16; supersedes the earlier "OAuth off" fix):
+        # authorization code + PKCE with a localhost callback only. The earlier risk was
+        # the implicit grant delivering tokens to a third-party callback; neither remains.
+        # The only password fallback is SRP, so a password never crosses the wire.
         self.clinician_client = self.pool.add_client(
             "ClinicianClient",
             user_pool_client_name="prior-auth-clinician",
             generate_secret=False,
-            auth_flows=cognito.AuthFlow(user_password=True),
-            disable_o_auth=True,
+            auth_flows=cognito.AuthFlow(user_srp=True),
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(authorization_code_grant=True, implicit_code_grant=False),
+                scopes=[cognito.OAuthScope.OPENID, cognito.OAuthScope.COGNITO_ADMIN],
+                callback_urls=[WORKBENCH_CALLBACK],
+                logout_urls=[WORKBENCH_LOGOUT],
+            ),
+            supported_identity_providers=[cognito.UserPoolClientIdentityProvider.COGNITO],
+            write_attributes=cognito.ClientAttributes(),
             access_token_validity=Duration.minutes(60),
             prevent_user_existence_errors=True,
         )

@@ -14,7 +14,14 @@
   2. That hash equals the agent's final span attribute.
   3. The decision record's recomputed hash equals the reviewer span attribute.
 - **Coverage.** L3 covers both records' fields. L6 covers every link.
-- **Reviewer identity.** It comes from the reviewer service's caller context. Gateway does not pass the caller's identity to Lambda targets (see `gateway-and-policy` contract notes). So in this change the reviewer identity is the clinician username, supplied by `scripts/clinician_decide.py` as a tool argument. The record labels it `reviewer_identity_source: "tool-argument"`, and the README's threat model states the limit. The workbench change may replace it with a verified token claim.
+- **Reviewer identity comes from a request interceptor** on the reviewer gateway (PM, 2026-10-16; contract-read in `docs/contract-notes.md`). Gateway does not pass the caller's identity to Lambda targets, but a REQUEST interceptor receives the bearer token (`passRequestHeaders: true`) and can rewrite the `tools/call` arguments.
+  - **Validation.** `tools/reviewer_interceptor.py` validates the token itself with Cognito `GetUser`, a server-side check, so it relies neither on the authorizer having run first nor on a crypto library in the Lambda. It also requires the token's `client_id` to be the clinician client, and its groups to include `clinician` and exactly one tenant group.
+  - **Overwrite.** It writes `reviewer_sub`, `reviewer_username` and `tenant` into the arguments, overwriting any caller-supplied values. It then returns the transformed request.
+  - **On failure** it returns a `transformedGatewayResponse` error (a short-circuit), so the target is never called.
+  - **No logging of credentials.** It never logs headers or the token.
+  - **In the record.** The decision record's reviewer identity is the interceptor's value, labeled `reviewer_identity_source: "validated-token"`.
+  - **Tests.** A unit test shows that a spoofed `reviewer_username` is overwritten. A recorded live call sends a spoofed name, and the decision record shows the real one.
+  - **Live check.** Whether a transformed body reaches a *Lambda* target is not stated in the docs. It is confirmed by that recorded call before the article's row is marked proven. If it does not, the article's evidence-record row is flagged for "reviewer identity as asserted by the clinician app".
 
 ### D2. Who writes the decision record for an auto-approved case (decided: Andrew, 2026-10-16)
 
@@ -40,6 +47,7 @@ The PM's rule is that the agent and tool roles may write only `recommendations/`
 - **Bucket policy** (explicit denies, which apply to every principal in the account):
   - Deny `s3:PutObject` on `decisions/*` unless the principal is the reviewer service role or the approval service role.
   - Deny `s3:PutObject` on `recommendations/*` unless the principal is the agent runtime role.
+  - Deny `s3:PutObject` on `queue/*` unless the principal is the case-tool role (`route_to_reviewer`). Queue entries also fall under the default retention; they are never overwritten, only superseded by the decision record.
   - Deny `s3:BypassGovernanceRetention`, `s3:PutObjectRetention` and `s3:DeleteObjectVersion` unless the principal is `prior-auth-teardown`.
   - Deny any `PutObject` that names a KMS key other than the project key.
 - **Overwrites.** Writers use `If-None-Match: *`, so a second write of the same key is refused.
@@ -78,7 +86,7 @@ The PM's rule is that the agent and tool roles may write only `recommendations/`
 
 `scripts/clinician_decide.py <case_id> <decision> <reason>` works like this:
 1. It reads a synthetic clinician's password from Secrets Manager.
-2. It signs in through the clinician app client.
+2. It signs in through the clinician app client, using SRP.
 3. It calls `ReviewerTools___record_adverse_determination` on the reviewer gateway.
 4. The reviewer service, `tools/reviewer_tools.py` extended, writes the decision record and returns its hash.
 
@@ -109,5 +117,5 @@ No Memory resource. The runtime and tool roles include an explicit `Deny` on `be
 
 - [Redaction misses error text or another event path] → The canary scan, with injected failures and a positive control, finds it. The fix is to stop emitting that path.
 - [Governance mode is weaker than compliance mode] → The bypass is limited to the teardown role by the bucket policy, and the README states production uses compliance mode.
-- [Reviewer identity is a tool argument until the workbench verifies a token] → The record labels its source, and the README's threat model states the limit.
+- [The interceptor's body rewrite might not reach a Lambda target] → A recorded live test with a spoofed name decides it before the claim is marked proven. The fallback is the article edit named above.
 - [The bucket policy locks out an administrator] → The teardown role is assumable by account administrators. Teardown assumes it explicitly.

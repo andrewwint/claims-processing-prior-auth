@@ -9,10 +9,20 @@
 
 ## 1. Criteria and synthetic data
 
-- [ ] 1.1 Two synthetic payer policies (two procedures each) in `policies/source/`, labeled synthetic, each criterion with its evidence rule (design D11), plus `policies/compile.py` with source verification. Tests:
+- [ ] 1.0 Synthetic data rules (PM, 2026-10-16):
+  - **Self-generated.** All data is generated here. Nothing is reused from any other repository: no files, names or attribution.
+  - **Payers.** Two fictional payers, **Larkspur Health Plan** and **Tidewell Mutual**. A test fails if any real payer name appears anywhere in the repository (`tests/test_no_real_payers.py`, added 2026-10-16).
+  - **Codes.** ICD-10-CM codes as they are. CPT code numbers only, each with our own short description, never the AMA descriptor text.
+- [ ] 1.1 Short synthetic payer policies in `policies/source/`, labeled synthetic, covering 2–3 procedures across the two payers: outpatient physical therapy, knee arthroscopy and lumbar discectomy. Each criterion has its evidence rule (design D11). `policies/compile.py` produces criteria with source locations and evidence rules, with source verification. Tests:
   - the compile reproduces the committed output
   - a criterion moved away from its stated location fails the compile (G1, G2)
-- [ ] 1.2 Synthetic charts in `cases/`, labeled synthetic: documents with pages and lines, plus `index.json` mapping `doc_id` to patient. Cases:
+- [ ] 1.2 About 8 synthetic patients across `tenant-a` and `tenant-b`, in `cases/`, labeled synthetic.
+  - Documents are page- and line-addressable, each with a `kind`.
+  - `index.json` maps `doc_id` to patient.
+  - Every chart embeds unique canary strings for the telemetry scan.
+  - Request records carry the tenant.
+
+  Cases:
   - approvable
   - missing evidence
   - wrong patient
@@ -23,7 +33,7 @@
 
 ## 2. Checks module and decision
 
-- [ ] 2.1 `checks/`: check 1 (schema), check 2 (exact NFC substring at the cited line, at least 4 non-whitespace characters), check 3 (patient from `index[doc_id]`), and `recompute()`. Negative tests, one per case:
+- [ ] 2.1 `checks/`: check 1 (schema), check 2 (exact NFC substring at the cited line, at least 4 non-whitespace characters), check 3 (the compiled evidence rule), check 4 (patient from `index[doc_id]`), and `recompute()`. The four checks match the article. Negative tests, one per case:
   - malformed output (G4)
   - value not at its location (G5)
   - near miss: one changed character, a change of case, the adjacent line (G5)

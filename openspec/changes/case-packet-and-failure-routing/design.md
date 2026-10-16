@@ -34,13 +34,14 @@ The rule underneath every decision here: **an approval is derived only from trus
   - Both strings are Unicode NFC-normalized first. Nothing else is normalized: no case folding, no whitespace collapsing, no fuzzy matching, no spans across lines.
   - The value must have at least 4 non-whitespace characters, so an empty or trivial value never matches.
   - A wrong line, a single changed character, or a change of case is a failure.
-- **Check 3, same patient.** The owning patient is looked up as `index[doc_id]` and compared with the request record's patient ID.
+- **Check 3, evidence rule.** The cited text must satisfy the criterion's compiled evidence rule (design D11).
+- **Check 4, same patient.** The owning patient is looked up as `index[doc_id]` and compared with the request record's patient ID.
   - The packet's `patient_id`, and any patient ID the model supplied, are ignored.
   - A `doc_id` missing from the index fails the check.
 - **`recompute(packet, request, criteria, chart)`** rebuilds the verdict:
   1. Run check 1.
   2. Take the criteria from the compiled policy for the request's (payer, CPT), never from the packet.
-  3. Check every finding with checks 2 and 3.
+  3. Check every finding with checks 2, 3 and 4.
   4. A criterion is Met only if it has at least one finding and every finding for it verifies.
   5. Return each criterion's status, all failures and the gaps.
 
@@ -147,7 +148,8 @@ A finding counts only if it passes source match, same patient, and its criterion
 
 ## Risks / Trade-offs
 
-- [The model invents a citation] → Checks 2 and 3 fail it, and the criterion is not Met.
+- [The model invents a citation] → Checks 2 and 4 fail it, and the criterion is not Met.
+- [A real quote proves nothing about the criterion] → Check 3 fails it.
 - [A forged or tampered packet reaches the approval service] → The hash catches tampering after storage. `recompute()` catches forged content, because it never reads statuses or patient IDs from the packet.
 - [Strict matching rejects true findings that the model paraphrased] → They route to a reviewer. That costs time, not safety. The extraction prompt asks for verbatim quotes.
 - [Cross-Region routing] → It is limited to three named US Regions by an explicit opt-in. Nova Pro is the single-Region fallback.

@@ -19,7 +19,8 @@ It is priority 2.
 - **One checks module, `checks/`.** It is imported by both the runtime and the approval service, and it holds:
   - check 1: schema
   - check 2: exact source match, at the cited line
-  - check 3: the same patient, derived from the chart index
+  - check 3: the cited text satisfies the criterion's compiled evidence rule
+  - check 4: the same patient, derived from the chart index
   - `recompute()`, which rebuilds every criterion's status from trusted sources
 - **The decision is a code function.** `decide(packet)` returns approve or route. It calls `checks.recompute()`, and the runtime wrapper acts on its result.
   - The model has no tools: it cannot call `record_approval` or `route_to_reviewer`.

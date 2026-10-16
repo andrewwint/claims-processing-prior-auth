@@ -13,6 +13,17 @@ The agent runtime SHALL write one recommendation record per case at the end of i
 - **WHEN** an agent session ends
 - **THEN** a recommendation record with every listed field exists, and the final span carries its hash
 
+### Requirement: Reviewer identity comes from the validated token
+The reviewer gateway's request interceptor SHALL validate the caller's token and overwrite the reviewer identity and tenant in the tool arguments. The decision record SHALL take its reviewer identity from those values.
+
+#### Scenario: Spoofed reviewer name
+- **WHEN** a clinician's call carries a `reviewer_username` that is not theirs
+- **THEN** the interceptor overwrites it, and the decision record shows the validated username
+
+#### Scenario: Invalid token
+- **WHEN** the interceptor cannot validate the caller's token
+- **THEN** the call is answered with an error and the target is not invoked
+
 ### Requirement: A decision record is written by the reviewer service
 The reviewer service SHALL write one decision record per decision. The record SHALL hold the reviewer identity, the decision, the reason, the recommendation record's hash, and a server-generated decision timestamp. Its hash SHALL be set on the reviewer call's span.
 
