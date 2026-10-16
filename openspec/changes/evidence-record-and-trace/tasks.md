@@ -36,7 +36,8 @@
 - [ ] 3.1 Each of these is recorded and refused:
   - an overwrite of a recommendation by the agent role
   - a delete by the agent role (L4)
-  - **a write to `decisions/` by the agent role (L8)**
+  - **a write to `decisions/` by the agent role, and by the case-tool role after the `queue/<tenant>/` scoping lands (L8)**
+  - a write by the case-tool role to `queue/` outside a tenant prefix
   - a governance bypass attempted by a non-teardown principal
   - a write under another KMS key (L5)
 

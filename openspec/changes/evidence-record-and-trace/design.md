@@ -47,7 +47,8 @@ The PM's rule is that the agent and tool roles may write only `recommendations/`
 - **Bucket policy** (explicit denies, which apply to every principal in the account):
   - Deny `s3:PutObject` on `decisions/*` unless the principal is the reviewer service role or the approval service role.
   - Deny `s3:PutObject` on `recommendations/*` unless the principal is the agent runtime role.
-  - Deny `s3:PutObject` on `queue/*` unless the principal is the case-tool role (`route_to_reviewer`). Queue entries also fall under the default retention; they are never overwritten, only superseded by the decision record.
+  - Deny `s3:PutObject` on `queue/*` unless the principal is the case-tool role (`route_to_reviewer`), and that role's IAM policy allows only `queue/tenant-a/*` and `queue/tenant-b/*` (PM, 2026-10-16). A key directly under `queue/`, or under any other tenant, is refused. Queue entries also fall under the default retention; they are never overwritten, only superseded by the decision record.
+  - The case-tool role stays denied on `decisions/`. L8 is re-run after the queue scoping lands, to confirm.
   - Deny `s3:BypassGovernanceRetention`, `s3:PutObjectRetention` and `s3:DeleteObjectVersion` unless the principal is `prior-auth-teardown`.
   - Deny any `PutObject` that names a KMS key other than the project key.
 - **Overwrites.** Writers use `If-None-Match: *`, so a second write of the same key is refused.

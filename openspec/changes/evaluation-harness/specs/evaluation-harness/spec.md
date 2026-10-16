@@ -38,6 +38,10 @@ The report SHALL give, per model, the false auto-approval rate (approvals the ap
 - **WHEN** the report is generated
 - **THEN** both rates appear with numerator, denominator, and N
 
+#### Scenario: Zero false approvals
+- **WHEN** no false auto-approvals occur in N trials
+- **THEN** the report states "0 of N" with the 95% upper bound of about 3/N, next to the auto-approval rate
+
 ### Requirement: Every trial is shown and failures count
 Every trial SHALL appear in the report. A response cut off at the token limit SHALL count as a failure, not a skip. Each trial SHALL record the sampling settings as sent.
 

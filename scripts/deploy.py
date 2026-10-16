@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import BotoCoreError, ClientError
 
 from infra.names import BUDGET_NAMES, BUDGET_STACK, CDK_CLI
 from scripts.inventory import present_budgets
@@ -80,13 +80,18 @@ def main(argv: list[str]) -> int:
     if missing:
         print(f"refusing to deploy {stack}: missing context {', '.join(missing)}", file=sys.stderr)
         return 2
-    if refuses_gateway_revert(stack, args, saved, _stack_exists(stack)):
+    try:
+        exists = _stack_exists(stack)
+    except BotoCoreError as e:
+        print(f"refusing to deploy {stack}: cannot reach AWS ({e})", file=sys.stderr)
+        return 1
+    if refuses_gateway_revert(stack, args, saved, exists):
         print(f"refusing to redeploy {stack} without -c agent_gateway_id and -c reviewer_gateway_id", file=sys.stderr)
         return 2
     if stack != BUDGET_STACK:
         try:
             require_budgets(present_budgets(boto3.Session(region_name="us-east-1")))
-        except (BudgetsMissing, ClientError) as e:
+        except (BudgetsMissing, ClientError, BotoCoreError) as e:
             print(f"refusing to deploy {stack}: {e}", file=sys.stderr)
             return 1
     return subprocess.run(["npx", "-y", CDK_CLI, *cdk_args(stack, extra)]).returncode

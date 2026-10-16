@@ -15,6 +15,12 @@
 
 Rates are given per model, with numerator, denominator and N. No ranking claims are made at this N.
 
+**How the false auto-approval rate is stated (PM, 2026-10-16).** Always as "x of N", with the one-sided 95% upper bound, and always next to the auto-approval rate.
+- **When x = 0:** the bound uses the rule of three, about 3/N. For example, "0 of 120 (95% upper bound 2.5%)".
+- **When x > 0:** the bound is the exact Clopper–Pearson upper limit.
+
+The pre-registration fixes this wording, and a report test checks both the form and the arithmetic.
+
 ### D2. Case generation and provenance
 
 - **Generator.** `harness/cases.py` builds every case from a parent by exactly one declared change. Each case file records:

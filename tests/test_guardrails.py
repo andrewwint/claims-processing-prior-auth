@@ -191,3 +191,14 @@ def test_redeploying_existing_gateways_without_exact_ids_is_refused():
     assert not deploy.refuses_gateway_revert("PriorAuthGateways", [], saved, stack_exists=False)
     ids = ["agent_gateway_id=a", "reviewer_gateway_id=b"]
     assert not deploy.refuses_gateway_revert("PriorAuthGateways", ids, saved, stack_exists=True)
+
+
+def test_deploy_fails_cleanly_when_credentials_are_expired(monkeypatch):
+    from botocore.exceptions import TokenRetrievalError
+
+    def expired(session):
+        raise TokenRetrievalError(provider="sso", error_msg="Token has expired")
+
+    monkeypatch.setattr(deploy, "present_budgets", expired)
+    monkeypatch.setattr(deploy.subprocess, "run", lambda *a, **k: pytest.fail("cdk must not run"))
+    assert deploy.main(["PriorAuthGateways", "-c", "cognito_domain_prefix=x"]) == 1
