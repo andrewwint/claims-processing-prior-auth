@@ -98,6 +98,25 @@ def card_page(text: str) -> str:
     </style></head><body><div>{html.escape(text)}</div></body></html>"""
 
 
+class PacketViewMismatch(RuntimeError):
+    pass
+
+
+def check_packet_view(page_html: str, run_id: str | None) -> None:
+    """Fail the recording unless the packet view shows what the caption says: this run, C1 and C2
+    Met with their evidence, C3 Not found."""
+    problems = []
+    if "The stored packet is not the one" in page_html or "No evidence record for this run" in page_html:
+        problems.append("the page shows no evidence for this run")
+    if run_id and run_id not in page_html:
+        problems.append("the page is not showing the fresh run")
+    for criterion, status in (("C1", "Met"), ("C2", "Met"), ("C3", "Not found")):
+        if not re.search(rf"<td>{criterion}</td><td class=\"{status.split()[0]}\">{status}</td>", page_html):
+            problems.append(f"{criterion} is not shown as {status}")
+    if problems:
+        raise PacketViewMismatch("packet view does not match the caption: " + "; ".join(problems))
+
+
 def caption(page, key: str) -> None:
     text, hold = CAPTIONS[key]
     page.evaluate(BANNER_JS, text)
@@ -145,7 +164,8 @@ def main() -> int:
     env = {**os.environ, "SYN_CLINICIAN_1_PASSWORD": password,
            "PLAYWRIGHT_BROWSERS_PATH": str(ROOT / "build" / "playwright")}
     print("running the demo beats (identifiers masked)...")
-    outputs = {b: run_beat(b, env) for b in (1, 2, 3, 4, 6)}
+    # Beat 3 (the fresh counterfactual run) goes last, immediately before the workbench opens it.
+    outputs = {b: run_beat(b, env) for b in (1, 2, 4, 6, 3)}
     run_id = (re.search(r"run (\S+)", outputs[3]) or [None, None])[1]
     print(f"counterfactual run: {run_id}")
 
@@ -182,6 +202,7 @@ def main() -> int:
 
             page.get_by_role("link", name=CASE).click()
             page.wait_for_load_state("networkidle")
+            check_packet_view(page.content(), run_id)
             caption(page, "packet")
             page.get_by_role("button", name="Deny").click()
             page.wait_for_load_state("networkidle")

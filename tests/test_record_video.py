@@ -31,3 +31,22 @@ def test_refuses_without_the_password_variable(tmp_path):
     out = subprocess.run([sys.executable, "-m", "scripts.record_video", str(tmp_path / "v")], cwd=ROOT,
                          capture_output=True, text=True, env={"PATH": "/usr/bin:/bin"})
     assert out.returncode == 2 and "PA_VIDEO_PASSWORD" in out.stderr
+
+
+def _row(c, status):
+    return f'<td>{c}</td><td class="{status.split()[0]}">{status}</td>'
+
+
+def test_packet_view_guard_accepts_the_captioned_state():
+    page = "run R1 " + _row("C1", "Met") + _row("C2", "Met") + _row("C3", "Not found")
+    rv.check_packet_view(page, "R1")
+
+
+def test_packet_view_guard_rejects_the_bad_take():
+    import pytest
+    bad = ("run R1 The stored packet is not the one this run recommended "
+           + _row("C1", "Not found") + _row("C2", "Not found") + _row("C3", "Not found"))
+    with pytest.raises(rv.PacketViewMismatch):
+        rv.check_packet_view(bad, "R1")
+    with pytest.raises(rv.PacketViewMismatch):  # a different run on screen
+        rv.check_packet_view("run R0 " + _row("C1", "Met") + _row("C2", "Met") + _row("C3", "Not found"), "R1")
