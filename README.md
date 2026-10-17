@@ -142,7 +142,7 @@ This repository is built backwards from a five-minute demo. These are deliberate
 - **Operator alerting is a metric and a CloudWatch alarm.** There is no SNS topic; the alarm's state change is the evidence.
 - **Memory is not used,** and no Memory evidence is recorded. **No Knowledge Base:** policy lookup is an exact match on (payer, CPT).
 - **The decision clock** is tested against the 7-day and 72-hour windows only, not edge cases.
-- **No redeploy-from-scratch test.** A verified teardown runs after the demo period.
+- **No redeploy-from-scratch test.** The teardown script and its runbook remove the deployment and verify that nothing is left.
 - **No mutation testing** of the checks module.
 - **Sampling settings are recorded as built, not captured.** Each trial records the sampling settings rebuilt from the model client's request builder, not taken from the request on the wire.
 - **Some storage refusals are simulated.** The runtime and tool roles trust only their service principals, so their refusals (writes to `decisions/`, deletes, retention changes, governance bypass, another KMS key) are evaluated with the IAM policy simulator against the deployed bucket policy, not by live calls. Write-once is shown live.
