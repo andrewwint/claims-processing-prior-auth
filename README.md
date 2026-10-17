@@ -4,10 +4,6 @@ Reference implementation for the article **"Build the Case, Let the Clinician De
 
 **Scope.** This repository covers the pre-service prior-authorization gate: from the X12 278 request to the determination, with an eligibility step on synthetic coverage data. Post-service claims (837, 277CA, adjudication, 835) are out of scope; the same human gate applies at adjudication's clinical pend.
 
-![The X12 transaction sequence across pre-service (in scope: eligibility 270/271, prior authorization 278 request and determination) and post-service (out of scope: claim submission 837, acknowledgment 277CA, status 276/277, adjudication with its clinical-review pend, remittance 835).](docs/transaction-code-sequence-system-boundaries.png)
-
-*The industry flow, for orientation. This repository covers the pre-service gate (in scope), working on synthetic records rather than X12 transactions; post-service claims are out of scope.*
-
 An agent on Amazon Bedrock AgentCore assembles a prior-authorization case: it gathers the evidence, checks it, and cites every statement. A clinician makes the decision.
 
 The agent's gateway has no tool for an adverse determination. That tool lives on a separate reviewer gateway, which admits clinicians only and where a Cedar policy forbids the action for the agent's identity. The agent may submit an approval, but the approval service records it only after re-running every check on the stored packet itself.
@@ -15,6 +11,12 @@ The agent's gateway has no tool for an adverse determination. That tool lives on
 ![A request is built into a case; if every criterion is met it is approved, otherwise (or on any failure) a clinician reviews and either approves or denies with a specific reason.](docs/agent_approves_or_escalates.png)
 
 *"Agent approves" means: the model only gathers and cites; `decide()` approves, and the approval service re-checks the stored packet before recording it. In this demo the request is a synthetic case record, not an X12 278 transaction.*
+
+## Where this sits in claims processing
+
+![The X12 transaction sequence across pre-service (in scope: eligibility 270/271, prior authorization 278 request and determination) and post-service (out of scope: claim submission 837, acknowledgment 277CA, status 276/277, adjudication with its clinical-review pend, remittance 835).](docs/transaction-code-sequence-system-boundaries.png)
+
+*The industry flow, for orientation. This repository works on synthetic records, not X12 transactions.*
 
 ## Start here
 
