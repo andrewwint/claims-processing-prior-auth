@@ -12,7 +12,7 @@ OUT = {"AgentClientId": "a" * 25 + "1", "ClinicianClientId": "b" * 25 + "2", "In
 SCREEN = (f"agent {OUT['AgentClientId']} clinician {OUT['ClinicianClientId']} intake {OUT['IntakeClientId']}\n"
           f"pool {OUT['UserPoolId']} url {OUT['AgentGatewayUrl']} domain {OUT['TokenDomain']}\n"
           "role arn:aws:iam::123456789012:role/prior-auth-runtime-role account 123456789012\n"
-          "token eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln operator <masked-sso-role-suffix>\n"
+          "token eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln operator AWSReservedSSO_AdministratorAccess_0123abcd4567ef89\n"
           "kept: ReviewerTools___record_adverse_determination SYN-CASE-CF-1 run 20261017T003416Z-8dd3a8dc\n")
 
 
@@ -21,7 +21,7 @@ def test_redact_masks_every_identifier():
     demo.RedactingStream(buf, demo.demo_named(OUT)).write(SCREEN)
     shown = buf.getvalue()
     assert find_unredacted(shown, list(OUT.values())) == []
-    for leaked in ("123456789012", "3ef8b4ddab344fe8", "eyJ", "us-east-1_AbCdEfGhI"):
+    for leaked in ("123456789012", "0123abcd4567ef89", "eyJ", "us-east-1_AbCdEfGhI"):
         assert leaked not in shown
     assert "<intake-client-id>" in shown and "<operator-role>" in shown
     # What the audience needs to see stays.
