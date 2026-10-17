@@ -89,7 +89,7 @@
   Done when each response, span and metric datapoint is saved.
 - [x] 4.3 B5: copy the deployed forbid text for the agent principal into the article snippet, with no retyping. Confirm the underscore count in the action name from the deployed `tools/list` names. Done when a test that compares the committed snippet with the deployed policy text passes.
 - [ ] 4.4 A4: record listings showing separate agent and clinician app clients, every target using `GATEWAY_IAM_ROLE`, and no secret values in tool or target configuration. Done when a test that fails on any secret-like value in the captured configuration passes.
-- [ ] 4.5 Model allow-list (M9). Done when:
+- [x] 4.5 (done 2026-10-17: `tests/test_model_allow_list.py`; `evidence/2026-10-16/model-allow-list-after-harness-revert.json`) Model allow-list (M9). Done when:
   - a code test shows an unlisted model is rejected
   - the IAM policy lists exactly the allow-listed model ARNs in us-east-1
 - [x] 4.6 Redaction: replace ARNs, account IDs and Cognito client IDs with placeholders before committing, and never change action names. Done when:

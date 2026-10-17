@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-16",
+  "label": "after-harness-revert",
+  "model_allow_list_env": "amazon.nova-pro-v1:0",
+  "nova_pro_only": true,
+  "probe_off_list_model": {
+    "model_id": "us.anthropic.claude-sonnet-4-6",
+    "response": {
+      "outcome": "rejected",
+      "reason": "model is not on the allow-list"
+    }
+  },
+  "runtime_role_model_grants": [
+    {
+      "condition": null,
+      "resources": [
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0"
+      ]
+    }
+  ],
+  "sha": "b92148352f388561df882d94e55685cc3747162a"
+}
