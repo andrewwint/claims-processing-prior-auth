@@ -76,13 +76,13 @@ If you have ten minutes, read in this order:
 | `make workbench` | The clinician's local page on 127.0.0.1:8765 |
 | `make deploy STACK=PriorAuthRuntime` | One stack, only through the deploy guard: clean tree, budgets present, exact gateway IDs, each deploy logged by commit |
 | `make smoke` | The boundary checks, compared with the recorded evidence |
-| `make verify-chain CASE=… RUN=…` | One decision's chain: decision → recommendation → runtime span, and decision → trace |
+| `make verify-chain CASE=… RUN=…` | One decision's chain: decision → recommendation → runtime span, and decision → trace. The trace check needs Transaction Search with trace indexing at 100% (as recorded for this account); on default sampling it can fail on an unindexed trace |
 | `make report` | Regenerates `evaluation/report.md` and `SAMPLE_OUTPUTS.md` from committed data |
 | `make scan` | The gate before going public: deployment identifiers and restricted terms in the tree and the full history, with a positive control |
 
 Deployed AWS resources keep the project's original name on purpose: the `project=prior-auth-agentcore` cost tag and the `prior-auth-agentcore-*` budget names. Renaming them would replace live budgets and re-tag resources.
 
-Teardown is not a make target: it runs once, deliberately, with `python -m scripts.teardown --yes`.
+Teardown is not a make target: it runs once, deliberately, with `python -m scripts.teardown --yes`, following [docs/teardown-runbook.md](docs/teardown-runbook.md).
 
 ## Principles
 
@@ -136,7 +136,7 @@ This repository is built backwards from a five-minute demo. These are deliberate
 - **No mutation testing** of the checks module.
 - **Sampling settings are recorded as built, not captured.** Each trial records the sampling settings rebuilt from the model client's request builder, not taken from the request on the wire.
 - **Some storage refusals are simulated.** The runtime and tool roles trust only their service principals, so their refusals (writes to `decisions/`, deletes, retention changes, governance bypass, another KMS key) are evaluated with the IAM policy simulator against the deployed bucket policy, not by live calls. Write-once is shown live.
-- **Governance mode, with one bypass role.** The teardown role (assumable by account administrators) can delete every version of a record and so let a different one be created on the same run. Nobody else can delete, hide or replace a record. Production uses compliance mode.
+- **Governance mode, with one bypass role.** The teardown role (assumable by account administrators) can delete every version of a record and so let a different one be created on the same run. The agent and app roles cannot delete, hide or replace a record. An account administrator could remove the bucket policy first; that change would itself be recorded in CloudTrail event history. Production uses compliance mode.
 - **The workbench is a local demo page.** Sessions live in memory; it serves one operator on 127.0.0.1.
 - **Direct Lambda invocation** by account administrators bypasses both gateway layers (see the threat model above).
 

@@ -144,7 +144,7 @@ The cases are synthetic, because real charts do not belong in a test harness. Th
 
 I used the same one-change method in [The Reader Who Never Asks](https://medium.com/@andrewwint/the-reader-who-never-asks-46534ee4c702), where one word split how models read a sentence. In prior authorization, the change is one missing note.
 
-A few rules keep the comparison honest. Run each case several times and show every trial. Count a response cut off at the token limit as a failure, not a skip. Record the sampling settings each model was given, because model families accept different ones; here, one candidate rejects temperature and top-p together. Label the cases as synthetic and author-labeled, never as clinical ground truth.
+A few rules keep the comparison honest. Run each case several times and show every trial. Count a response cut off at the token limit as a failure, not a skip. Record the sampling settings each model was given, because model families accept different ones. Here, one candidate rejected temperature and top-p set together. Label the cases as synthetic and author-labeled, never as clinical ground truth.
 
 On six synthetic cases, three trials each, Nova Pro and Sonnet 4.6 each made zero false approvals in twelve trials that needed review. That's a small sample: the 95% upper bound is still 25%. Sonnet cleared one more approvable case, at about five times the cost.
 
@@ -159,7 +159,7 @@ Each concern above lands on a specific AgentCore service. None of them depends o
 | Run the agent, one case at a time | Runtime | An isolated session per prior authorization request |
 | Expose only safe tools | Gateway | Two gateways. The agent's holds the five case-building tools. The reviewer's holds the denial tool, for clinicians only |
 | Make denial impossible for the agent | Policy | Cedar rules evaluated on every tool call, with a `forbid` on adverse determinations |
-| Reach payer systems without shared secrets | Identity | Clinicians and the agent sign in as separate identities. Tools authenticate with the gateway's role, so no secrets live in the agent |
+| Reach payer systems without shared secrets | Identity | Clinicians and the agent sign in as separate identities. The agent's gateway token comes from AgentCore Identity, which keeps the client secret in its vault, and tools run under the gateway's role. No secret is in the agent's code or configuration |
 | Keep context inside the case | Memory | Not used for patient data. Context lives only in the case's Runtime session |
 | Prove what happened | Observability | OpenTelemetry traces with IDs, timings, and hashes, never chart text |
 
