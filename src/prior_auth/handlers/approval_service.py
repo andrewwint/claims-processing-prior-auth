@@ -59,10 +59,12 @@ def _record_auto_approval(packet_id: str, case_id: str, s3=None) -> tuple[list[s
         reviewer_identity_source="service", recommendation_key=key, recommendation_record_hash=rec_hash,
         decided_at=records.now())
     try:
-        return [], {"decision_record_hash": evidence_store.put_decision(s3, bucket, record),
-                    "recommendation_record_hash": rec_hash, "run_id": run_id}
+        decision_hash = evidence_store.put_decision(s3, bucket, record)
     except evidence_store.AlreadyExists:
         return ["this run already has a decision"], {}
+    from prior_auth import trace_mark
+    trace_mark.mark_decision("prior-auth-auto-approval", decision_hash, rec_hash, run_id)
+    return [], {"decision_record_hash": decision_hash, "recommendation_record_hash": rec_hash, "run_id": run_id}
 
 
 def record_approval(event: dict) -> dict:

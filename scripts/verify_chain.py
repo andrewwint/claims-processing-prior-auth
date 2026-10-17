@@ -1,8 +1,10 @@
-"""Verify one run's record chain: decision -> recommendation -> runtime span.
+"""Verify one run's record chain: decision -> trace, and decision -> recommendation -> runtime span.
 
 Every hash is recomputed from stored bytes; nothing recorded in a record is
 trusted on its own. The span is found in the runtime log group's `spans`
-stream by the recommendation hash it carries (pa.recommendation_record_sha256).
+stream by the recommendation hash it carries (pa.recommendation_record_sha256);
+the decision's trace segment is found in X-Ray by its `decision_record_sha256`
+annotation (written by the reviewer or approval Lambda).
 
 Usage: python -m scripts.verify_chain <case_id> <run_id> [--out path]
 """
@@ -10,6 +12,7 @@ Usage: python -m scripts.verify_chain <case_id> <run_id> [--out path]
 import argparse
 import json
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import boto3
@@ -34,6 +37,17 @@ def find_span(logs, recommendation_hash: str) -> dict | None:
     return None
 
 
+def find_decision_segment(xray, decision_hash: str, decided_at: str) -> dict | None:
+    at = datetime.fromisoformat(decided_at)
+    pages = xray.get_paginator("get_trace_summaries").paginate(
+        StartTime=at - timedelta(minutes=5), EndTime=at + timedelta(minutes=60),
+        FilterExpression=f'annotation.decision_record_sha256 = "{decision_hash}"')
+    for page in pages:
+        for summary in page["TraceSummaries"]:
+            return {"trace_id": summary["Id"]}
+    return None
+
+
 def verify(session: boto3.Session, case_id: str, run_id: str) -> dict:
     s3, logs = session.client("s3"), session.client("logs")
     bucket = f"{EVIDENCE_BUCKET_PREFIX}-{session.client('sts').get_caller_identity()['Account']}"
@@ -46,7 +60,11 @@ def verify(session: boto3.Session, case_id: str, run_id: str) -> dict:
         result["verified"] = False
         return result
     result["decision"] = decision["decision"]
-    result["decision_record_sha256"] = evidence_store.stored_hash(s3, bucket, decision_key)
+    decision_hash = evidence_store.stored_hash(s3, bucket, decision_key)
+    result["decision_record_sha256"] = decision_hash
+    segment = find_decision_segment(session.client("xray"), decision_hash, decision["decided_at"])
+    result["decision_segment"] = segment
+    checks["decision_trace_carries_decision_hash"] = segment is not None
     rec_key = evidence_store.recommendation_key(case_id, run_id)
     rec_hash = evidence_store.stored_hash(s3, bucket, rec_key)
     result["recommendation_record_sha256"] = rec_hash

@@ -13,6 +13,9 @@ Modes:
   control  plant a control token through the runtime's test-only path (one span
            attribute, one log line) and a control line in each Lambda log group,
            then require the scan to find the token in every sink it was planted in.
+           Recorded once (evidence/2026-10-16/canary-scan-control.json, at the commit
+           it names); the path was then removed from the runtime, because the intake
+           client could reach it. Rerunning needs that commit deployed.
   clean    run all six cases fresh, wait for their spans, then require zero hits.
 
 Usage: python -m scripts.canary_scan control|clean

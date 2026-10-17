@@ -131,9 +131,23 @@ class FakeLogs:
             {"message": json.dumps(s)} for s in spans if kw["filterPattern"].strip('"') in json.dumps(s)]}])
 
 
+class FakeXray:
+    """Trace summaries for the decision hashes in `annotated` (None: every hash has a trace)."""
+
+    def __init__(self, annotated=None):
+        self.annotated = annotated
+
+    def get_paginator(self, name):
+        def paginate(**kw):
+            wanted = kw["FilterExpression"].split('"')[1]
+            found = self.annotated is None or wanted in self.annotated
+            return [{"TraceSummaries": [{"Id": "1-T"}] if found else []}]
+        return types.SimpleNamespace(paginate=paginate)
+
+
 class FakeSession:
-    def __init__(self, s3, logs):
-        self.clients = {"s3": s3, "logs": logs,
+    def __init__(self, s3, logs, xray=None):
+        self.clients = {"s3": s3, "logs": logs, "xray": xray or FakeXray(),
                         "sts": types.SimpleNamespace(get_caller_identity=lambda: {"Account": "000000000000"})}
 
     def client(self, name):
@@ -172,3 +186,28 @@ def test_verify_chain_fails_without_the_span(s3, monkeypatch):
     verify_chain, _ = chained(s3, monkeypatch)
     result = verify_chain.verify(FakeSession(s3, FakeLogs([])), "CF-1", "RUN-1")
     assert not result["verified"] and not result["checks"]["span_carries_recommendation_hash"]
+
+
+def test_verify_chain_fails_without_the_decision_trace(s3, monkeypatch):
+    verify_chain, span = chained(s3, monkeypatch)
+    result = verify_chain.verify(FakeSession(s3, FakeLogs([span]), FakeXray(annotated=[])), "CF-1", "RUN-1")
+    assert not result["verified"] and not result["checks"]["decision_trace_carries_decision_hash"]
+
+
+def test_decision_segment_carries_hashes_under_the_invocation_trace(monkeypatch):
+    from prior_auth import trace_mark
+    monkeypatch.setenv("_X_AMZN_TRACE_ID", "Root=1-abc-def;Parent=0123456789abcdef;Sampled=1")
+    sent = []
+    xray = types.SimpleNamespace(put_trace_segments=lambda TraceSegmentDocuments: sent.extend(TraceSegmentDocuments))
+    trace_mark.mark_decision("prior-auth-reviewer-decision", "D", "R", "RUN-1", xray)
+    doc = json.loads(sent[0])
+    assert doc["trace_id"] == "1-abc-def" and doc["parent_id"] == "0123456789abcdef"
+    assert doc["annotations"] == {"decision_record_sha256": "D", "recommendation_record_sha256": "R", "run_id": "RUN-1"}
+
+
+def test_trace_marking_never_raises(monkeypatch):
+    from prior_auth import trace_mark
+    monkeypatch.setenv("_X_AMZN_TRACE_ID", "Root=1-abc-def")
+    def boom(**kw):
+        raise RuntimeError("x-ray down")
+    trace_mark.mark_decision("n", "D", "R", "RUN", types.SimpleNamespace(put_trace_segments=boom))

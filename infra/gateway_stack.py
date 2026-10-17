@@ -52,6 +52,8 @@ def _tool(t: dict) -> agentcore.CfnGatewayTarget.ToolDefinitionProperty:
     )
 
 
+DECISION_FUNCTIONS = ("prior-auth-approval-service", "prior-auth-reviewer-tools")
+
 class GatewayStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, *, domain_prefix: str,
                  gateway_ids: dict[str, str] | None = None, b4_layer2_test: bool = False, **kwargs):
@@ -182,6 +184,8 @@ class GatewayStack(Stack):
             runtime=lambda_.Runtime.PYTHON_3_13, architecture=lambda_.Architecture.ARM_64,
             handler=handler, code=lambda_.Code.from_asset(ASSET_ROOT, exclude=ASSET_EXCLUDE),
             timeout=Duration.seconds(15), memory_size=256, log_group=log_group,
+            # Active tracing: the decision Lambdas put their record hashes on the trace (L6).
+            tracing=lambda_.Tracing.ACTIVE if function_name in DECISION_FUNCTIONS else None,
             # Fixed role names, so the evidence bucket policy can name each writer.
             role=iam.Role(self, f"{construct_id}Role", role_name=ROLE_NAMES[role_key],
                           assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),

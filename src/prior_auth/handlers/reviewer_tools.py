@@ -11,7 +11,7 @@ import os
 
 import boto3
 
-from prior_auth import evidence_store, records
+from prior_auth import evidence_store, records, trace_mark
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -40,6 +40,7 @@ def _decide(event: dict, decision: str, reason, s3=None) -> dict:
         decision_hash = evidence_store.put_decision(s3, bucket, record)
     except evidence_store.AlreadyExists:
         return {"recorded": False, "status": "refused", "reasons": ["this run already has a decision"]}
+    trace_mark.mark_decision("prior-auth-reviewer-decision", decision_hash, rec_hash, queued["run_id"])
     return {"recorded": True, "status": "recorded", "decision": decision, "case_id": case_id,
             "run_id": queued["run_id"], "decision_record_hash": decision_hash, "recommendation_record_hash": rec_hash}
 

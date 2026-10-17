@@ -102,10 +102,8 @@ This repository is built backwards from a five-minute demo. These are deliberate
 - **The decision clock** is tested against the 7-day and 72-hour windows only, not edge cases.
 - **No redeploy-from-scratch test.** One verified teardown is recorded.
 - **No mutation testing** of the checks module.
-- **The decision's hash is in a log line, not a span.** The chain decision → recommendation → runtime span is verified from stored bytes (`scripts/verify_chain.py`). The reviewer Lambda logs the decision record's hash, but no span carries it.
 - **Some storage refusals are simulated.** The runtime and tool roles trust only their service principals, so their refusals (writes to `decisions/`, deletes, retention changes, governance bypass, another KMS key) are evaluated with the IAM policy simulator against the deployed bucket policy, not by live calls. Write-once is shown live.
 - **The workbench is a local demo page.** Sessions live in memory; it serves one operator on 127.0.0.1.
-- **The runtime keeps a test-only path** for the canary scan's positive control. It accepts only a fixed-format control token and runs no case.
 - **Direct Lambda invocation** by account administrators bypasses both gateway layers (see the threat model above).
 
 ## Data
