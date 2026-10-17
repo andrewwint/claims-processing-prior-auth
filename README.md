@@ -15,7 +15,7 @@ The agent's gateway has no tool for an adverse determination. That tool lives on
 If you have ten minutes, read in this order:
 
 1. **The article:** [docs/article-draft.md](docs/article-draft.md). It makes the claims; this repository backs them.
-2. **The demo:** six beats, run with `python -m scripts.demo [--redact] <beat>` (`--redact` masks every identifier on screen; use it for any recording).
+2. **The demo:** six beats, run with `make demo BEAT=<1-6>`. Identifiers on screen are masked by default, so any run can be recorded.
 
    | Beat | What it shows                                                                                                                    | Status                                                                              |
    | ---- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -62,6 +62,23 @@ If you have ten minutes, read in this order:
 | `openspec/`                | The claims ledger and the OpenSpec changes                                                                                | Definition of done             |
 | `tests/`                   | The test suite, including the real-payer-name, redaction and consistency checks                                           | All rows typed `test`          |
 | `evaluation/`              | The pre-registration, the runner, the raw trials and the one-page report                                                  | M1–M8                          |
+
+## Commands
+
+`make help` lists them. They use whatever `AWS_PROFILE` is set in your shell.
+
+| Command | What it does |
+|---|---|
+| `make test` | The test suite |
+| `make demo BEAT=1` | One demo beat, identifiers masked (`REDACT=0` to show them) |
+| `make workbench` | The clinician's local page on 127.0.0.1:8765 |
+| `make deploy STACK=PriorAuthRuntime` | One stack, only through the deploy guard: clean tree, budgets present, exact gateway IDs, each deploy logged by commit |
+| `make smoke` | The boundary checks, compared with the recorded evidence |
+| `make verify-chain CASE=… RUN=…` | One decision's chain: decision → recommendation → runtime span, and decision → trace |
+| `make report` | Regenerates `evaluation/report.md` and `SAMPLE_OUTPUTS.md` from committed data |
+| `make scan` | The gate before going public: deployment identifiers and restricted terms in the tree and the full history, with a positive control |
+
+Teardown is not a make target: it runs once, deliberately, with `python -m scripts.teardown --yes`.
 
 ## Principles
 
