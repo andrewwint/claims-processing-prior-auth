@@ -27,7 +27,10 @@ ROOT = Path(__file__).resolve().parent.parent
 USERNAME = "syn-clinician-1"
 CASE = "SYN-CASE-CF-1"
 WORKBENCH = "http://localhost:8765/"
-VIEWPORT = {"width": 1280, "height": 800}
+# 16:9 layout; each still is captured at 8/3 pixel density, so it is exactly 3840x2160 (4K).
+VIEWPORT = {"width": 1440, "height": 810}
+SCALE = 8 / 3
+FRAME = (3840, 2160)
 DENIAL_REASON = ("Criterion C3 not met: no functional assessment (Oswestry Disability Index) is documented "
                  "in the submitted chart. Resubmit with the functional assessment.")
 
@@ -62,7 +65,7 @@ BANNER_JS = """
     b = document.createElement('div');
     b.id = 'pa-caption';
     b.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#111827;color:#fff;' +
-      'font:600 20px/1.45 system-ui,sans-serif;padding:16px 28px;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+      'font:600 22px/1.45 system-ui,sans-serif;padding:16px 28px;box-shadow:0 2px 8px rgba(0,0,0,.3)';
     document.documentElement.appendChild(b);
   }
   b.textContent = text;
@@ -83,7 +86,7 @@ def run_beat(beat: int, env: dict) -> str:
 
 def terminal_page(command: str, output: str) -> str:
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
-    body {{ margin:0; background:#0b1020; color:#e5e7eb; font:16px/1.5 ui-monospace,Menlo,monospace; }}
+    body {{ margin:0; background:#0b1020; color:#e5e7eb; font:18px/1.55 ui-monospace,Menlo,monospace; }}
     .term {{ margin:24px 40px; padding:20px 24px; background:#111827; border-radius:10px; white-space:pre-wrap; }}
     .cmd {{ color:#93c5fd; }}
     </style></head><body><div class="term"><span class="cmd">$ {html.escape(command)}</span>
@@ -92,7 +95,7 @@ def terminal_page(command: str, output: str) -> str:
 
 def card_page(text: str) -> str:
     return f"""<!doctype html><html><head><meta charset="utf-8"><style>
-    body {{ margin:0; background:#0b1020; color:#f9fafb; font:600 34px/1.4 system-ui,sans-serif;
+    body {{ margin:0; background:#0b1020; color:#f9fafb; font:600 38px/1.4 system-ui,sans-serif;
            display:flex; align-items:center; justify-content:center; height:100vh; text-align:center; }}
     div {{ max-width:900px; padding:0 40px; }}
     </style></head><body><div>{html.escape(text)}</div></body></html>"""
@@ -117,15 +120,44 @@ def check_packet_view(page_html: str, run_id: str | None) -> None:
         raise PacketViewMismatch("packet view does not match the caption: " + "; ".join(problems))
 
 
-def caption(page, key: str) -> None:
+class Stills:
+    """The video as a list of (still, seconds). Playwright's screen recorder captures at a low,
+    fixed bitrate and the window's own size; full-density screenshots stay sharp."""
+
+    def __init__(self, folder: Path):
+        self.folder, self.shots = folder, []
+        folder.mkdir(parents=True, exist_ok=True)
+        for old in folder.glob("s*.png"):
+            old.unlink()
+
+    def take(self, page, seconds: float) -> None:
+        path = self.folder / f"s{len(self.shots):03d}.png"
+        page.screenshot(path=str(path))
+        self.shots.append((path, seconds))
+
+    def encode(self, mp4_4k: Path, mp4_1080: Path) -> None:
+        listing = self.folder / "stills.txt"
+        lines = [f"file '{p.name}'\nduration {d}" for p, d in self.shots]
+        lines.append(f"file '{self.shots[-1][0].name}'")  # the concat demuxer needs the last file repeated
+        listing.write_text("\n".join(lines) + "\n")
+        base = ["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(listing)]
+        enc = ["-r", "30", "-c:v", "libx264", "-preset", "slow", "-tune", "stillimage", "-pix_fmt", "yuv420p",
+               "-movflags", "+faststart"]
+        subprocess.run(base + ["-vf", f"scale={FRAME[0]}:{FRAME[1]}:flags=lanczos", *enc, "-crf", "16",
+                               str(mp4_4k)], check=True)
+        subprocess.run(base + ["-vf", "scale=1920:1080:flags=lanczos", *enc, "-crf", "18", str(mp4_1080)],
+                       check=True)
+
+
+def caption(page, stills: Stills, key: str) -> None:
     text, hold = CAPTIONS[key]
     page.evaluate(BANNER_JS, text)
-    time.sleep(hold)
+    stills.take(page, hold)
 
 
-def show_terminal(page, key: str, beat: int, output: str) -> None:
+def show_terminal(page, stills: Stills, key: str, beat: int, output: str) -> None:
     page.set_content(terminal_page(f"make demo BEAT={beat}", output))
-    caption(page, key)
+    caption(page, stills, key)
 
 
 def wait_for_workbench(timeout: float = 20) -> None:
@@ -177,55 +209,52 @@ def main() -> int:
             raise RuntimeError("the workbench exited; the port may be taken")
         from playwright.sync_api import sync_playwright
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = env["PLAYWRIGHT_BROWSERS_PATH"]
+        stills = Stills(out_dir / "stills")
         with sync_playwright() as p:
             browser = p.chromium.launch()
-            context = browser.new_context(viewport=VIEWPORT, record_video_dir=str(out_dir), record_video_size=VIEWPORT)
+            context = browser.new_context(viewport=VIEWPORT, device_scale_factor=SCALE)
             page = context.new_page()
             page.set_content(card_page(CAPTIONS["title"][0]))
-            time.sleep(CAPTIONS["title"][1])
-            show_terminal(page, "beat1", 1, outputs[1])
-            show_terminal(page, "beat2", 2, outputs[2])
-            show_terminal(page, "beat3", 3, outputs[3])
-            show_terminal(page, "beat4", 4, outputs[4])
+            stills.take(page, CAPTIONS["title"][1])
+            show_terminal(page, stills, "beat1", 1, outputs[1])
+            show_terminal(page, stills, "beat2", 2, outputs[2])
+            show_terminal(page, stills, "beat3", 3, outputs[3])
+            show_terminal(page, stills, "beat4", 4, outputs[4])
 
             page.goto(WORKBENCH)
             page.get_by_role("link", name="Sign in").click()
             page.wait_for_load_state("networkidle")
             page.evaluate(BANNER_JS, CAPTIONS["signin"][0])
-            user = page.locator("input[name=username]:visible").first
-            user.fill(USERNAME)
+            page.locator("input[name=username]:visible").first.fill(USERNAME)
+            stills.take(page, 1.5)
             page.locator("input[name=password]:visible").first.fill(password)
-            time.sleep(2)
+            stills.take(page, 2)
             page.locator("input[name=signInSubmitButton]:visible, button[type=submit]:visible").first.click()
             page.wait_for_url(WORKBENCH + "**")
-            caption(page, "signin")
+            caption(page, stills, "signin")
 
             page.get_by_role("link", name=CASE).click()
             page.wait_for_load_state("networkidle")
             check_packet_view(page.content(), run_id)
-            caption(page, "packet")
+            caption(page, stills, "packet")
             page.get_by_role("button", name="Deny").click()
             page.wait_for_load_state("networkidle")
-            caption(page, "empty")
+            caption(page, stills, "empty")
             page.locator("textarea[name=reason]").fill(DENIAL_REASON)
-            time.sleep(2)
+            stills.take(page, 3)
             page.get_by_role("button", name="Deny").click()
             page.wait_for_load_state("networkidle")
-            caption(page, "denied")
+            caption(page, stills, "denied")
 
-            show_terminal(page, "beat6", 6, outputs[6])
+            show_terminal(page, stills, "beat6", 6, outputs[6])
             page.set_content(card_page(CAPTIONS["close"][0]))
-            time.sleep(CAPTIONS["close"][1])
-            video = Path(page.video.path())
+            stills.take(page, CAPTIONS["close"][1])
             context.close()
             browser.close()
     finally:
         workbench.terminate()
-    webm = out_dir / "prior-auth-demo.webm"
-    video.rename(webm)
-    mp4 = out_dir / "prior-auth-demo.mp4"
-    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(webm), "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                    str(mp4)], check=True)
+    mp4 = out_dir / "prior-auth-demo-4k.mp4"
+    stills.encode(mp4, out_dir / "prior-auth-demo-1080p.mp4")
     (out_dir / "run.json").write_text(json.dumps({"case_id": CASE, "run_id": run_id}, indent=2) + "\n")
     print(f"video: {mp4}\ncounterfactual run for verify-chain: {run_id}")
     print("next: python -m scripts.scan_video " + str(mp4))
