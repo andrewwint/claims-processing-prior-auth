@@ -17,4 +17,4 @@ It also provides the record chain that the clean-case, counterfactual and clinic
 
 ## Teardown
 
-- [ ] 2.1 Sunday, after the final evidence run: one full verified teardown, with its output saved. Ask Andrew whether to keep the stack up for Monday.
+- [ ] 2.1 One full verified teardown, with its output saved. **Decided (Andrew, 2026-10-16): the stack stays up for Saturday's video and Monday's interview; the teardown runs Monday after the interview.** The teardown is extended (not run): it empties the evidence bucket as the teardown role by version ID before the evidence stack goes, and removes the Identity provider and the runtime's log group by exact name (`scripts/teardown.py`, `tests/test_guardrails.py`).

@@ -25,7 +25,7 @@ Delivers demo **beats 2 and 3**: a clean case approved by `decide()`, and a one-
 
 - [x] 3.1 Real `check_eligibility`, `fetch_policy_criteria` (exact (payer, CPT) match, no Knowledge Base) and `extract_clinical_evidence` (returns chart lines with document, page and line).
 - [x] 3.2 Approval service against the real stores: request record, compiled criteria, chart index, packet store. The existing refusal tests run against them.
-- [ ] 3.3 `route_to_reviewer` writes `queue/<case_id>.json` and the recommendation record (single tenant).
+- [x] 3.3 (done 2026-10-16: `src/prior_auth/handlers/agent_tools.py` writes the queue entry with the run ID; the runtime writes the write-once recommendation record before acting, `tests/test_evidence_chain.py`) `route_to_reviewer` writes `queue/<case_id>.json` and the recommendation record (single tenant).
 
 ## 4. Strands agent on Runtime (deploy, with approval)
 

@@ -6,6 +6,10 @@ An agent on Amazon Bedrock AgentCore assembles a prior-authorization case: it ga
 
 The agent's gateway has no tool for an adverse determination. That tool lives on a separate reviewer gateway, which admits clinicians only and where a Cedar policy forbids the action for the agent's identity. The agent may submit an approval, but the approval service records it only after re-running every check on the stored packet itself.
 
+![A request is built into a case; if every criterion is met it is approved, otherwise (or on any failure) a clinician reviews and either approves or denies with a specific reason.](docs/agent_approves_or_escalates.png)
+
+*"Agent approves" means: the model only gathers and cites; `decide()` approves, and the approval service re-checks the stored packet before recording it. In this demo the request is a synthetic case record, not an X12 278 transaction.*
+
 ## Start here
 
 If you have ten minutes, read in this order:
@@ -23,6 +27,8 @@ If you have ten minutes, read in this order:
    | 6    | A trace with no chart text: a canary scan with a positive control                                                                | **Proven** for normal, refusal and clinician-decision paths; error paths: partial    |
 
    The harness: six cases × Nova Pro and Sonnet 4.6 × three trials, pre-registered in [evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md), reported in [evaluation/report.md](evaluation/report.md).
+
+   **Sample outputs:** [SAMPLE_OUTPUTS.md](SAMPLE_OUTPUTS.md) shows each beat's real output from the committed evidence.
 
 3. **The claims ledger:** [openspec/claims-ledger.md](openspec/claims-ledger.md). One row per article claim, with the evidence that proves it and its status: proven, partial (with what's open), or deferred.
 4. **The evidence:** [evidence/](evidence/). Redacted records from deployed runs: gateway configuration, policy text, live allowed and denied calls, chain verifications, canary scans, storage-control checks, the boundary smoke rerun after each boundary deploy, the independent reviews of IAM changes (`evidence/2026-10-16/reviews/`), and every deploy logged by commit in `evidence/deploys.jsonl`.

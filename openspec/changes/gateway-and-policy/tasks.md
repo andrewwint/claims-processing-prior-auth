@@ -98,7 +98,7 @@
 
 ## 5. Teardown
 
-- [ ] 5.1 Run the teardown, then the verifier. The teardown also restores the recorded Transaction Search settings. The verifier covers the Lambda log groups, confirms that the budgets remain, and reports the restored Transaction Search values against the recorded ones. Done when verification passes the same day and its output is saved to the evidence directory.
+- [ ] 5.1 (Monday, after the interview; see `evidence-record-and-trace` 2.1) Run the teardown, then the verifier. The teardown also restores the recorded Transaction Search settings. The verifier covers the Lambda log groups, confirms that the budgets remain, and reports the restored Transaction Search values against the recorded ones. Done when verification passes the same day and its output is saved to the evidence directory.
 
 ## Workflow follow-up
 

@@ -1,10 +1,10 @@
 # Tasks (demo scope, PM 2026-10-16)
 
-**After Monday** (PM, 2026-10-16). Not part of the Monday demo. Delivers the one-page harness report and the Sonnet 4.6 comparison.
+Run 2026-10-17 on the deployed system (PM, 2026-10-16: allowed before Monday, $10 cap). Delivers the one-page harness report and the Sonnet 4.6 comparison.
 
-- [ ] 1.1 Six cases, each with its provenance (parent plus change): 2 clean, 2 one-note-removed counterfactuals, 1 wrong patient, 1 forged document. A label-consistency test on gold extraction.
-- [ ] 1.2 `evaluation/PREREGISTRATION.md`, committed before the run: the cases, models (Nova Pro, Sonnet 4.6), 3 trials each, metrics, report wording, and prices with source and date.
-- [ ] 1.3 Runner: the real agent code in-process, against the deployed gateways and approval service. Every trial records its sampling settings, stop reason, decision, latency and token counts.
+- [x] 1.1 (done: `data/cases/generate.py`, `tests/test_synthetic_data.py`) Six cases, each with its provenance (parent plus change): 2 clean, 2 one-note-removed counterfactuals, 1 wrong patient, 1 forged document. A label-consistency test on gold extraction.
+- [x] 1.2 (done: committed in 0a8a669, before the first trial) `evaluation/PREREGISTRATION.md`, committed before the run: the cases, models (Nova Pro, Sonnet 4.6), 3 trials each, metrics, report wording, and prices with source and date.
+- [x] 1.3 (done: `evaluation/run.py`. Changed from in-process to the deployed runtime, because the evidence bucket lets only the runtime role write packets; see design D3) Runner: the real agent code in-process, against the deployed gateways and approval service. Every trial records its sampling settings, stop reason, decision, latency and token counts.
 - [ ] 1.4 One-page report, per model:
   - false auto-approvals as "x of N" with the rule-of-three bound
   - auto-approval rate

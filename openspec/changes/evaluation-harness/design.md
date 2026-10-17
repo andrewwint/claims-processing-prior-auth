@@ -39,9 +39,9 @@ They describe this harness's synthetic cases only.
 
 ### D3. Runner
 
-- **In process.** The runner calls the same pipeline the runtime hosts. The model ID and its accepted sampling settings come from the allow-list.
+- **On the deployed runtime** (changed 2026-10-17 from in-process). The evidence bucket lets only the runtime role write packets, and the approval service reads the packet it verifies from that bucket, so an in-process runner could not reach a real approval. Each trial is submitted by the intake client in its own session, naming the model; the runtime enforces the allow-list (M9).
 - **Through the real boundary.** Tool calls go to the deployed gateways with the agent's client-credentials token, and approvals go through `ApprovalService___record_approval`.
-- **Not measured.** Runtime hosting latency is not measured, and the report says so.
+- **Measured end to end.** Latency runs from submission to the runtime's response, so it includes runtime hosting; the report says so.
 - **Trials.** The number of trials per case per model is fixed in the pre-registration (3 is proposed). There is no early stopping and no re-running of individual trials. A failed trial is a recorded trial.
 
 ### D4. Scoring rules
