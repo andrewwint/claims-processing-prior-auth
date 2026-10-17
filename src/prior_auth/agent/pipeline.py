@@ -35,10 +35,13 @@ class ModelUnavailable(RuntimeError):
 SUMMARY_LABEL = "Model summary. Not used for any decision."
 
 
-def session_id_for(case_id: str) -> str:
-    """runtimeSessionId must be 33-256 characters; this is deterministic per case and always long enough."""
+def session_id_for(case_id: str, nonce: str | None = None) -> str:
+    """runtimeSessionId must be 33-256 characters. Readable by case, but unique per request:
+    a reused session ID lands on the same microVM, which can still be running an earlier deploy."""
     import hashlib
-    return f"prior-auth-case-{case_id}-{hashlib.sha256(case_id.encode()).hexdigest()[:16]}"
+    import uuid
+    nonce = nonce or uuid.uuid4().hex
+    return f"prior-auth-case-{case_id}-{hashlib.sha256(case_id.encode()).hexdigest()[:8]}-{nonce}"
 
 
 def packet_id_for(case_id: str) -> str:

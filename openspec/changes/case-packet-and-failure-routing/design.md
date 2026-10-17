@@ -122,7 +122,7 @@ The eligibility row and the last two extraction-adjacent rows (throttling and un
   - CodeZip ARM64 build, HTTP protocol, public network mode
   - a JWT authorizer whose allowed client is the `prior-auth-intake` app client only (client credentials)
   - models from the allow-list
-- **Intake.** `scripts/intake.py` names a case from the bundled request records, then invokes the runtime with a token from the intake client and a session ID derived from the case ID.
+- **Intake.** `scripts/intake.py` names a case from the bundled request records, then invokes the runtime with a token from the intake client and a session ID that names the case and is unique per request. (Finding, 2026-10-17: a session ID derived from the case alone was reused on resubmission, and the reused session ran the pre-deploy code. The new approval service refused its packet, which had no run ID, so the case was routed; nothing was approved.)
 - **Session IDs.** `runtimeSessionId` must be 33–256 characters, and it doubles as an idempotency token (contract notes). The ID is `prior-auth-case-<case_id>-<first 16 hex of sha256(case_id)>`: deterministic per case, and always at least 33 characters. A test checks the length for the shortest possible case ID.
 - **Agent token without a secret (PM, 2026-10-16; contract-read in the notes).**
   - An AgentCore Identity OAuth2 credential provider (vendor `CognitoOauth2`, client credentials) holds the agent client's secret in the token vault.

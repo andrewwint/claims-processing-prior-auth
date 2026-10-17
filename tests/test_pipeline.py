@@ -209,7 +209,10 @@ def test_only_decide_calls_the_ending_tools():
 
 def test_session_ids_meet_the_runtime_minimum():
     assert len(session_id_for("")) >= 33 and len(session_id_for("SYN-CASE-CLEAN-1")) <= 256
-    assert session_id_for("A") == session_id_for("A") != session_id_for("B")
+    assert session_id_for("A", "n") == session_id_for("A", "n") != session_id_for("B", "n")
+    # One session per request: resubmitting a case never reuses its earlier session.
+    assert session_id_for("A") != session_id_for("A")
+    assert session_id_for("SYN-CASE-CLEAN-1").startswith("prior-auth-case-SYN-CASE-CLEAN-1-")
 
 
 # G10: the Strands agent's tool list is exactly the three gathering tools

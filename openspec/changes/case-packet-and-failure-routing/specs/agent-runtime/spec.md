@@ -6,12 +6,16 @@ Hosts the agent on AgentCore Runtime, so that each prior-authorization request r
 
 ## ADDED Requirements
 
-### Requirement: One isolated session per case
-Each prior-authorization request SHALL run in its own runtime session, identified by a session ID derived from the case.
+### Requirement: One isolated session per request
+Each prior-authorization request SHALL run in its own runtime session. The session ID SHALL name the case and SHALL be unique per request, so a resubmitted case never reuses an earlier session (a reused session can still be running an earlier deploy).
 
 #### Scenario: Two cases
 - **WHEN** two cases are submitted
 - **THEN** they run under different session IDs
+
+#### Scenario: The same case resubmitted
+- **WHEN** a case is submitted again
+- **THEN** it runs under a new session ID
 
 ### Requirement: Only the intake client can invoke the runtime
 The runtime SHALL accept callers only through a JWT authorizer. Its only allowed client SHALL be the `prior-auth-intake` app client, using client credentials. That client SHALL be separate from the agent and clinician clients.
