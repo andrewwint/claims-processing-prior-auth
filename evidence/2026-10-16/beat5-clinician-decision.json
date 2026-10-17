@@ -1,0 +1,96 @@
+{
+  "bucket_policy_simulation_put_decisions": {
+    "prior-auth-agent-tools-role": "explicitDeny",
+    "prior-auth-approval-service-role": "allowed",
+    "prior-auth-reviewer-tools-role": "allowed",
+    "prior-auth-runtime-role": "explicitDeny"
+  },
+  "calls": {
+    "agent_token_refused_at_authorizer": {
+      "http_status": 403,
+      "result": {
+        "reasons": [
+          "insufficient_scope - The request requires higher privileges than provided by the access token."
+        ],
+        "recorded": false
+      }
+    },
+    "clinician_denial_recorded": {
+      "http_status": 200,
+      "result": {
+        "case_id": "SYN-CASE-CF-1",
+        "decision": "adverse_determination",
+        "decision_record_hash": "38f4785e165cf7c88e00d859741294733c2c93cd6f09ff5e3511a0f0c6f029f7",
+        "recommendation_record_hash": "6ddf9c86f7595c425d93cf646e1d6b9b540fd51741293735d4383b55424dbfd6",
+        "recorded": true,
+        "run_id": "20261017T001220Z-7da8444a",
+        "status": "recorded"
+      }
+    },
+    "second_decision_refused_write_once": {
+      "http_status": 200,
+      "result": {
+        "reasons": [
+          "this run already has a decision"
+        ],
+        "recorded": false,
+        "status": "refused"
+      }
+    },
+    "whitespace_reason_refused_by_lambda": {
+      "http_status": 200,
+      "result": {
+        "reasons": [
+          "a specific reason is required"
+        ],
+        "recorded": false,
+        "status": "refused"
+      }
+    }
+  },
+  "case_id": "SYN-CASE-CF-1",
+  "chain": {
+    "case_id": "SYN-CASE-CF-1",
+    "checks": {
+      "decision_exists": true,
+      "decision_names_this_run": true,
+      "decision_points_at_recommendation": true,
+      "recommendation_hash_matches_stored_bytes": true,
+      "span_carries_recommendation_hash": true,
+      "span_names_this_run": true
+    },
+    "decision": "adverse_determination",
+    "decision_key": "decisions/SYN-CASE-CF-1/20261017T001220Z-7da8444a.json",
+    "decision_record_sha256": "38f4785e165cf7c88e00d859741294733c2c93cd6f09ff5e3511a0f0c6f029f7",
+    "recommendation_record_sha256": "6ddf9c86f7595c425d93cf646e1d6b9b540fd51741293735d4383b55424dbfd6",
+    "run_id": "20261017T001220Z-7da8444a",
+    "span": {
+      "name": "POST /invocations",
+      "run_id": "20261017T001220Z-7da8444a",
+      "span_id": "4a5afde350ceea3f",
+      "trace_id": "6ad2bd5c19bf722f4a45d0fa1fcf1413"
+    },
+    "verified": true
+  },
+  "clinician_sign_in": "SRP (scripted fallback); the workbench uses the hosted UI with PKCE and state",
+  "date": "2026-10-16",
+  "expectations_met": {
+    "agent_refused_at_authorizer": true,
+    "clinician_recorded": true,
+    "only_decision_writers_allowed": true,
+    "records_chained": true,
+    "whitespace_refused": true,
+    "write_once": true
+  },
+  "routed": {
+    "gaps": [
+      "C3"
+    ],
+    "outcome": "routed",
+    "packet_id": "PKT-SYN-CASE-CF-1",
+    "reason": "criteria not met",
+    "run_id": "20261017T001220Z-7da8444a"
+  },
+  "session_id": "prior-auth-case-SYN-CASE-CF-1-cdc46e71-ae6801cc765f4e68bf75d71b17093720",
+  "sha": "668d834d7e3fee5d14274c2ca99cddfb5a25849a"
+}

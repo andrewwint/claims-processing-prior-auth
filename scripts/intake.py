@@ -30,12 +30,14 @@ def intake_token(out: dict, session) -> str:
         return json.loads(resp.read())["access_token"]
 
 
-def invoke(case_id: str, runtime_arn: str, token: str) -> dict:
+def invoke(case_id: str, runtime_arn: str, token: str, session_id: str | None = None) -> dict:
+    """session_id defaults to a fresh one: every request gets its own session."""
+    session_id = session_id or session_id_for(case_id)
     url = (f"https://bedrock-agentcore.us-east-1.amazonaws.com/runtimes/"
            f"{urllib.parse.quote(runtime_arn, safe='')}/invocations?qualifier=DEFAULT")
     req = urllib.request.Request(url, method="POST", data=json.dumps({"case_id": case_id}).encode(),
                                  headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json",
-                                          "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id_for(case_id)})
+                                          "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": session_id})
     with urllib.request.urlopen(req, timeout=300) as resp:
         return json.loads(resp.read())
 

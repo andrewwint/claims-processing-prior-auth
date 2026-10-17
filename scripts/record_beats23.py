@@ -37,11 +37,12 @@ def main() -> int:
               "beats": {}}
     for beat, case_id in CASES.items():
         start = time.time()
-        result = invoke(case_id, runtime["arn"], token)
+        session_id = session_id_for(case_id)
+        result = invoke(case_id, runtime["arn"], token, session_id)
         packet = get_packet(s3, bucket, result["packet_id"]) if "packet_id" in result else None
         head = s3.head_object(Bucket=bucket, Key=packet_key(result["packet_id"])) if packet else {}
         record["beats"][beat] = {
-            "case_id": case_id, "session_id": session_id_for(case_id), "response": result,
+            "case_id": case_id, "session_id": session_id, "response": result,
             "seconds": round(time.time() - start, 1),
             "stored_packet": {"key": packet_key(result["packet_id"]), "sha256": checks.packet_hash(packet),
                               "citations": [(f["criterion_id"], f["doc_id"], f["page"], f["line"]) for f in packet["findings"]],
