@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-16",
+  "mode": "clean",
+  "needles": {
+    "canaries": 15,
+    "chart_lines": 25
+  },
+  "passed": true,
+  "runs": {
+    "SYN-CASE-CF-1": {
+      "gaps": [
+        "C3"
+      ],
+      "outcome": "routed",
+      "reason": "criteria not met",
+      "run_id": "20261017T001635Z-f23b9314"
+    },
+    "SYN-CASE-CF-2": {
+      "gaps": [
+        "C2"
+      ],
+      "outcome": "routed",
+      "reason": "criteria not met",
+      "run_id": "20261017T001649Z-2663d2c8"
+    },
+    "SYN-CASE-CLEAN-1": {
+      "gaps": null,
+      "outcome": "approved",
+      "reason": null,
+      "run_id": "20261017T001703Z-56dab2ff"
+    },
+    "SYN-CASE-CLEAN-2": {
+      "gaps": null,
+      "outcome": "approved",
+      "reason": null,
+      "run_id": "20261017T001719Z-80cce10c"
+    },
+    "SYN-CASE-FORGED": {
+      "gaps": [
+        "C3"
+      ],
+      "outcome": "routed",
+      "reason": "checks failed",
+      "run_id": "20261017T001734Z-5e04fb94"
+    },
+    "SYN-CASE-WRONG-PATIENT": {
+      "gaps": [
+        "C3"
+      ],
+      "outcome": "routed",
+      "reason": "checks failed",
+      "run_id": "20261017T001746Z-ae520c36"
+    }
+  },
+  "scan": {
+    "events_scanned": {
+      "/aws/lambda/prior-auth-agent-tools": 137,
+      "/aws/lambda/prior-auth-approval-service": 10,
+      "/aws/lambda/prior-auth-pre-token": 0,
+      "/aws/lambda/prior-auth-reviewer-tools": 0,
+      "aws/spans": 384,
+      "runtime": 464,
+      "xray": 284
+    },
+    "hits": {}
+  },
+  "sha": "22291ca1aef60abc34d624f1e0ef337c6e02f02f",
+  "span_source": "runtime log group `spans` stream (ADOT via X-Ray Transaction Search), plus aws/spans and X-Ray BatchGetTraces",
+  "spans_seen": {
+    "20261017T001635Z-f23b9314": 1,
+    "20261017T001649Z-2663d2c8": 1,
+    "20261017T001703Z-56dab2ff": 1,
+    "20261017T001719Z-80cce10c": 1,
+    "20261017T001734Z-5e04fb94": 1,
+    "20261017T001746Z-ae520c36": 1
+  }
+}
