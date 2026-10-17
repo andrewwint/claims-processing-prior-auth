@@ -33,27 +33,36 @@ def _review(packet_id, claimed):
 
         from prior_auth.evidence_store import get_packet
         s3 = boto3.client("s3")
-        failures, case_id = approval.review_stored(
-            packet_id, claimed, lambda pid: get_packet(s3, os.environ["EVIDENCE_BUCKET"], pid))
-        return failures, case_id
+        loaded = {}
+
+        def load(pid):
+            loaded["packet"] = get_packet(s3, os.environ["EVIDENCE_BUCKET"], pid)
+            return loaded["packet"]
+        failures, case_id = approval.review_stored(packet_id, claimed, load)
+        return failures, case_id, loaded.get("packet")
     trusted, stored = _stores()
-    return approval.review(packet_id, claimed, packets=stored, trusted=trusted), approval.case_for(packet_id, trusted)
+    return (approval.review(packet_id, claimed, packets=stored, trusted=trusted), approval.case_for(packet_id, trusted),
+            None)
 
 
-def _record_auto_approval(packet_id: str, case_id: str, s3=None) -> tuple[list[str], dict]:
-    """Write the auto-approval's decision record, chained to the run's recommendation record."""
+def _record_auto_approval(packet: dict | None, packet_hash: str, case_id: str, s3=None) -> tuple[list[str], dict]:
+    """Write the auto-approval's decision record, chained to the recommendation of the packet
+    that was verified (that exact object, read once), which must name its hash and say approve."""
     import boto3
 
     from prior_auth import evidence_store, records
     bucket = os.environ.get("EVIDENCE_BUCKET")
-    if not bucket or not packet_id.startswith("PKT-"):
+    if not bucket or packet is None:
         return [], {}
     s3 = s3 or boto3.client("s3")
-    run_id = (evidence_store.get_packet(s3, bucket, packet_id) or {}).get("run_id")
-    key = evidence_store.recommendation_key(case_id, run_id) if run_id else None
-    rec_hash = evidence_store.stored_hash(s3, bucket, key) if key else None
-    if rec_hash is None:
+    run_id = packet.get("run_id")
+    key = evidence_store.recommendation_key(case_id, run_id) if isinstance(run_id, str) else None
+    recommendation, rec_hash = evidence_store.get_with_hash(s3, bucket, key) if key else (None, None)
+    if recommendation is None:
         return ["no recommendation record for this run"], {}
+    if recommendation.get("packet_hash") != packet_hash or \
+            (recommendation.get("recommendation") or {}).get("decision") != "approve":
+        return ["the run's recommendation is not an approval of this packet"], {}
     record = records.decision_record(
         case_id=case_id, run_id=run_id, decision="auto_approval", reason=None, reviewer_identity="approval-service",
         reviewer_identity_source="service", recommendation_key=key, recommendation_record_hash=rec_hash,
@@ -69,10 +78,10 @@ def _record_auto_approval(packet_id: str, case_id: str, s3=None) -> tuple[list[s
 
 def record_approval(event: dict) -> dict:
     packet_id, claimed = event.get("packet_id"), event.get("packet_hash")
-    failures, case_id = _review(packet_id, claimed)
+    failures, case_id, packet = _review(packet_id, claimed)
     chain = {}
     if not failures:
-        failures, chain = _record_auto_approval(packet_id, case_id)
+        failures, chain = _record_auto_approval(packet, claimed, case_id)
     # Identifiers and outcome only; never packet contents.
     logger.info(json.dumps({"tool": "record_approval", "packet_id": packet_id,
                             "packet_hash": claimed, "approved": not failures, "failure_count": len(failures)}))

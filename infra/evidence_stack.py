@@ -8,7 +8,7 @@ only its own prefixes. Only the teardown role may bypass governance retention.
 from aws_cdk import Aws, Duration, RemovalPolicy, Stack, aws_iam as iam, aws_kms as kms, aws_s3 as s3
 from constructs import Construct
 
-from infra.names import EVIDENCE_BUCKET_PREFIX, EVIDENCE_KEY_ALIAS, PREFIX_WRITERS, ROLE_NAMES
+from infra.names import EVIDENCE_BUCKET_PREFIX, EVIDENCE_KEY_ALIAS, PREFIX_WRITERS, ROLE_NAMES, WRITE_ONCE_PREFIXES
 
 
 def role_arn(key: str) -> str:
@@ -39,6 +39,16 @@ class EvidenceStack(Stack):
                 resources=[self.bucket.arn_for_objects(f"{prefix}*")],
                 conditions={"ArnNotEquals": {"aws:PrincipalArn": [role_arn(w) for w in writers]}},
             ))
+        # Write-once enforced by storage, not by the writer's choice of header: a PUT to a
+        # record prefix must be a conditional create (If-None-Match: *), and may never
+        # replace an object by ETag (If-Match).
+        records = [self.bucket.arn_for_objects(f"{p}*") for p in WRITE_ONCE_PREFIXES]
+        self.bucket.add_to_resource_policy(iam.PolicyStatement(
+            sid="RecordsAreCreateOnly", effect=iam.Effect.DENY, principals=[iam.AnyPrincipal()],
+            actions=["s3:PutObject"], resources=records, conditions={"Null": {"s3:if-none-match": "true"}}))
+        self.bucket.add_to_resource_policy(iam.PolicyStatement(
+            sid="RecordsAreNeverReplaced", effect=iam.Effect.DENY, principals=[iam.AnyPrincipal()],
+            actions=["s3:PutObject"], resources=records, conditions={"Null": {"s3:if-match": "false"}}))
         self.bucket.add_to_resource_policy(iam.PolicyStatement(
             sid="NoWritesOutsideKnownPrefixes", effect=iam.Effect.DENY, principals=[iam.AnyPrincipal()],
             actions=["s3:PutObject"],

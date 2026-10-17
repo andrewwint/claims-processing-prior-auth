@@ -16,7 +16,10 @@ Modes:
            Recorded once (evidence/2026-10-16/canary-scan-control.json, at the commit
            it names); the path was then removed from the runtime, because the intake
            client could reach it. Rerunning needs that commit deployed.
-  clean    run all six cases fresh, wait for their spans, then require zero hits.
+  clean    run all six cases fresh; a clinician (SRP) decides each routed case through
+           the reviewer gateway (denials with a reason, so the reviewer Lambda and its
+           trace segments are scanned too); wait for the spans; require zero hits for
+           chart text and for the decision reasons.
 
 Usage: python -m scripts.canary_scan control|clean
 """
@@ -37,6 +40,7 @@ from prior_auth.agent.pipeline import session_id_for
 from scripts import gateway_client as gc
 from scripts.intake import intake_token, invoke, invoke_payload
 from scripts.redact import find_unredacted, known_values, redact
+from scripts.workbench import tool_result
 
 MIN_LINE = 24
 SPANS_GROUP = "aws/spans"
@@ -157,13 +161,28 @@ def run(mode: str) -> dict:
         for case_id in stores.cases():
             result = invoke(case_id, runtime["arn"], token, session_id_for(case_id))
             runs[case_id] = {k: result.get(k) for k in ("outcome", "reason", "gaps", "run_id")}
+        clinician = gc.user_token(out, session, "syn-clinician-1")
+        reasons = {}
+        for case_id, r in runs.items():
+            if r["outcome"] != "routed" or not r["run_id"]:
+                continue
+            reasons[case_id] = f"Reason {secrets.token_hex(6)}: criterion not documented in the submitted chart."
+            resp = gc.mcp(out["ReviewerGatewayUrl"], clinician, "tools/call", {
+                "name": "ReviewerTools___record_adverse_determination",
+                "arguments": {"case_id": case_id, "run_id": r["run_id"], "reason": reasons[case_id],
+                              "reviewer": "syn-clinician-1"}})
+            r["clinician_decision"] = tool_result(resp).get("status")
         record["runs"] = runs
         record["spans_seen"] = wait_for_spans(session, start, [r["run_id"] for r in runs.values() if r["run_id"]])
         wanted = needles()
         record["needles"] = {"canaries": sum(1 for k in wanted if k.startswith("CANARY-")),
-                             "chart_lines": sum(1 for k in wanted if not k.startswith("CANARY-"))}
+                             "chart_lines": sum(1 for k in wanted if not k.startswith("CANARY-")),
+                             "decision_reasons": len(reasons)}
+        wanted |= {text: f"{case_id} decision reason" for case_id, text in reasons.items()}
         record["scan"] = scan(collect(session, start, datetime.now(timezone.utc)), wanted)
-        record["passed"] = record["scan"]["hits"] == {} and all(record["spans_seen"].values())
+        record["passed"] = (record["scan"]["hits"] == {} and all(record["spans_seen"].values())
+                            and all(r.get("clinician_decision") == "recorded" for r in runs.values()
+                                    if r["outcome"] == "routed"))
     return record
 
 

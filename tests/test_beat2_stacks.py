@@ -104,3 +104,18 @@ def test_runtime_entry_point_is_instrumented(runtime):
 def test_runtime_role_can_set_the_span_destination_policy(runtime):
     st = next(s for s in _statements(runtime, "AWS::IAM::Policy") if "logs:PutResourcePolicy" in s["Action"])
     assert "/aws/bedrock-agentcore/runtimes/*" in json.dumps(st["Resource"])
+
+
+# L4: write-once is enforced by the bucket, whatever header a writer chooses to send.
+def test_records_are_create_only_and_never_replaced(evidence):
+    policy = evidence.find_resources("AWS::S3::BucketPolicy")
+    statements = next(iter(policy.values()))["Properties"]["PolicyDocument"]["Statement"]
+    by_sid = {s.get("Sid"): s for s in statements}
+    create_only, never_replaced = by_sid["RecordsAreCreateOnly"], by_sid["RecordsAreNeverReplaced"]
+    for st in (create_only, never_replaced):
+        assert st["Effect"] == "Deny" and st["Action"] == "s3:PutObject" and st["Principal"] == {"AWS": "*"}
+        text = json.dumps(st["Resource"])
+        assert "/recommendations/*" in text and "/decisions/*" in text
+        assert "/packets/*" not in text and "/queue/*" not in text
+    assert create_only["Condition"] == {"Null": {"s3:if-none-match": "true"}}
+    assert never_replaced["Condition"] == {"Null": {"s3:if-match": "false"}}

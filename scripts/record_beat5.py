@@ -47,7 +47,9 @@ def simulate_decision_writes(session: boto3.Session, account: str, bucket: str) 
             ContextEntries=[{"ContextKeyName": "aws:PrincipalArn", "ContextKeyValues": [arn],
                              "ContextKeyType": "string"},
                             {"ContextKeyName": "s3:x-amz-server-side-encryption-aws-kms-key-id",
-                             "ContextKeyValues": [key_arn], "ContextKeyType": "string"}])["EvaluationResults"][0]
+                             "ContextKeyValues": [key_arn], "ContextKeyType": "string"},
+                            {"ContextKeyName": "s3:if-none-match", "ContextKeyValues": ["*"],
+                             "ContextKeyType": "string"}])["EvaluationResults"][0]
         results[ROLE_NAMES[key]] = r["EvalDecision"]
     return results
 
@@ -67,12 +69,16 @@ def main() -> int:
     reason = "Criterion C3 is not documented in the submitted chart; resubmit with the imaging report."
     call = lambda token, name, args: gc.mcp(R, token, "tools/call", {"name": name, "arguments": args})
     calls = {
-        "whitespace_reason_refused_by_lambda": call(clinician, DENY_TOOL, {"case_id": CASE, "reason": "   ",
-                                                                           "reviewer": CLINICIAN}),
-        "agent_token_refused_at_authorizer": call(agent, DENY_TOOL, {"case_id": CASE, "reason": reason}),
-        "clinician_denial_recorded": call(clinician, DENY_TOOL, {"case_id": CASE, "reason": reason,
+        "whitespace_reason_refused_by_lambda": call(clinician, DENY_TOOL, {"case_id": CASE, "run_id": run_id,
+                                                                           "reason": "   ", "reviewer": CLINICIAN}),
+        "agent_token_refused_at_authorizer": call(agent, DENY_TOOL, {"case_id": CASE, "run_id": run_id,
+                                                                     "reason": reason}),
+        "decision_on_another_run_refused": call(clinician, DENY_TOOL, {"case_id": CASE, "run_id": "20200101T000000Z-stale",
+                                                                       "reason": reason, "reviewer": CLINICIAN}),
+        "clinician_denial_recorded": call(clinician, DENY_TOOL, {"case_id": CASE, "run_id": run_id, "reason": reason,
                                                                  "reviewer": CLINICIAN}),
-        "second_decision_refused_write_once": call(clinician, APPROVE_TOOL, {"case_id": CASE, "reviewer": CLINICIAN}),
+        "second_decision_refused_write_once": call(clinician, APPROVE_TOOL, {"case_id": CASE, "run_id": run_id,
+                                                                             "reviewer": CLINICIAN}),
     }
     record = {
         "date": date.today().isoformat(),
@@ -87,6 +93,7 @@ def main() -> int:
     record["expectations_met"] = {
         "whitespace_refused": c["whitespace_reason_refused_by_lambda"]["result"].get("recorded") is False,
         "agent_refused_at_authorizer": c["agent_token_refused_at_authorizer"]["http_status"] == 403,
+        "other_run_refused": c["decision_on_another_run_refused"]["result"].get("recorded") is False,
         "clinician_recorded": c["clinician_denial_recorded"]["result"].get("recorded") is True,
         "write_once": c["second_decision_refused_write_once"]["result"].get("recorded") is False,
         # Spans and trace summaries arrive minutes later; those links are checked by scripts.verify_chain then.

@@ -52,8 +52,10 @@ TOOL_TARGETS = {**{t["name"]: CASE_TARGET for t in CASE_TOOLS}, **{t["name"]: AP
 
 REVIEWER_TOOLS = [
     _tool("record_adverse_determination", "Record a clinician's adverse determination with a specific reason.",
-          {"case_id": _s("Case ID"), "reason": _s("The specific reason for the determination"),
+          {"case_id": _s("Case ID"), "run_id": _s("The run whose recommendation the clinician reviewed"),
+           "reason": _s("The specific reason for the determination"),
            "reviewer": _s("The reviewer, as the clinician app reports it")}),
     _tool("record_clinician_approval", "Record a clinician's approval of a routed case.",
-          {"case_id": _s("Case ID"), "reviewer": _s("The reviewer, as the clinician app reports it")}),
+          {"case_id": _s("Case ID"), "run_id": _s("The run whose recommendation the clinician reviewed"),
+           "reviewer": _s("The reviewer, as the clinician app reports it")}),
 ]

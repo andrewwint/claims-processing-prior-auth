@@ -38,6 +38,8 @@ PREFIX_WRITERS = {
     "queue/": ("agent_tools",),
     "decisions/": ("reviewer_tools", "approval_service"),
 }
+# Records are created once and never replaced (enforced by the bucket policy).
+WRITE_ONCE_PREFIXES = ("recommendations/", "decisions/")
 RUNTIME_NAME = "prior_auth_agent"
 IDENTITY_PROVIDER_NAME = "prior-auth-agent-m2m"
 EXTRACTION_MODEL_ID = "amazon.nova-pro-v1:0"

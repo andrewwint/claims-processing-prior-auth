@@ -42,10 +42,10 @@ def s3(monkeypatch):
     return FakeS3()
 
 
-def recommend(s3, case_id="CF-1", run_id="RUN-1"):
-    packet = {"packet_id": f"PKT-{case_id}", "case_id": case_id, "run_id": run_id, "findings": []}
+def recommend(s3, case_id="CF-1", run_id="RUN-1", decision="route", packet=None):
+    packet = packet or {"packet_id": f"PKT-{case_id}", "case_id": case_id, "run_id": run_id, "findings": []}
     record = records.recommendation_record(case_id=case_id, run_id=run_id, packet=packet,
-                                           decision={"decision": "route"}, policy_version=None,
+                                           decision={"decision": decision}, policy_version=None,
                                            received_at=records.now(), recommended_at=records.now())
     return evidence_store.put_recommendation(s3, BUCKET, record)
 
@@ -74,7 +74,7 @@ def test_clinician_decision_chains_to_the_recommendation(s3):
     rec_hash = recommend(s3)
     agent_tools.route_to_reviewer({"case_id": "CF-1", "run_id": "RUN-1", "reason": "gap", "gaps": ["C3"]}, s3)
     out = reviewer_tools.record_adverse_determination(
-        {"case_id": "CF-1", "reason": "Criterion C3 not documented.", "reviewer": "clinician-1"}, s3)
+        {"case_id": "CF-1", "run_id": "RUN-1", "reason": "Criterion C3 not documented.", "reviewer": "clinician-1"}, s3)
     assert out["recorded"] and out["recommendation_record_hash"] == rec_hash
     decision = evidence_store.get_decision(s3, BUCKET, "CF-1", "RUN-1")
     assert decision["recommendation_record_hash"] == rec_hash
@@ -87,8 +87,8 @@ def test_clinician_decision_chains_to_the_recommendation(s3):
 def test_a_run_has_one_decision(s3):
     recommend(s3)
     agent_tools.route_to_reviewer({"case_id": "CF-1", "run_id": "RUN-1", "reason": "gap", "gaps": []}, s3)
-    assert reviewer_tools.record_clinician_approval({"case_id": "CF-1", "reviewer": "c"}, s3)["recorded"]
-    second = reviewer_tools.record_adverse_determination({"case_id": "CF-1", "reason": "r", "reviewer": "c"}, s3)
+    assert reviewer_tools.record_clinician_approval({"case_id": "CF-1", "run_id": "RUN-1", "reviewer": "c"}, s3)["recorded"]
+    second = reviewer_tools.record_adverse_determination({"case_id": "CF-1", "run_id": "RUN-1", "reason": "r", "reviewer": "c"}, s3)
     assert not second["recorded"] and "already has a decision" in second["reasons"][0]
 
 
@@ -96,25 +96,59 @@ def test_decision_refused_without_queue_entry_or_recommendation(s3):
     out = reviewer_tools.record_clinician_approval({"case_id": "CF-9", "reviewer": "c"}, s3)
     assert not out["recorded"] and "not in the review queue" in out["reasons"][0]
     agent_tools.route_to_reviewer({"case_id": "CF-9", "run_id": "RUN-X", "reason": "r", "gaps": []}, s3)
-    out = reviewer_tools.record_clinician_approval({"case_id": "CF-9", "reviewer": "c"}, s3)
+    out = reviewer_tools.record_clinician_approval({"case_id": "CF-9", "run_id": "RUN-X", "reviewer": "c"}, s3)
     assert not out["recorded"] and "no recommendation record" in out["reasons"][0]
 
 
+def test_decision_binds_to_the_reviewed_run(s3):
+    """The queue moved to run B after the clinician opened run A: the decision on A is refused."""
+    recommend(s3, run_id="RUN-A")
+    recommend(s3, run_id="RUN-B")
+    agent_tools.route_to_reviewer({"case_id": "CF-1", "run_id": "RUN-B", "reason": "r", "gaps": []}, s3)
+    out = reviewer_tools.record_adverse_determination({"case_id": "CF-1", "run_id": "RUN-A", "reason": "about A",
+                                                       "reviewer": "c"}, s3)
+    assert not out["recorded"] and "different run" in out["reasons"][0]
+    assert evidence_store.get_decision(s3, BUCKET, "CF-1", "RUN-B") is None
+    missing = reviewer_tools.record_clinician_approval({"case_id": "CF-1", "reviewer": "c"}, s3)
+    assert not missing["recorded"]
+
+
+def test_clinician_cannot_decide_a_run_that_was_not_routed(s3):
+    recommend(s3, run_id="RUN-1", decision="approve")
+    agent_tools.route_to_reviewer({"case_id": "CF-1", "run_id": "RUN-1", "reason": "r", "gaps": []}, s3)
+    out = reviewer_tools.record_clinician_approval({"case_id": "CF-1", "run_id": "RUN-1", "reviewer": "c"}, s3)
+    assert not out["recorded"] and "not a routed case" in out["reasons"][0]
+
+
 def test_denial_still_requires_a_reason(s3):
-    out = reviewer_tools.record_adverse_determination({"case_id": "CF-1", "reason": "  "}, s3)
+    out = reviewer_tools.record_adverse_determination({"case_id": "CF-1", "run_id": "RUN-1", "reason": "  "}, s3)
     assert not out["recorded"]
 
 
 def test_auto_approval_writes_a_chained_decision(s3):
-    rec_hash = recommend(s3, "CLEAN-1", "RUN-A")
+    from prior_auth.checks import canonical_hash
     packet = {"packet_id": "PKT-CLEAN-1", "case_id": "CLEAN-1", "run_id": "RUN-A", "findings": []}
-    evidence_store.put_packet(s3, BUCKET, packet)
-    failures, chain = approval_service._record_auto_approval("PKT-CLEAN-1", "CLEAN-1", s3)
+    rec_hash = recommend(s3, "CLEAN-1", "RUN-A", decision="approve", packet=packet)
+    failures, chain = approval_service._record_auto_approval(packet, canonical_hash(packet), "CLEAN-1", s3)
     assert failures == [] and chain["recommendation_record_hash"] == rec_hash
     decision = evidence_store.get_decision(s3, BUCKET, "CLEAN-1", "RUN-A")
     assert decision["decision"] == "auto_approval" and decision["reviewer_identity_source"] == "service"
-    again, _ = approval_service._record_auto_approval("PKT-CLEAN-1", "CLEAN-1", s3)
+    again, _ = approval_service._record_auto_approval(packet, canonical_hash(packet), "CLEAN-1", s3)
     assert again == ["this run already has a decision"]
+
+
+def test_auto_approval_refuses_a_recommendation_that_does_not_approve_this_packet(s3):
+    """The verified packet points at a run whose recommendation was to route, or names another packet."""
+    from prior_auth.checks import canonical_hash
+    packet = {"packet_id": "PKT-CLEAN-1", "case_id": "CLEAN-1", "run_id": "RUN-OLD", "findings": []}
+    recommend(s3, "CLEAN-1", "RUN-OLD", decision="route", packet=packet)
+    failures, _ = approval_service._record_auto_approval(packet, canonical_hash(packet), "CLEAN-1", s3)
+    assert failures == ["the run's recommendation is not an approval of this packet"]
+    other = packet | {"run_id": "RUN-NEW"}
+    recommend(s3, "CLEAN-1", "RUN-NEW", decision="approve", packet=packet)  # names a different packet hash
+    failures, _ = approval_service._record_auto_approval(other, canonical_hash(other), "CLEAN-1", s3)
+    assert failures == ["the run's recommendation is not an approval of this packet"]
+    assert evidence_store.get_decision(s3, BUCKET, "CLEAN-1", "RUN-NEW") is None
 
 
 # L6: verify_chain recomputes every link; a broken link fails verification.
@@ -163,7 +197,7 @@ def chained(s3, monkeypatch):
         case_id="CF-1", run_id="RUN-1", packet={"packet_id": "PKT-CF-1", "findings": []},
         decision={"decision": "route"}, policy_version=None, received_at="t", recommended_at="t"))
     agent_tools.route_to_reviewer({"case_id": "CF-1", "run_id": "RUN-1", "reason": "r", "gaps": []}, s3)
-    reviewer_tools.record_clinician_approval({"case_id": "CF-1", "reviewer": "c"}, s3)
+    reviewer_tools.record_clinician_approval({"case_id": "CF-1", "run_id": "RUN-1", "reviewer": "c"}, s3)
     span = {"traceId": "T", "spanId": "S", "name": "POST /invocations",
             "attributes": {"pa.recommendation_record_sha256": rec_hash, "pa.run_id": "RUN-1"}}
     return verify_chain, span

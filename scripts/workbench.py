@@ -132,11 +132,12 @@ class Workbench:
                 "rows": criterion_rows(criteria, queued, packet if matches else None),
                 "decision": evidence_store.get_decision(self.s3, self.bucket, case_id, run_id)}
 
-    def decide(self, access_token: str, case_id: str, action: str, reason: str, reviewer: str) -> dict:
+    def decide(self, access_token: str, case_id: str, run_id: str, action: str, reason: str, reviewer: str) -> dict:
+        """The decision names the run the clinician reviewed; the Lambda refuses it if the queue moved on."""
         if action == "deny":
-            name, args = DENY_TOOL, {"case_id": case_id, "reason": reason, "reviewer": reviewer}
+            name, args = DENY_TOOL, {"case_id": case_id, "run_id": run_id, "reason": reason, "reviewer": reviewer}
         else:
-            name, args = APPROVE_TOOL, {"case_id": case_id, "reviewer": reviewer}
+            name, args = APPROVE_TOOL, {"case_id": case_id, "run_id": run_id, "reviewer": reviewer}
         return tool_result(gc.mcp(self.out["ReviewerGatewayUrl"], access_token, "tools/call",
                                   {"name": name, "arguments": args}))
 
@@ -209,11 +210,11 @@ def make_handler(app: Workbench):
             field = lambda k: form.get(k, [""])[0]
             if "token" not in sess or not secrets.compare_digest(field("csrf"), sess["csrf"]):
                 return self._send(403, _page("Refused", "<p>Refused: not signed in, or a stale form.</p>"), sid=sid)
-            case_id, action, reason = field("case_id"), field("action"), field("reason")
+            case_id, run_id, action, reason = field("case_id"), field("run_id"), field("action"), field("reason")
             if action == "deny" and not reason.strip():
                 result = {"recorded": False, "reasons": ["a specific reason is required"]}
             else:
-                result = app.decide(sess["token"]["access_token"], case_id, action, reason, sess["username"])
+                result = app.decide(sess["token"]["access_token"], case_id, run_id, action, reason, sess["username"])
             sess["flash"] = result
             return self._send(303, sid=sid, location="/case?" + urllib.parse.urlencode({"id": case_id}))
 
@@ -275,7 +276,8 @@ def make_handler(app: Workbench):
                           f'<code>{html.escape(d["recommendation_record_hash"])}</code></div>')
             else:
                 hidden = (f'<input type="hidden" name="csrf" value="{html.escape(sess["csrf"])}">'
-                          f'<input type="hidden" name="case_id" value="{html.escape(case_id)}">')
+                          f'<input type="hidden" name="case_id" value="{html.escape(case_id)}">'
+                          f'<input type="hidden" name="run_id" value="{html.escape(q["run_id"])}">')
                 action = (f'<form method="post" action="/decide">{hidden}'
                           '<p><label>Reason (required to deny)<br><textarea name="reason" rows="3"></textarea></label></p>'
                           '<button name="action" value="approve">Approve</button>'

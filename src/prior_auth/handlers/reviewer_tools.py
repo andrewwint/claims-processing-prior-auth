@@ -28,10 +28,17 @@ def _decide(event: dict, decision: str, reason, s3=None) -> dict:
     queued = evidence_store.get_queue_entry(s3, bucket, case_id)
     if not queued or not queued.get("run_id"):
         return {"recorded": False, "status": "refused", "reasons": ["case is not in the review queue"]}
+    # The decision binds to the run the clinician reviewed, never to whatever the queue names now.
+    if event.get("run_id") != queued["run_id"]:
+        return {"recorded": False, "status": "refused",
+                "reasons": ["the queue now names a different run; reload the case"]}
     key = evidence_store.recommendation_key(case_id, queued["run_id"])
-    rec_hash = evidence_store.stored_hash(s3, bucket, key)
-    if rec_hash is None:
+    recommendation, rec_hash = evidence_store.get_with_hash(s3, bucket, key)
+    if recommendation is None:
         return {"recorded": False, "status": "refused", "reasons": ["no recommendation record for this run"]}
+    if (recommendation.get("case_id"), recommendation.get("run_id")) != (case_id, queued["run_id"]) \
+            or (recommendation.get("recommendation") or {}).get("decision") != "route":
+        return {"recorded": False, "status": "refused", "reasons": ["the run's recommendation is not a routed case"]}
     record = records.decision_record(
         case_id=case_id, run_id=queued["run_id"], decision=decision, reason=reason,
         reviewer_identity=str(event.get("reviewer") or "unknown"), reviewer_identity_source="clinician-app",

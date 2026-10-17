@@ -83,6 +83,16 @@ def get_decision(s3, bucket: str, case_id: str, run_id: str) -> dict | None:
     return _get(s3, bucket, decision_key(case_id, run_id))
 
 
+def get_with_hash(s3, bucket: str, key: str) -> tuple[dict | None, str | None]:
+    """One read: the stored record and the hash of exactly those bytes."""
+    import hashlib
+    try:
+        body = s3.get_object(Bucket=bucket, Key=key)["Body"].read()
+    except s3.exceptions.NoSuchKey:
+        return None, None
+    return json.loads(body), hashlib.sha256(body).hexdigest()
+
+
 def stored_hash(s3, bucket: str, key: str) -> str | None:
     """Recompute the hash from the stored object's bytes (the verifier's view)."""
     try:
