@@ -59,3 +59,24 @@ def test_committed_report_matches_the_committed_trials():
     if not report.TRIALS.exists():
         pytest.skip("no harness run recorded yet")
     assert report.REPORT.read_text() == report.render(report.load())
+
+
+def test_headline_states_the_bound_and_both_auto_approval_forms():
+    trials = [trial(), trial(case="SYN-CASE-CF-2"), trial(case="SYN-CASE-CLEAN-1", label="approve", outcome="approved")]
+    text = report.render(trials)
+    assert ("False auto-approvals: 0 of 2 trials on needs-review cases, with a 95% upper bound of 100.0% "
+            "(rule of three).") in text
+    assert ("Auto-approvals: 1 of 1 trials on approvable cases, and 1 of 3 (33.3%) overall; the overall figure "
+            "reflects the test mix, in which 1 of 3 cases are approvable.") in text
+
+
+def test_routed_approvable_trials_show_their_reconstructed_cause(tmp_path, monkeypatch):
+    note = {"R1": {"citations": [{"criterion_id": "C1", "doc_id": "D", "page": 3, "line": 3,
+                                   "cited_line_exists": False, "document_pages": 1}],
+                   "check_failures": ["source match: value for C1 is shorter than 4 characters"]}}
+    path = tmp_path / "annotations.json"
+    path.write_text(json.dumps(note))
+    monkeypatch.setattr(report, "ANNOTATIONS", path)
+    text = report.render([trial(case="SYN-CASE-CLEAN-2", label="approve", run_id="R1", reason="checks failed")])
+    assert "C1 cited D page 3 line 3 (no such line: the document has 1 page)" in text
+    assert "nothing was approved" in text

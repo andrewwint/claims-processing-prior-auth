@@ -11,7 +11,7 @@ The agent's gateway has no tool for an adverse determination. That tool lives on
 If you have ten minutes, read in this order:
 
 1. **The article:** [docs/article-draft.md](docs/article-draft.md). It makes the claims; this repository backs them.
-2. **The demo:** six beats, run with `python -m scripts.demo <beat>`.
+2. **The demo:** six beats, run with `python -m scripts.demo [--redact] <beat>` (`--redact` masks every identifier on screen; use it for any recording).
 
    | Beat | What it shows                                                                                                                    | Status                                                                              |
    | ---- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -19,13 +19,13 @@ If you have ten minutes, read in this order:
    | 2    | The Strands agent (three gathering tools, Nova Pro) builds a cited packet; `decide()` approves                                   | **Proven**                                                                          |
    | 3    | One note removed: routed to the reviewer, gap marked                                                                             | **Proven**                                                                          |
    | 4    | The agent refused at the reviewer gateway, first by the authorizer, then by Cedar                                                | **Proven**                                                                          |
-   | 5    | A clinician decides with the same tool the agent was refused; the decision record chains to the recommendation                   | **Proven** (scripted clinician sign-in; a hosted-UI sign-in by a person is pending) |
-   | 6    | A trace with no chart text: a canary scan with a positive control                                                                | **Proven** for normal and refusal paths; error paths not yet scanned                |
+   | 5    | A clinician decides with the same tool the agent was refused; the decision record chains to the recommendation                   | **Proven** (scripted clinician sign-in; a hosted-UI sign-in by a person is pending)  |
+   | 6    | A trace with no chart text: a canary scan with a positive control                                                                | **Proven** for normal, refusal and clinician-decision paths; error paths: partial    |
 
-   After Monday: the harness report (six cases × Nova Pro and Sonnet 4.6 × three trials).
+   The harness: six cases × Nova Pro and Sonnet 4.6 × three trials, pre-registered in [evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md), reported in [evaluation/report.md](evaluation/report.md).
 
 3. **The claims ledger:** [openspec/claims-ledger.md](openspec/claims-ledger.md). One row per article claim, with the evidence that proves it and its status: proven, partial (with what's open), or deferred.
-4. **The evidence:** [evidence/](evidence/). Redacted records from deployed runs: gateway configuration, policy text, live allowed and denied calls, chain verifications, canary scans, and every deploy logged by commit in `evidence/deploys.jsonl`.
+4. **The evidence:** [evidence/](evidence/). Redacted records from deployed runs: gateway configuration, policy text, live allowed and denied calls, chain verifications, canary scans, storage-control checks, the boundary smoke rerun after each boundary deploy, the independent reviews of IAM changes (`evidence/2026-10-16/reviews/`), and every deploy logged by commit in `evidence/deploys.jsonl`.
 
 **Status:** all six demo beats run on the deployed system: the gateways, the Cedar policies, the Strands agent on AgentCore Runtime, the evidence store, and the clinician's decision. Some ledger rows are partial, and each names what's open. The article is published only after every row it relies on is proven.
 
@@ -38,7 +38,7 @@ If you have ten minutes, read in this order:
 - **Failure routing.** Every failure mode goes to a human reviewer or an operator alert, never to a default. Every session ends in exactly one outcome.
 - **Clean telemetry.** Traces hold identifiers, timings and hashes. A canary scan, with a positive control, shows they contain no chart text.
 - **Chained, write-once evidence records.** A decision record chains to its recommendation by a hash recomputed from the stored bytes.
-- **A pre-registered evaluation** (after Monday) that reports the false auto-approval rate on counterfactual cases, with every trial shown.
+- **A pre-registered evaluation** that reports the false auto-approval rate on counterfactual cases, with every trial shown.
 
 ## Repository map
 
@@ -50,12 +50,12 @@ If you have ten minutes, read in this order:
 | `src/prior_auth/agent/`    | The Strands agent, the session wrapper, the case pipeline, telemetry settings                                             | Beats 2, 3, 6 · G10, F1–F7, A1 |
 | `scripts/workbench.py`     | The clinician's local page (127.0.0.1), signing in through the Cognito hosted UI                                          | Beat 5 · B8, L3                |
 | `data/`                    | Synthetic policies, charts and cases; `SYNTHETIC.md`                                                                      | Beats 2, 3, 6 · G1–G3          |
-| `scripts/`                 | Deploy guard, teardown and verifier, evidence recorders, `verify_chain.py`, `demo.py`                                     | All beats · guardrails         |
+| `scripts/`                 | Deploy guard, teardown and verifier, `boundary_smoke.py`, evidence recorders, `verify_chain.py`, `canary_scan.py`, `demo.py` | All beats · guardrails · L2–L8 |
 | `evidence/`                | Redacted, committed evidence from deployed runs                                                                           | All proven ledger rows         |
 | `docs/`                    | Principles, AgentCore contract notes, the empty-output rules, the article draft                                           | B5, R1–R6                      |
 | `openspec/`                | The claims ledger and the OpenSpec changes                                                                                | Definition of done             |
 | `tests/`                   | The test suite, including the real-payer-name, redaction and consistency checks                                           | All rows typed `test`          |
-| `evaluation/`              | The harness and its one-page report                                                                                       | After Monday · M1–M8           |
+| `evaluation/`              | The pre-registration, the runner, the raw trials and the one-page report                                                  | M1–M8                          |
 
 ## Principles
 

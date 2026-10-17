@@ -1,0 +1,49 @@
+{
+  "20261017T010337Z-58dff3fc": {
+    "check_failures": [
+      "source match: value for C1 is shorter than 4 characters",
+      "source match: value for C2 is shorter than 4 characters",
+      "source match: value for C3 is shorter than 4 characters"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-102-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-102-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-102-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      }
+    ],
+    "gaps": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  }
+}

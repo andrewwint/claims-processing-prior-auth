@@ -22,6 +22,9 @@ RUNTIME_CODE = "build/runtime"
 IDENTITY_SECRET_ACTION = "secretsmanager:GetSecretValue"
 
 
+INVOKE = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
+
+
 def model_resources(model_ids, account: str) -> list[str]:
     """The exact ARNs for the allow-listed models: foundation models in their named Regions,
     plus the inference profile for a profile model."""
@@ -32,6 +35,20 @@ def model_resources(model_ids, account: str) -> list[str]:
         if m["profile"]:
             arns.append(f"arn:aws:bedrock:us-east-1:{account}:inference-profile/{model_id}")
     return arns
+
+
+def model_statements(model_ids, account: str) -> list[iam.PolicyStatement]:
+    """M9 in IAM: a direct model gets its foundation-model ARNs; a profile model gets its
+    profile ARN, and its foundation models only when the call comes through that profile."""
+    direct = [m for m in model_ids if not MODELS[m]["profile"]]
+    statements = [iam.PolicyStatement(actions=INVOKE, resources=model_resources(direct, account))] if direct else []
+    for model_id in (m for m in model_ids if MODELS[m]["profile"]):
+        profile = f"arn:aws:bedrock:us-east-1:{account}:inference-profile/{model_id}"
+        foundation = [a for a in model_resources([model_id], account) if a != profile]
+        statements += [iam.PolicyStatement(actions=INVOKE, resources=[profile]),
+                       iam.PolicyStatement(actions=INVOKE, resources=foundation,
+                                           conditions={"StringEquals": {"bedrock:InferenceProfileArn": profile}})]
+    return statements
 
 
 class RuntimeStack(Stack):
@@ -50,8 +67,7 @@ class RuntimeStack(Stack):
         allowed = (EXTRACTION_MODEL_ID, *opt_in_models)
         statements = [
             # M9: the allow-listed models only, each in its named Regions.
-            iam.PolicyStatement(actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-                                resources=model_resources(allowed, account)),
+            *model_statements(allowed, account),
             iam.PolicyStatement(actions=["s3:PutObject"],
                                 resources=[f"arn:aws:s3:::{bucket}/packets/*", f"arn:aws:s3:::{bucket}/recommendations/*"]),
             iam.PolicyStatement(actions=["kms:GenerateDataKey", "kms:Encrypt"], resources=["*"],

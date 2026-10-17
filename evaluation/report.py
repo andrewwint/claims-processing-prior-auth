@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-TRIALS, REPORT = HERE / "trials.jsonl", HERE / "report.md"
+TRIALS, REPORT, ANNOTATIONS = HERE / "trials.jsonl", HERE / "report.md", HERE / "annotations.json"
 LABEL = "Synthetic, author-labeled cases; not clinical ground truth."
 # Per 1K tokens (input, output), from the pre-registration.
 PRICES = {"amazon.nova-pro-v1:0": (0.0008, 0.0032), "us.anthropic.claude-sonnet-4-6": (0.0033, 0.0165)}
@@ -76,6 +76,16 @@ def render(trials: list[dict]) -> str:
              "(runtime, gateways, approval service). Definitions, prices and wording: "
              "[PREREGISTRATION.md](PREREGISTRATION.md). No ranking claims are made at this N.", ""]
     models = list(dict.fromkeys(t["model_id"] for t in trials))
+    for m in models:
+        s = summarize([t for t in trials if t["model_id"] == m])
+        lines += [
+            f"**`{m}`.** False auto-approvals: {s['false_auto']} of {s['n_review']} trials on needs-review cases, "
+            f"with a 95% upper bound of {pct(s['bound'])} "
+            f"({'rule of three' if s['false_auto'] == 0 else 'exact Clopper-Pearson'}). "
+            f"Auto-approvals: {s['auto_on_approve']} of {s['n_approve']} trials on approvable cases, and "
+            f"{s['auto']} of {s['n']} ({pct(s['auto'] / s['n']) if s['n'] else 'n/a'}) overall; the overall figure "
+            f"reflects the test mix, in which {len({t['case_id'] for t in trials if t['label'] == 'approve'})} of "
+            f"{len({t['case_id'] for t in trials})} cases are approvable.", ""]
     lines += ["| Model | False auto-approvals | Auto-approval rate | Auto-approvals on approve-labeled cases | "
               "Disagreements | Truncated | Latency p50 / p95 | Cost per trial |",
               "|---|---|---|---|---|---|---|---|"]
@@ -86,6 +96,23 @@ def render(trials: list[dict]) -> str:
             f"{s['auto']} of {s['n']} ({pct(s['auto'] / s['n']) if s['n'] else 'n/a'}) | "
             f"{s['auto_on_approve']} of {s['n_approve']} | {s['disagreements']} | {s['truncated']} | "
             f"{s['p50']:.1f} s / {s['p95']:.1f} s | ${s['cost_per_trial']:.4f} |")
+    notes = annotations()
+    if notes:
+        lines += ["", "## Approvable trials that were routed", "",
+                  "Not re-run. The cause is reconstructed from each run's stored recommendation record: its "
+                  "citations are re-checked against the trusted chart ([annotate.py](annotate.py)).", ""]
+        for t in trials:
+            note = notes.get(t.get("run_id"))
+            if not note:
+                continue
+            cites = "; ".join(
+                f"{c['criterion_id']} cited {c['doc_id']} page {c['page']} line {c['line']}"
+                + ("" if c.get("cited_line_exists", True) else f" (no such line: the document has "
+                   f"{c.get('document_pages')} page{'s' if c.get('document_pages') != 1 else ''})")
+                for c in note.get("citations", []))
+            lines.append(f"- `{t['model_id']}` {t['case_id']} trial {t['trial']}: {cites}. "
+                         f"Checks: {'; '.join(note.get('check_failures', []))}. Routed to a clinician; "
+                         f"nothing was approved.")
     excluded = [t for t in trials if t["outcome"] == "operator_alert"]
     lines += ["", f"Operator-alert trials excluded from the rates: {len(excluded)}.",
               f"Total model cost of the run: ${sum(cost(t) for t in trials):.4f}.", "",
@@ -101,6 +128,11 @@ def render(trials: list[dict]) -> str:
             f"{json.dumps(t.get('sampling') or {}, sort_keys=True)} | "
             f"{usage.get('input_tokens', '')} / {usage.get('output_tokens', '')} | {t['seconds']:.1f} |")
     return "\n".join(lines) + "\n"
+
+
+def annotations(path: Path = None) -> dict:
+    path = path or ANNOTATIONS
+    return json.loads(path.read_text()) if path.exists() else {}
 
 
 def load(path: Path = TRIALS) -> list[dict]:

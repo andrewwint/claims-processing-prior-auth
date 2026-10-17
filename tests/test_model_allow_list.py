@@ -18,23 +18,31 @@ def _model_arns(tmp_path, opt_in=()):
                                          intake_client_id="INTAKECLIENT", agent_gateway_url="https://gw/mcp",
                                          code_path=str(tmp_path), opt_in_models=opt_in))
     policy = next(iter(t.find_resources("AWS::IAM::Policy").values()))["Properties"]["PolicyDocument"]
-    invoke = next(s for s in policy["Statement"] if "bedrock:InvokeModel" in s["Action"])
+    invoke = [s for s in policy["Statement"] if "bedrock:InvokeModel" in s["Action"]]
     runtime = next(iter(t.find_resources("AWS::BedrockAgentCore::Runtime").values()))["Properties"]
-    return json.dumps(invoke["Resource"]), runtime["EnvironmentVariables"]["MODEL_ALLOW_LIST"]
+    return invoke, runtime["EnvironmentVariables"]["MODEL_ALLOW_LIST"]
 
 
 def test_default_allows_only_nova_pro_in_us_east_1(tmp_path):
-    arns, allow = _model_arns(tmp_path)
+    invoke, allow = _model_arns(tmp_path)
     assert allow == EXTRACTION_MODEL_ID
-    assert arns == json.dumps(f"arn:aws:bedrock:us-east-1::foundation-model/{EXTRACTION_MODEL_ID}")
+    assert len(invoke) == 1 and "Condition" not in invoke[0]
+    assert invoke[0]["Resource"] == f"arn:aws:bedrock:us-east-1::foundation-model/{EXTRACTION_MODEL_ID}"
 
 
 def test_sonnet_opt_in_adds_exactly_its_profile_and_three_regions(tmp_path):
-    arns, allow = _model_arns(tmp_path, ("us.anthropic.claude-sonnet-4-6",))
+    invoke, allow = _model_arns(tmp_path, ("us.anthropic.claude-sonnet-4-6",))
     assert allow == f"{EXTRACTION_MODEL_ID},us.anthropic.claude-sonnet-4-6"
+    arns = json.dumps([s["Resource"] for s in invoke])
     for region in ("us-east-1", "us-east-2", "us-west-2"):
         assert f"arn:aws:bedrock:{region}::foundation-model/anthropic.claude-sonnet-4-6" in arns
     assert "inference-profile/us.anthropic.claude-sonnet-4-6" in arns and arns.count("arn:aws:bedrock") == 5
+    # The Sonnet foundation models are reachable only through the US profile, never directly.
+    sonnet = next(s for s in invoke if "anthropic.claude-sonnet-4-6" in json.dumps(s["Resource"])
+                  and "foundation-model" in json.dumps(s["Resource"]))
+    assert "inference-profile/us.anthropic.claude-sonnet-4-6" in json.dumps(
+        sonnet["Condition"]["StringEquals"]["bedrock:InferenceProfileArn"])
+    assert all("Condition" not in s for s in invoke if "amazon.nova-pro" in json.dumps(s["Resource"]))
 
 
 def test_an_unlisted_opt_in_is_refused_at_synth(tmp_path):
