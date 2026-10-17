@@ -3,75 +3,80 @@
   "mode": "clean",
   "needles": {
     "canaries": 15,
-    "chart_lines": 25
+    "chart_lines": 25,
+    "decision_reasons": 4
   },
   "passed": true,
   "runs": {
     "SYN-CASE-CF-1": {
+      "clinician_decision": "recorded",
       "gaps": [
         "C3"
       ],
       "outcome": "routed",
       "reason": "criteria not met",
-      "run_id": "20261017T001635Z-f23b9314"
+      "run_id": "20261017T005432Z-6fa4913a"
     },
     "SYN-CASE-CF-2": {
+      "clinician_decision": "recorded",
       "gaps": [
         "C2"
       ],
       "outcome": "routed",
       "reason": "criteria not met",
-      "run_id": "20261017T001649Z-2663d2c8"
+      "run_id": "20261017T005447Z-1b92364a"
     },
     "SYN-CASE-CLEAN-1": {
       "gaps": null,
       "outcome": "approved",
       "reason": null,
-      "run_id": "20261017T001703Z-56dab2ff"
+      "run_id": "20261017T005500Z-6ef28cf4"
     },
     "SYN-CASE-CLEAN-2": {
       "gaps": null,
       "outcome": "approved",
       "reason": null,
-      "run_id": "20261017T001719Z-80cce10c"
+      "run_id": "20261017T005516Z-48447bad"
     },
     "SYN-CASE-FORGED": {
+      "clinician_decision": "recorded",
       "gaps": [
         "C3"
       ],
       "outcome": "routed",
       "reason": "checks failed",
-      "run_id": "20261017T001734Z-5e04fb94"
+      "run_id": "20261017T005529Z-0f73a032"
     },
     "SYN-CASE-WRONG-PATIENT": {
+      "clinician_decision": "recorded",
       "gaps": [
         "C3"
       ],
       "outcome": "routed",
       "reason": "checks failed",
-      "run_id": "20261017T001746Z-ae520c36"
+      "run_id": "20261017T005541Z-31368ade"
     }
   },
   "scan": {
     "events_scanned": {
       "/aws/lambda/prior-auth-agent-tools": 137,
-      "/aws/lambda/prior-auth-approval-service": 10,
-      "/aws/lambda/prior-auth-pre-token": 0,
-      "/aws/lambda/prior-auth-reviewer-tools": 0,
-      "aws/spans": 384,
+      "/aws/lambda/prior-auth-approval-service": 9,
+      "/aws/lambda/prior-auth-pre-token": 3,
+      "/aws/lambda/prior-auth-reviewer-tools": 16,
+      "aws/spans": 448,
       "runtime": 464,
-      "xray": 284
+      "xray": 322
     },
     "hits": {}
   },
-  "sha": "22291ca1aef60abc34d624f1e0ef337c6e02f02f",
+  "sha": "2d98f31e55946d99693e71e91a181c6c85831322",
   "span_source": "runtime log group `spans` stream (ADOT via X-Ray Transaction Search), plus aws/spans and X-Ray BatchGetTraces",
   "spans_seen": {
-    "20261017T001635Z-f23b9314": 1,
-    "20261017T001649Z-2663d2c8": 1,
-    "20261017T001703Z-56dab2ff": 1,
-    "20261017T001719Z-80cce10c": 1,
-    "20261017T001734Z-5e04fb94": 1,
-    "20261017T001746Z-ae520c36": 1
+    "20261017T005432Z-6fa4913a": 1,
+    "20261017T005447Z-1b92364a": 1,
+    "20261017T005500Z-6ef28cf4": 1,
+    "20261017T005516Z-48447bad": 1,
+    "20261017T005529Z-0f73a032": 1,
+    "20261017T005541Z-31368ade": 1
   }
 }
