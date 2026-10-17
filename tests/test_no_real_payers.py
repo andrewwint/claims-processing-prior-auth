@@ -32,15 +32,34 @@ def tracked_files() -> list[Path]:
     return [ROOT / f for f in out if f not in SKIP]
 
 
+IMAGES = {".png", ".jpg", ".jpeg"}
+
+
 def test_no_real_payer_names_anywhere():
+    """Text files, read as text. Binary files are not searched as text: compressed bytes can spell
+    a name by chance and could never show one that is drawn; images are read by OCR below."""
     hits = []
     for path in tracked_files():
         try:
-            text = path.read_text(errors="ignore")
+            text = path.read_bytes().decode("utf-8")
+        except UnicodeDecodeError:
+            continue  # binary
         except (IsADirectoryError, FileNotFoundError):
             continue
         for m in PATTERN.finditer(text):
             hits.append(f"{path.relative_to(ROOT)}: {m.group(0)}")
+    assert hits == []
+
+
+def test_no_real_payer_names_in_images():
+    """The text drawn in every PNG and JPEG, read by OCR (macOS Vision)."""
+    import pytest
+    ocrmac = pytest.importorskip("ocrmac.ocrmac")
+    hits = []
+    for path in tracked_files():
+        if path.suffix.lower() in IMAGES and path.exists():
+            text = " ".join(t for t, _, _ in ocrmac.OCR(str(path)).recognize())
+            hits += [f"{path.relative_to(ROOT)}: {m.group(0)}" for m in PATTERN.finditer(text)]
     assert hits == []
 
 
