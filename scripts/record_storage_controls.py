@@ -31,7 +31,10 @@ EXPECTED = [
     ("approval_service", "s3:PutObject", "decisions/", "evidence", "allowed"),
     ("reviewer_tools", "s3:PutObject", "decisions/", "evidence", "allowed"),
     # L4: the agent's roles cannot delete, shorten retention, or bypass governance.
-    ("runtime", "s3:DeleteObject", "recommendations/", "evidence", "implicitDeny"),
+    ("runtime", "s3:DeleteObject", "recommendations/", "evidence", "explicitDeny"),
+    # No one, not even teardown, may hide a record behind a delete marker.
+    ("teardown", "s3:DeleteObject", "decisions/", "evidence", "implicitDeny"),
+    ("reviewer_tools", "s3:DeleteObject", "decisions/", "evidence", "explicitDeny"),
     ("runtime", "s3:DeleteObjectVersion", "recommendations/", "evidence", "explicitDeny"),
     ("runtime", "s3:BypassGovernanceRetention", "recommendations/", "evidence", "explicitDeny"),
     ("runtime", "s3:PutObjectRetention", "recommendations/", "evidence", "explicitDeny"),

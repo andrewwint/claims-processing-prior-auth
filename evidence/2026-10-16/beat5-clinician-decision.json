@@ -20,11 +20,21 @@
       "result": {
         "case_id": "SYN-CASE-CF-1",
         "decision": "adverse_determination",
-        "decision_record_hash": "d3151be2cb8567fc36905bdabbd0d3cef69d3d4537e7c70dea0ccaaa101ffac7",
-        "recommendation_record_hash": "a4e4a5ace1084a76b845609857b3edc7073dc28538417563e1413bfc488cb5ca",
+        "decision_record_hash": "27aaa60ce617088518a95da55381bd42b50f223fa344d776de95e9563e5951d3",
+        "recommendation_record_hash": "d880a116a10a19ccfb60cb306d792b76c2efd7246272687a022bfacc0a3ac4b0",
         "recorded": true,
-        "run_id": "20261017T003416Z-8dd3a8dc",
+        "run_id": "20261017T005320Z-518338a1",
         "status": "recorded"
+      }
+    },
+    "decision_on_another_run_refused": {
+      "http_status": 200,
+      "result": {
+        "reasons": [
+          "the queue now names a different run; reload the case"
+        ],
+        "recorded": false,
+        "status": "refused"
       }
     },
     "second_decision_refused_write_once": {
@@ -61,16 +71,16 @@
       "span_names_this_run": true
     },
     "decision": "adverse_determination",
-    "decision_key": "decisions/SYN-CASE-CF-1/20261017T003416Z-8dd3a8dc.json",
-    "decision_record_sha256": "d3151be2cb8567fc36905bdabbd0d3cef69d3d4537e7c70dea0ccaaa101ffac7",
+    "decision_key": "decisions/SYN-CASE-CF-1/20261017T005320Z-518338a1.json",
+    "decision_record_sha256": "27aaa60ce617088518a95da55381bd42b50f223fa344d776de95e9563e5951d3",
     "decision_segment": null,
-    "recommendation_record_sha256": "a4e4a5ace1084a76b845609857b3edc7073dc28538417563e1413bfc488cb5ca",
-    "run_id": "20261017T003416Z-8dd3a8dc",
+    "recommendation_record_sha256": "d880a116a10a19ccfb60cb306d792b76c2efd7246272687a022bfacc0a3ac4b0",
+    "run_id": "20261017T005320Z-518338a1",
     "span": {
       "name": "POST /invocations",
-      "run_id": "20261017T003416Z-8dd3a8dc",
-      "span_id": "6e26aa82871bf28d",
-      "trace_id": "6ad2c282412ca12262d37e5e479a4b39"
+      "run_id": "20261017T005320Z-518338a1",
+      "span_id": "a397b3b882362a5e",
+      "trace_id": "6ad2c6f83c1cc1b91ef0da3735737c56"
     },
     "verified": false
   },
@@ -80,6 +90,7 @@
     "agent_refused_at_authorizer": true,
     "clinician_recorded": true,
     "only_decision_writers_allowed": true,
+    "other_run_refused": true,
     "records_chained": true,
     "whitespace_refused": true,
     "write_once": true
@@ -91,8 +102,8 @@
     "outcome": "routed",
     "packet_id": "PKT-SYN-CASE-CF-1",
     "reason": "criteria not met",
-    "run_id": "20261017T003416Z-8dd3a8dc"
+    "run_id": "20261017T005320Z-518338a1"
   },
-  "session_id": "prior-auth-case-SYN-CASE-CF-1-cdc46e71-f733a59dea5448399860563a11bcf43a",
-  "sha": "15a490fd49efd88bb55514023773aa41aa9ca0a4"
+  "session_id": "prior-auth-case-SYN-CASE-CF-1-cdc46e71-669a990711e54b3b85d3fa428de35a39",
+  "sha": "2028d6b66d71a07890970f849f714b9320855284"
 }
