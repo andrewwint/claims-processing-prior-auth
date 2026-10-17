@@ -81,7 +81,7 @@ The packet then reads like a checklist.
 
 | Criterion | Evidence in the record | Source | Status |
 | --- | --- | --- | --- |
-| Six weeks of conservative therapy | PT notes, eight visits over seven weeks | Note dated in the record, page cited | Met |
+| Six weeks of conservative therapy | PT notes, eight visits over seven weeks | Therapy note, page and line cited | Met |
 | Imaging confirms the diagnosis | MRI report names the finding | Radiology report, line cited | Met |
 | Functional limitation documented | No measure found | None | Not found |
 
@@ -137,7 +137,7 @@ That gives the bake-off two numbers to watch.
 
 | Metric | Defined as | Direction |
 | --- | --- | --- |
-| False auto-approval rate | Cases approved by the agent that a clinician would not have approved | As close to zero as you can get |
+| False auto-approval rate | Cases the agent approved that should have gone to a clinician. In a test harness, the case author's label stands in for that clinician | As close to zero as you can get |
 | Auto-approval rate | Share of requests that clear without a human touch | Higher, once the first number holds |
 
 The cases are synthetic, because real charts do not belong in a test harness. The useful ones are counterfactual. Take a case that clearly meets criteria. Remove one piece of evidence. Keep everything else fixed. The agent should stop approving and route to a reviewer.
@@ -148,7 +148,7 @@ A few rules keep the comparison honest. Run each case several times and show eve
 
 On six synthetic cases, three trials each, Nova Pro and Sonnet 4.6 each made zero false approvals in twelve trials that needed review. That's a small sample: the 95% upper bound is still 25%. Sonnet cleared one more approvable case, at about five times the cost.
 
-Make one real call to every candidate before you build. Model families disagree about which parameters they accept, and some return a reasoning block before the answer. You want that surprise on day one.
+Make one real call to every candidate before you build. Model families disagree about which sampling parameters they accept. You want that surprise on day one.
 
 ## Map it to AgentCore
 
@@ -173,4 +173,4 @@ An agent can shorten the wait for a decision. It can clear the obvious approvals
 
 The design follows from that one rule. Take the denial tool away and enforce it outside the prompt. Ground every claim in a cited source. Send every failure to a person. Keep a record an auditor can follow, with no chart text in the logs. Choose models by how rarely they approve what they should not.
 
-The reference implementation is on GitHub at \[REPO LINK\]. Every claim in this article maps to a test or an artifact there.
+The reference implementation is on GitHub at \[REPO LINK\]. Every claim about how the system behaves maps to a test or a recorded artifact there, and every regulatory claim cites its source.
