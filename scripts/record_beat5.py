@@ -89,8 +89,9 @@ def main() -> int:
         "agent_refused_at_authorizer": c["agent_token_refused_at_authorizer"]["http_status"] == 403,
         "clinician_recorded": c["clinician_denial_recorded"]["result"].get("recorded") is True,
         "write_once": c["second_decision_refused_write_once"]["result"].get("recorded") is False,
-        # Spans reach the log group minutes later; the span link is checked by scripts.verify_chain then.
-        "records_chained": all(v for k, v in record["chain"]["checks"].items() if not k.startswith("span_")),
+        # Spans and trace summaries arrive minutes later; those links are checked by scripts.verify_chain then.
+        "records_chained": all(v for k, v in record["chain"]["checks"].items()
+                               if not k.startswith("span_") and k != "decision_trace_carries_decision_hash"),
         "only_decision_writers_allowed": {k: v == "allowed" for k, v in
                                           record["bucket_policy_simulation_put_decisions"].items()} == {
             ROLE_NAMES["runtime"]: False, ROLE_NAMES["agent_tools"]: False,

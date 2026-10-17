@@ -4,20 +4,24 @@
     "decision_exists": true,
     "decision_names_this_run": true,
     "decision_points_at_recommendation": true,
+    "decision_trace_carries_decision_hash": true,
     "recommendation_hash_matches_stored_bytes": true,
     "span_carries_recommendation_hash": true,
     "span_names_this_run": true
   },
   "decision": "auto_approval",
-  "decision_key": "decisions/SYN-CASE-CLEAN-1/20261017T000628Z-6f3796ea.json",
-  "decision_record_sha256": "8be32657a4533d8b360de38511ac2b43258b3171977ed58033050b7b54419ba1",
-  "recommendation_record_sha256": "a2d4cebc152df01a1af87d114a78328dc45e69b233328f3b9fb9cc641c409c22",
-  "run_id": "20261017T000628Z-6f3796ea",
+  "decision_key": "decisions/SYN-CASE-CLEAN-1/20261017T003542Z-5bda2498.json",
+  "decision_record_sha256": "e2b436f305845ad713feda7ffd8ac7231575b032510aaa89590615652a52f8ca",
+  "decision_segment": {
+    "trace_id": "1-6ad2c2d7-2a0f2c7508fc52ba7147ee81"
+  },
+  "recommendation_record_sha256": "4f3c62581073f5494de97b171c00d185277d738fc8a6ada704e2b82ad78747a4",
+  "run_id": "20261017T003542Z-5bda2498",
   "span": {
     "name": "POST /invocations",
-    "run_id": "20261017T000628Z-6f3796ea",
-    "span_id": "a0bfeb05277f1ea0",
-    "trace_id": "6ad2bbfc6cbab8ce57dc86174efcfebf"
+    "run_id": "20261017T003542Z-5bda2498",
+    "span_id": "39bf867b17168cda",
+    "trace_id": "6ad2c2d72a0f2c7508fc52ba7147ee81"
   },
   "verified": true
 }

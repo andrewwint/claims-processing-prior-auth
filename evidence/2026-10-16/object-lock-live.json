@@ -1,0 +1,23 @@
+{
+  "attempts": {
+    "operator_without_bypass": {
+      "code": "AccessDenied",
+      "message": "User: <operator> is not authorized to perform: s3:DeleteObjectVersion on resource: \"arn:aws:s3:::<evidence-bucket>/queue/CLEAN-1.json\" with an explicit deny in a resource-based policy",
+      "refused": true
+    },
+    "teardown_role_without_bypass_header": {
+      "code": "AccessDenied",
+      "message": "Access Denied because object protected by object lock.",
+      "refused": true
+    }
+  },
+  "date": "2026-10-16",
+  "key": "queue/CLEAN-1.json",
+  "label": "Object Lock: live",
+  "object_lock_mode": "GOVERNANCE",
+  "passed": true,
+  "retain_until": "2026-10-18 00:03:49.009000+00:00",
+  "sha": "15a490fd49efd88bb55514023773aa41aa9ca0a4",
+  "version_id": "CnXVlqPjc2EB2PJMe7pwxBrV66DJN2Mv",
+  "version_still_present": true
+}

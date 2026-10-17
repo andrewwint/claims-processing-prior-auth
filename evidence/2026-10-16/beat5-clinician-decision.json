@@ -20,10 +20,10 @@
       "result": {
         "case_id": "SYN-CASE-CF-1",
         "decision": "adverse_determination",
-        "decision_record_hash": "38f4785e165cf7c88e00d859741294733c2c93cd6f09ff5e3511a0f0c6f029f7",
-        "recommendation_record_hash": "6ddf9c86f7595c425d93cf646e1d6b9b540fd51741293735d4383b55424dbfd6",
+        "decision_record_hash": "d3151be2cb8567fc36905bdabbd0d3cef69d3d4537e7c70dea0ccaaa101ffac7",
+        "recommendation_record_hash": "a4e4a5ace1084a76b845609857b3edc7073dc28538417563e1413bfc488cb5ca",
         "recorded": true,
-        "run_id": "20261017T001220Z-7da8444a",
+        "run_id": "20261017T003416Z-8dd3a8dc",
         "status": "recorded"
       }
     },
@@ -55,22 +55,24 @@
       "decision_exists": true,
       "decision_names_this_run": true,
       "decision_points_at_recommendation": true,
+      "decision_trace_carries_decision_hash": false,
       "recommendation_hash_matches_stored_bytes": true,
       "span_carries_recommendation_hash": true,
       "span_names_this_run": true
     },
     "decision": "adverse_determination",
-    "decision_key": "decisions/SYN-CASE-CF-1/20261017T001220Z-7da8444a.json",
-    "decision_record_sha256": "38f4785e165cf7c88e00d859741294733c2c93cd6f09ff5e3511a0f0c6f029f7",
-    "recommendation_record_sha256": "6ddf9c86f7595c425d93cf646e1d6b9b540fd51741293735d4383b55424dbfd6",
-    "run_id": "20261017T001220Z-7da8444a",
+    "decision_key": "decisions/SYN-CASE-CF-1/20261017T003416Z-8dd3a8dc.json",
+    "decision_record_sha256": "d3151be2cb8567fc36905bdabbd0d3cef69d3d4537e7c70dea0ccaaa101ffac7",
+    "decision_segment": null,
+    "recommendation_record_sha256": "a4e4a5ace1084a76b845609857b3edc7073dc28538417563e1413bfc488cb5ca",
+    "run_id": "20261017T003416Z-8dd3a8dc",
     "span": {
       "name": "POST /invocations",
-      "run_id": "20261017T001220Z-7da8444a",
-      "span_id": "4a5afde350ceea3f",
-      "trace_id": "6ad2bd5c19bf722f4a45d0fa1fcf1413"
+      "run_id": "20261017T003416Z-8dd3a8dc",
+      "span_id": "6e26aa82871bf28d",
+      "trace_id": "6ad2c282412ca12262d37e5e479a4b39"
     },
-    "verified": true
+    "verified": false
   },
   "clinician_sign_in": "SRP (scripted fallback); the workbench uses the hosted UI with PKCE and state",
   "date": "2026-10-16",
@@ -89,8 +91,8 @@
     "outcome": "routed",
     "packet_id": "PKT-SYN-CASE-CF-1",
     "reason": "criteria not met",
-    "run_id": "20261017T001220Z-7da8444a"
+    "run_id": "20261017T003416Z-8dd3a8dc"
   },
-  "session_id": "prior-auth-case-SYN-CASE-CF-1-cdc46e71-ae6801cc765f4e68bf75d71b17093720",
-  "sha": "668d834d7e3fee5d14274c2ca99cddfb5a25849a"
+  "session_id": "prior-auth-case-SYN-CASE-CF-1-cdc46e71-f733a59dea5448399860563a11bcf43a",
+  "sha": "15a490fd49efd88bb55514023773aa41aa9ca0a4"
 }

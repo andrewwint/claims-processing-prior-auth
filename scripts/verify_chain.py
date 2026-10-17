@@ -12,7 +12,7 @@ Usage: python -m scripts.verify_chain <case_id> <run_id> [--out path]
 import argparse
 import json
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import boto3
@@ -40,7 +40,7 @@ def find_span(logs, recommendation_hash: str) -> dict | None:
 def find_decision_segment(xray, decision_hash: str, decided_at: str) -> dict | None:
     at = datetime.fromisoformat(decided_at)
     pages = xray.get_paginator("get_trace_summaries").paginate(
-        StartTime=at - timedelta(minutes=5), EndTime=at + timedelta(minutes=60),
+        StartTime=at - timedelta(minutes=5), EndTime=min(at + timedelta(minutes=60), datetime.now(timezone.utc)),
         FilterExpression=f'annotation.decision_record_sha256 = "{decision_hash}"')
     for page in pages:
         for summary in page["TraceSummaries"]:

@@ -1,6 +1,10 @@
 """The five-minute demo, one subcommand per beat.
 
-Usage: python -m scripts.demo <1-6>
+Usage: python -m scripts.demo [--redact] <1-6>
+
+--redact masks every identifier in the output (account IDs, ARNs, gateway URLs,
+client IDs, pool and domain names, tokens), using scripts/redact.py. Use it for
+any recording.
 
 1  Both gateways side by side (tool lists).
 2  Clean case: the Strands agent builds a cited packet; decide() approves.
@@ -11,11 +15,43 @@ Usage: python -m scripts.demo <1-6>
 Beats 4 and 5 are shown back to back.
 """
 
+import re
 import sys
 
 import boto3
 
 from scripts import gateway_client as gc
+from scripts.redact import known_values, redact
+
+SSO_ROLE = re.compile(r"AWSReservedSSO_[A-Za-z0-9_]+")
+
+
+class RedactingStream:
+    """Writes through redact(): nothing printed by a beat reaches the screen unmasked."""
+
+    def __init__(self, stream, named: dict[str, str]):
+        self.stream, self.named = stream, named
+
+    def write(self, text: str) -> int:
+        return self.stream.write(SSO_ROLE.sub("<operator-role>", redact(text, self.named)))
+
+    def flush(self) -> None:
+        self.stream.flush()
+
+
+def demo_named(out: dict) -> dict[str, str]:
+    """Named placeholders: the stack outputs, plus the intake client and the runtime."""
+    named = known_values(out)
+    if out.get("IntakeClientId"):
+        named[out["IntakeClientId"]] = "<intake-client-id>"
+    try:
+        import json as _json
+        from pathlib import Path as _Path
+        runtime = _json.loads(_Path(".local/runtime.json").read_text())
+        named.update({runtime["arn"]: "<runtime-arn>", runtime["id"]: "<runtime-id>"})
+    except (OSError, ValueError, KeyError):
+        pass
+    return named
 
 DENIAL = "ReviewerTools___record_adverse_determination"
 
@@ -83,10 +119,16 @@ BEATS = {
 
 
 def main(argv: list[str]) -> int:
-    if not argv or argv[0] not in BEATS:
+    masked = "--redact" in argv
+    argv = [a for a in argv if a != "--redact"]
+    if len(argv) != 1 or argv[0] not in BEATS:
         print(__doc__, file=sys.stderr)
         return 2
-    BEATS[argv[0]](boto3.Session(region_name="us-east-1"), gc.outputs())
+    out = gc.outputs()
+    if masked:
+        sys.stdout = RedactingStream(sys.stdout, demo_named(out))
+        sys.stderr = RedactingStream(sys.stderr, demo_named(out))
+    BEATS[argv[0]](boto3.Session(region_name="us-east-1"), out)
     return 0
 
 
