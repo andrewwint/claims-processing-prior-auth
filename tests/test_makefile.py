@@ -2,6 +2,7 @@
 through the guard, there is no teardown target, and no AWS profile or account is named."""
 
 import re
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -45,3 +46,19 @@ def test_no_profile_or_account_is_named():
 
 def test_demo_is_redacted_by_default():
     assert "--redact" in " ".join(targets()["demo"])
+
+
+def test_recipes_run_with_pipefail():
+    assert "SHELL := /bin/bash" in MAKEFILE and "-o pipefail" in MAKEFILE
+
+
+def _make(target: str, py: str) -> int:
+    return subprocess.run(["make", "-s", target, f"PY={py}"], cwd=ROOT, capture_output=True).returncode
+
+
+def test_a_failing_scan_fails_the_target():
+    assert _make("scan", "python3 -c 'import sys; sys.exit(1)'") != 0
+
+
+def test_a_passing_scan_passes_the_target():
+    assert _make("scan", "python3 -c 'import sys; sys.exit(0)'") == 0

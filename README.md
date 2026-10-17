@@ -80,6 +80,8 @@ If you have ten minutes, read in this order:
 | `make report` | Regenerates `evaluation/report.md` and `SAMPLE_OUTPUTS.md` from committed data |
 | `make scan` | The gate before going public: deployment identifiers and restricted terms in the tree and the full history, with a positive control |
 
+Deployed AWS resources keep the project's original name on purpose: the `project=prior-auth-agentcore` cost tag and the `prior-auth-agentcore-*` budget names. Renaming them would replace live budgets and re-tag resources.
+
 Teardown is not a make target: it runs once, deliberately, with `python -m scripts.teardown --yes`.
 
 ## Principles

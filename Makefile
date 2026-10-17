@@ -2,6 +2,11 @@
 # nothing here names a profile or an account. Teardown is deliberately not a target: it runs
 # once, through its own script (python -m scripts.teardown --yes).
 
+# Every recipe fails on the first failing command, and a pipe fails if any part of it does,
+# so a gate's exit status is never hidden.
+SHELL := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
+
 PY := .venv/bin/python
 BEAT ?= 1
 
