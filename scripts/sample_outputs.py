@@ -27,8 +27,9 @@ SOURCES = {
     "chain": f"{E}/chain-clinician-denial-cf-1.json",
     "control": f"{E}/canary-scan-control.json",
     "clean": f"{E}/canary-scan-clean.json",
-    "report": "evaluation/report.md",
+    "trials": "evaluation/trials.jsonl",
 }
+AGENT_TOOLS_TEST = "tests/test_pipeline.py::test_strands_agent_gets_exactly_the_three_gathering_tools"
 POLICY_SUFFIX = re.compile(r"(prior_auth_[a-z_]+)-[a-z0-9]{10}\b")
 
 
@@ -56,7 +57,10 @@ def beat1() -> list[str]:
             "`python -m scripts.demo --redact 1`: each gateway's `tools/list`, under the agent's and a clinician's token.", "",
             *_block("Agent gateway (agent identity):\n" + "\n".join(f"   {t}" for t in agent)
                     + "\nReviewer gateway (clinician identity):\n" + "\n".join(f"   {t}" for t in reviewer)),
-            "", "The agent's gateway has no denial tool. " + _src("tools"), ""]
+            "", "The agent's gateway has no denial tool. " + _src("tools"), "",
+            "Of these five, the Strands agent is given the three gathering tools. `decide()`, in code, is the only "
+            "caller of `route_to_reviewer` and `record_approval`. "
+            f"<sub>Pinned by [`{AGENT_TOOLS_TEST}`](tests/test_pipeline.py).</sub>", ""]
 
 
 def beat2() -> list[str]:
@@ -92,16 +96,24 @@ def beat4() -> list[str]:
             _src("layer1") + " · " + _src("layer2"), ""]
 
 
+LABELS = {"agent_token_refused_at_authorizer": "Agent's token, denial tool",
+          "whitespace_reason_refused_by_lambda": "Clinician, blank reason",
+          "clinician_denial_recorded": "Clinician, denial with a reason",
+          "second_decision_refused_write_once": "Clinician, a second decision on the same run",
+          "decision_on_another_run_refused": "Clinician, a decision naming a stale run"}
+
+
 def beat5() -> list[str]:
     rec = _load("beat5")
     calls = rec["calls"]
-    order = ["whitespace_reason_refused_by_lambda", "agent_token_refused_at_authorizer",
-             "decision_on_another_run_refused", "clinician_denial_recorded", "second_decision_refused_write_once"]
+    # As the story runs: the agent is refused, then the clinician's own attempts.
+    order = ["agent_token_refused_at_authorizer", "whitespace_reason_refused_by_lambda", "clinician_denial_recorded",
+             "second_decision_refused_write_once", "decision_on_another_run_refused"]
     rows = []
     for k in order:
         r = calls[k]["result"]
         what = "recorded" if r.get("recorded") else "refused: " + "; ".join(r.get("reasons", []))
-        rows.append(f"| {k.replace('_', ' ')} | {calls[k]['http_status']} | {what} |")
+        rows.append(f"| {LABELS[k]} | {calls[k]['http_status']} | {what} |")
     chain = _load("chain")
     checks = "\n".join(f"  {'ok ' if v else 'FAIL'} {k}" for k, v in chain["checks"].items())
     return ["## 5. A clinician decides; the record chains", "",
@@ -132,17 +144,32 @@ def beat6() -> list[str]:
 
 
 def harness() -> list[str]:
-    report = (ROOT / SOURCES["report"]).read_text().splitlines()
-    headline = [l for l in report if l.startswith("**`")]
-    return ["## 7. The harness", "",
-            "Pre-registered ([evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md)); six synthetic cases, "
-            "three trials per model, on the deployed system.", "", *headline, "",
-            "Every trial, and the cause of each approvable trial that was routed: "
-            "[evaluation/report.md](evaluation/report.md).", ""]
+    from evaluation.report import load, pct, summarize
+    trials = load(ROOT / SOURCES["trials"])
+    approvable = len({t["case_id"] for t in trials if t["label"] == "approve"})
+    cases = len({t["case_id"] for t in trials})
+    lines = ["## 7. The harness", "",
+             "Pre-registered ([evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md)); six synthetic cases, "
+             "three trials per model, on the deployed system. Computed here from the raw trials.", ""]
+    for model in dict.fromkeys(t["model_id"] for t in trials):
+        s = summarize([t for t in trials if t["model_id"] == model])
+        lines += [f"**`{model}`**", "", "| Measure | Result |", "|---|---|",
+                  f"| False auto-approvals | {s['false_auto']} of {s['n_review']} trials on needs-review cases "
+                  f"(95% upper bound {pct(s['bound'])}, "
+                  f"{'rule of three' if s['false_auto'] == 0 else 'exact Clopper-Pearson'}) |",
+                  f"| Auto-approvals on approvable cases | {s['auto_on_approve']} of {s['n_approve']} |",
+                  f"| Auto-approvals overall | {s['auto']} of {s['n']} ({pct(s['auto'] / s['n'])}); reflects the test "
+                  f"mix, {approvable} of {cases} cases approvable |",
+                  f"| Latency p50 / p95 | {s['p50']:.1f} s / {s['p95']:.1f} s |",
+                  f"| Cost per trial | ${s['cost_per_trial']:.4f} |", ""]
+    return lines + ["Every trial, and the cause of each approvable trial that was routed: "
+                    "[evaluation/report.md](evaluation/report.md). " + _src("trials"), ""]
 
 
 def render() -> str:
     lines = ["# Sample outputs", "",
+             "An agent on Amazon Bedrock AgentCore assembles a prior-authorization case; a clinician decides "
+             "([README](README.md), [article](docs/article-draft.md)).", "",
              "Real runs on the deployed system, with synthetic data only. Each sample is generated from a committed, "
              "redacted evidence file named beside it (`python -m scripts.sample_outputs`); account IDs, ARNs, "
              "gateway URLs, client IDs and tokens are masked.", "",

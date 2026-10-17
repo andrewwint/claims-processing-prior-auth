@@ -1,5 +1,7 @@
 # Sample outputs
 
+An agent on Amazon Bedrock AgentCore assembles a prior-authorization case; a clinician decides ([README](README.md), [article](docs/article-draft.md)).
+
 Real runs on the deployed system, with synthetic data only. Each sample is generated from a committed, redacted evidence file named beside it (`python -m scripts.sample_outputs`); account IDs, ARNs, gateway URLs, client IDs and tokens are masked.
 
 > **Reproducibility.** The boundary results (tool lists, refusals, Cedar denials, write-once, the chain checks) are deterministic. The model's citations are not, even at temperature 0: in the harness, one of six Nova Pro trials on an approvable case cited lines that do not exist and was routed to a clinician instead of approved. A different run can cite differently; it cannot approve without passing every check.
@@ -29,6 +31,8 @@ Reviewer gateway (clinician identity):
 ```
 
 The agent's gateway has no denial tool. <sub>Source: [`evidence/2026-10-16/boundary-smoke-2028d6b66d71.json`](evidence/2026-10-16/boundary-smoke-2028d6b66d71.json)</sub>
+
+Of these five, the Strands agent is given the three gathering tools. `decide()`, in code, is the only caller of `route_to_reviewer` and `record_approval`. <sub>Pinned by [`tests/test_pipeline.py::test_strands_agent_gets_exactly_the_three_gathering_tools`](tests/test_pipeline.py).</sub>
 
 ## 2. Clean case: a cited packet, approved
 
@@ -78,11 +82,11 @@ The same denial tool, through the reviewer gateway, under a clinician's token (s
 
 | Call | HTTP | Result |
 |---|---|---|
-| whitespace reason refused by lambda | 200 | refused: a specific reason is required |
-| agent token refused at authorizer | 403 | refused: insufficient_scope - The request requires higher privileges than provided by the access token. |
-| decision on another run refused | 200 | refused: the queue now names a different run; reload the case |
-| clinician denial recorded | 200 | recorded |
-| second decision refused write once | 200 | refused: this run already has a decision |
+| Agent's token, denial tool | 403 | refused: insufficient_scope - The request requires higher privileges than provided by the access token. |
+| Clinician, blank reason | 200 | refused: a specific reason is required |
+| Clinician, denial with a reason | 200 | recorded |
+| Clinician, a second decision on the same run | 200 | refused: this run already has a decision |
+| Clinician, a decision naming a stale run | 200 | refused: the queue now names a different run; reload the case |
 
 `python -m scripts.verify_chain <case> <run>`: every hash recomputed from the stored bytes.
 
@@ -120,9 +124,26 @@ Clean run: all six cases, each routed case decided by a clinician, then a scan o
 
 ## 7. The harness
 
-Pre-registered ([evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md)); six synthetic cases, three trials per model, on the deployed system.
+Pre-registered ([evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md)); six synthetic cases, three trials per model, on the deployed system. Computed here from the raw trials.
 
-**`amazon.nova-pro-v1:0`.** False auto-approvals: 0 of 12 trials on needs-review cases, with a 95% upper bound of 25.0% (rule of three). Auto-approvals: 5 of 6 trials on approvable cases, and 5 of 18 (27.8%) overall; the overall figure reflects the test mix, in which 2 of 6 cases are approvable.
-**`us.anthropic.claude-sonnet-4-6`.** False auto-approvals: 0 of 12 trials on needs-review cases, with a 95% upper bound of 25.0% (rule of three). Auto-approvals: 6 of 6 trials on approvable cases, and 6 of 18 (33.3%) overall; the overall figure reflects the test mix, in which 2 of 6 cases are approvable.
+**`amazon.nova-pro-v1:0`**
 
-Every trial, and the cause of each approvable trial that was routed: [evaluation/report.md](evaluation/report.md).
+| Measure | Result |
+|---|---|
+| False auto-approvals | 0 of 12 trials on needs-review cases (95% upper bound 25.0%, rule of three) |
+| Auto-approvals on approvable cases | 5 of 6 |
+| Auto-approvals overall | 5 of 18 (27.8%); reflects the test mix, 2 of 6 cases approvable |
+| Latency p50 / p95 | 13.0 s / 16.1 s |
+| Cost per trial | $0.0042 |
+
+**`us.anthropic.claude-sonnet-4-6`**
+
+| Measure | Result |
+|---|---|
+| False auto-approvals | 0 of 12 trials on needs-review cases (95% upper bound 25.0%, rule of three) |
+| Auto-approvals on approvable cases | 6 of 6 |
+| Auto-approvals overall | 6 of 18 (33.3%); reflects the test mix, 2 of 6 cases approvable |
+| Latency p50 / p95 | 14.3 s / 18.0 s |
+| Cost per trial | $0.0207 |
+
+Every trial, and the cause of each approvable trial that was routed: [evaluation/report.md](evaluation/report.md). <sub>Source: [`evaluation/trials.jsonl`](evaluation/trials.jsonl)</sub>

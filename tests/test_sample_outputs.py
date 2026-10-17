@@ -12,6 +12,6 @@ def test_sample_outputs_carry_no_identifiers():
     assert find_unredacted(sample_outputs.render()) == []
 
 
-def test_every_source_is_committed_evidence_or_the_report():
+def test_every_source_is_committed_evidence_or_the_raw_trials():
     for path in sample_outputs.SOURCES.values():
-        assert (sample_outputs.ROOT / path).is_file() and path.startswith(("evidence/", "evaluation/report.md"))
+        assert (sample_outputs.ROOT / path).is_file() and path.startswith(("evidence/", "evaluation/trials.jsonl"))
