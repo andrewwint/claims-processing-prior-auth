@@ -1,0 +1,27 @@
+{
+  "case_id": "SYN-CASE-WRONG-PATIENT",
+  "checks": {
+    "decision_exists": true,
+    "decision_names_this_run": true,
+    "decision_points_at_recommendation": true,
+    "decision_trace_carries_decision_hash": true,
+    "recommendation_hash_matches_stored_bytes": true,
+    "span_carries_recommendation_hash": true,
+    "span_names_this_run": true
+  },
+  "decision": "clinician_approval",
+  "decision_key": "decisions/SYN-CASE-WRONG-PATIENT/20261017T020030Z-5aaae8fa.json",
+  "decision_record_sha256": "51745b42dc41bdc7c2f838697b49e34c824f42cda87478b9347f52f631cf86d8",
+  "decision_segment": {
+    "trace_id": "1-6ad3b7c7-4b7c9af13fa916df2565d1de"
+  },
+  "recommendation_record_sha256": "4f9ffe131e646c8e52032eee4dad87a1515f0c07984dc575852ba87db137c1df",
+  "run_id": "20261017T020030Z-5aaae8fa",
+  "span": {
+    "name": "POST /invocations",
+    "run_id": "20261017T020030Z-5aaae8fa",
+    "span_id": "2df2130b850b5863",
+    "trace_id": "6ad2d6b84a720f713408bcd552d87833"
+  },
+  "verified": true
+}
