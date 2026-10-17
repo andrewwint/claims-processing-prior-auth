@@ -30,7 +30,7 @@ If you have ten minutes, read in this order:
 
    ![The demo, scripted: both gateways' tool lists, the clean case approved, the counterfactual routed with gap C3, the agent refused the denial tool, the clinician's hosted-UI sign-in and packet view, a denial refused without a reason and then recorded, and the clean telemetry scan.](docs/demo.gif)
 
-   *A scripted run, recorded with Playwright (`scripts/record_video.py`); every frame was scanned for identifiers before publishing (`scripts/scan_video.py`).*
+   *A scripted run, recorded with Playwright (`scripts/record_video.py`); every frame was scanned for identifiers before publishing (`scripts/scan_video.py`). Full video, in 4K: [https://youtu.be/gor2Ay986ns](https://youtu.be/gor2Ay986ns).*
 
    The harness: six cases × Nova Pro and Sonnet 4.6 × three trials, pre-registered in [evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md), reported in [evaluation/report.md](evaluation/report.md).
 
@@ -51,12 +51,6 @@ If you have ten minutes, read in this order:
 - **Clean telemetry.** Traces hold identifiers, timings and hashes. A canary scan, with a positive control, shows they contain no chart text.
 - **Chained, write-once evidence records.** A decision record chains to its recommendation by a hash recomputed from the stored bytes.
 - **A pre-registered evaluation** that reports the false auto-approval rate on counterfactual cases, with every trial shown.
-
-## Architecture
-
-![The AWS architecture: an intake client starts a case on AgentCore Runtime, which gets its gateway token from AgentCore Identity and calls its tools through the agent gateway (case tools and the approval service, no denial tool), with Amazon Bedrock Nova Pro returning citations only and a Cedar policy engine checking every tool call. Clinicians sign in through Amazon Cognito and reach the reviewer gateway, the only path to a denial; the agent is refused there. Records go to an S3 evidence bucket under a customer-managed KMS key, and telemetry carries no chart text.](docs/architecture.png)
-
-*Numbers follow a case from intake to decision. The left half is the agent's side; the lower box is the clinician's, the only path to a denial.*
 
 ## Where this sits in claims processing
 

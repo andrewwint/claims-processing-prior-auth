@@ -38,7 +38,7 @@ The agent works the whole pre-service path. It stops at one place.
 
 The agent approves only when every criterion is met and every check passes. A miss or any failure goes to a clinician with the case already built. Only the clinician can deny.
 
-Here it is running on AgentCore, with synthetic data: \[DEMO VIDEO LINK\]
+Here it is running on AgentCore, with synthetic data: [the demo video](https://youtu.be/gor2Ay986ns).
 
 ## Enforce the boundary outside the prompt
 

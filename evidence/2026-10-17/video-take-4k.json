@@ -18,8 +18,9 @@
     "tool": "scripts/scan_video.py"
   },
   "packet_view_guard": "passed: fresh run shown with C1 Met, C2 Met, C3 Not found",
+  "published_at": "https://youtu.be/gor2Ay986ns",
   "recorded_with": "scripts/record_video.py: stills at 4K density held for each caption, encoded by ffmpeg (x264, CRF 16 and 18)",
   "run_id": "20261017T190605Z-1864e305",
-  "status": "pending PM approval (replaces the approved take only once approved)",
+  "status": "approved by the PM; published",
   "take": "prior-auth-demo-4k.mp4 (3840x2160) and prior-auth-demo-1080p.mp4 (1920x1080), 86.5 s, kept outside the repository"
 }
