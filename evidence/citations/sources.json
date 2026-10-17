@@ -1,0 +1,102 @@
+{
+  "_about": "Official primary sources for the ledger's citation rows (R1-R6), with the quotes relied on, the retrieval date, and how far each supports the article's wording. tests/test_citations.py checks every R row has an entry here.",
+  "sources": [
+    {
+      "row": "R1",
+      "title": "Washington E2SSB 5395 (Ch. 157, Laws of 2026), RCW 48.43.830(3)(a); Colorado HB26-1139 (Session Laws 2026, Ch. 325), C.R.S. 10-16-112.7(5)",
+      "urls": [
+        "https://app.leg.wa.gov/RCW/default.aspx?cite=48.43.830",
+        "https://app.leg.wa.gov/billsummary?BillNumber=5395&Year=2025&Initiative=false",
+        "https://leg.colorado.gov/bills/hb26-1139",
+        "https://leg.colorado.gov/laws/session-laws/HB26-1139/325/download"
+      ],
+      "retrieved": "2026-10-16",
+      "quotes": [
+        "Artificial intelligence shall not be the sole means used to deny, delay, or modify health care services.",
+        "Governor signed. Chapter 157, 2026 Laws. ... Effective date 6/11/2026*.",
+        "A CARRIER'S DENIAL OF COVERAGE BASED IN WHOLE OR IN PART ON MEDICAL NECESSITY SHALL NOT BE ISSUED SOLELY ON THE OUTPUT OF AN ARTIFICIAL INTELLIGENCE SYSTEM WITHOUT HUMAN REVIEW AND APPROVAL OF THE DENIAL BY A LICENSED CLINICIAN, LICENSED PHYSICIAN, OR OTHER REGULATED PROFESSIONAL",
+        "This act takes effect January 1, 2027"
+      ],
+      "verdict": "supported",
+      "notes": "Washington took effect June 11, 2026; Colorado January 1, 2027 (subject to referendum petition). Colorado covers medical-necessity denials only; Washington also covers delay and modification. Washington applies to carriers; Medicaid managed care is not yet covered."
+    },
+    {
+      "row": "R2",
+      "title": "CMS-0057-F, 89 FR 8758-8988 (Feb 8, 2024), FR Doc 2024-00895; 42 CFR 422.568(b)(1)(ii), 422.122(a)",
+      "urls": [
+        "https://www.federalregister.gov/documents/2024/02/08/2024-00895/medicare-and-medicaid-programs-patient-protection-and-affordable-care-act-advancing-interoperability",
+        "https://www.federalregister.gov/documents/full_text/text/2024/02/08/2024-00895.txt"
+      ],
+      "retrieved": "2026-10-16",
+      "quotes": [
+        "we are finalizing that these timeframes would be 72 hours for expedited requests, unless a shorter minimum timeframe is established under applicable state law, and 7 calendar days for standard requests with the possibility of an extension to up to 14 days in certain circumstances. (89 FR 8878)",
+        "We are requiring that impacted payers send notices to providers when they make a prior authorization decision, including a specific reason for denial when they deny a prior authorization request. (89 FR 8759-8760)",
+        "finalizing compliance dates in 2026 (by January 1, 2026, for MA organizations and state Medicaid and CHIP FFS programs; by the rating period beginning on or after January 1, 2026, for Medicaid managed care plans and CHIP managed care entities; and for plan years beginning on or after January 1, 2026, for QHP issuers on the FFEs). (89 FR 8760)"
+      ],
+      "verdict": "supported, simplified",
+      "notes": "'January 2026' is exact for MA and Medicaid/CHIP FFS; managed care and QHPs start with the rating period or plan year on or after that date. QHP issuers on the FFEs are exempt from the timeframes (not from the denial reason). Drugs are excluded. A standard request may be extended up to 14 days. The current eCFR text of 42 CFR 422.122 could not be fetched (503) to confirm no later amendment."
+    },
+    {
+      "row": "R3",
+      "title": "CMS-0057-F, 89 FR 8758-8988 (Feb 8, 2024), FR Doc 2024-00895; 42 CFR 422.122(b); 45 CFR 170.215(a)(1) (HL7 FHIR Release 4.0.1)",
+      "urls": [
+        "https://www.federalregister.gov/documents/2024/02/08/2024-00895/medicare-and-medicaid-programs-patient-protection-and-affordable-care-act-advancing-interoperability"
+      ],
+      "retrieved": "2026-10-16",
+      "quotes": [
+        "we are requiring impacted payers to implement and maintain a Prior Authorization API ... finalizing compliance dates in 2027 (by January 1, 2027, for MA organizations and state Medicaid and CHIP FFS programs; ...). (89 FR 8759)",
+        "Beginning January 1, 2027, an MA organization must implement and maintain an API conformant with ... the standards in 45 CFR 170.215(a)(1), (b)(1)(i), and (c)(1) (89 FR 8976)"
+      ],
+      "verdict": "supported, simplified",
+      "notes": "Same plan-year timing as R2 for managed care and QHPs. The rule recommends, but does not require, the Da Vinci CRD, DTR and PAS guides."
+    },
+    {
+      "row": "R4",
+      "title": "45 CFR 162 Subpart M, \u00a7162.1301 and \u00a7162.1302 (X12 278, 005010X217); CMS-0057-F, 89 FR 8758-8988 (Feb 8, 2024), FR Doc 2024-00895",
+      "urls": [
+        "https://www.ecfr.gov/api/versioner/v1/full/2026-10-01/title-45.xml?part=162&subpart=M",
+        "https://www.federalregister.gov/documents/2024/02/08/2024-00895/medicare-and-medicaid-programs-patient-protection-and-affordable-care-act-advancing-interoperability"
+      ],
+      "retrieved": "2026-10-16",
+      "quotes": [
+        "The referral certification and authorization transaction is any of the following transmissions: (a) A request from a health care provider to a health plan for the review of health care to obtain an authorization for the health care. ... (c) A response from a health plan to a health care provider (45 CFR 162.1301)",
+        "ASC X12 Standards for Electronic Data Interchange Technical Report Type 3-Health Care Services Review-Request for Review and Response (278), May 2006, ASC X12N/005010X217 (45 CFR 162.1302)",
+        "the X12 278 transaction standard (Version 5010) and NCPDP D.0 are the current standards for electronic prior authorization transactions, adopted by HHS under provisions of HIPAA. (89 FR 8869)"
+      ],
+      "verdict": "supported, simplified",
+      "notes": "'Pre-service' is not a regulatory term; it follows from a request made to obtain authorization before care. X12 278 is the HIPAA standard for dental, professional and institutional requests; retail pharmacy prior authorization uses NCPDP."
+    },
+    {
+      "row": "R5",
+      "title": "RCW 48.43.830(3)(a); C.R.S. 10-16-112.7(5)(a)",
+      "urls": [
+        "https://app.leg.wa.gov/RCW/default.aspx?cite=48.43.830",
+        "https://leg.colorado.gov/laws/session-laws/HB26-1139/325/download"
+      ],
+      "retrieved": "2026-10-16",
+      "quotes": [
+        "Algorithms may be used to process and approve prior authorization requests, but may not be used without human review to deny care based on a determination of medical necessity.",
+        "AN ARTIFICIAL INTELLIGENCE SYSTEM MAY BE USED TO ASSIST WITH UTILIZATION REVIEW, INCLUDING EXPEDITED APPROVALS."
+      ],
+      "verdict": "supported",
+      "notes": "Both laws allow automated approval and bar an automated medical-necessity denial without human review."
+    },
+    {
+      "row": "R6",
+      "title": "HL7 Da Vinci Prior Authorization Support (PAS) FHIR IG v2.2.1 (STU 2.2); CMS-0057-F, 89 FR 8758-8988 (Feb 8, 2024), FR Doc 2024-00895",
+      "urls": [
+        "https://hl7.org/fhir/us/davinci-pas/en/index.html",
+        "https://hl7.org/fhir/us/davinci-pas/en/specification.html",
+        "https://www.federalregister.gov/documents/2024/02/08/2024-00895/medicare-and-medicaid-programs-patient-protection-and-affordable-care-act-advancing-interoperability"
+      ],
+      "retrieved": "2026-10-16",
+      "quotes": [
+        "The Administrative Simplification provisions of HIPAA mandate that the X12 278 Health Care Services Review Request for Review and Response be used for communicating prior authorization requests and responses.",
+        "the trading partners can disregard any requirements in this Implementation Guide to translate the PAS FHIR Bundle into or out of the X12 278. The defined PAS FHIR request bundles can then be transmitted intact between the provider and payer.",
+        "The Prior Authorization API can support the submission of a prior authorization request itself, or provide data that can support the HIPAA-compliant X12 278 transaction standard, if used (89 FR 8870)"
+      ],
+      "verdict": "supported",
+      "notes": "CMS-0057-F recommends PAS STU 2.0.1; HL7's current published version is 2.2.1. The article names no version. FHIR bundles travel intact under CMS's enforcement discretion, as the IG reports; CMS's own notice was not fetched."
+    }
+  ]
+}
