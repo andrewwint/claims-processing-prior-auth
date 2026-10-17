@@ -14,7 +14,9 @@ A positive control runs first: one planted value of each kind must be caught, or
 Hits are reported as commit, file and line with the value masked, so the scan never re-leaks
 what it finds. Exit status 1 on any hit or a failed control.
 
-Usage: python -m scripts.public_scan
+Usage: python -m scripts.public_scan [--repo PATH]
+  --repo scans another clone (for example the rewritten history before it is published), using
+  the deployment identifiers from this checkout's local files.
 """
 
 import codecs
@@ -113,16 +115,16 @@ def positive_control(exact: list[str], allow: set[str]) -> list[str]:
     return missed
 
 
-def tree_files() -> list[str]:
-    out = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT,
+def tree_files(repo: Path = ROOT) -> list[str]:
+    out = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=repo,
                          capture_output=True, text=True, check=True).stdout
     return [f for f in out.splitlines() if f != "security/public-scan-allow.json"]
 
 
-def history() -> list[tuple[str, str, str]]:
+def history(repo: Path = ROOT) -> list[tuple[str, str, str]]:
     """(commit, file, added text) for every commit's diff, plus each commit's metadata."""
     out = subprocess.run(["git", "log", "--all", "-p", "--no-color", "--format=COMMIT %H%n%an <%ae>%n%cn <%ce>%n%B"],
-                         cwd=ROOT, capture_output=True, text=True, check=True).stdout
+                         cwd=repo, capture_output=True, text=True, check=True).stdout
     chunks, commit, path, buf = [], "", "<metadata>", []
     for line in out.splitlines():
         if line.startswith("COMMIT "):
@@ -140,21 +142,24 @@ def history() -> list[tuple[str, str, str]]:
     return [c for c in chunks if c[1] != "security/public-scan-allow.json"]
 
 
-def main() -> int:
+def main(argv: list[str] = None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    repo = Path(argv[argv.index("--repo") + 1]).resolve() if "--repo" in argv else ROOT
     exact, allow = known_identifiers(), allowed()
     missed = positive_control(exact, allow)
     if missed:
         print(f"FAIL: positive control missed {missed}")
         return 1
     print(f"positive control: every needle kind caught its planted value ({len(exact)} deployment identifiers)")
+    print(f"scanning {'this checkout' if repo == ROOT else repo}")
     hits = []
-    for f in tree_files():
+    for f in tree_files(repo):
         try:
-            text = (ROOT / f).read_text()
+            text = (repo / f).read_text()
         except (UnicodeDecodeError, FileNotFoundError, IsADirectoryError):
             continue
         hits += [("tree", f, n, kind, value) for kind, value, n in scan_text(text, exact, allow)]
-    for commit, f, text in history():
+    for commit, f, text in history(repo):
         hits += [(commit, f, n, kind, value) for kind, value, n in scan_text(text, exact, allow)]
     seen = set()
     for h in hits:

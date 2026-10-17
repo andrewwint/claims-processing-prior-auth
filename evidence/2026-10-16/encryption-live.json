@@ -1,0 +1,44 @@
+{
+  "bucket_default_encryption": {
+    "bucket_key_enabled": true,
+    "kms_master_key_is_the_evidence_key": true,
+    "sse_algorithm": "aws:kms"
+  },
+  "date": "2026-10-16",
+  "evidence_key": {
+    "alias": "alias/prior-auth-evidence",
+    "arn": "<kms-key-arn>",
+    "key_manager": "CUSTOMER",
+    "key_spec": "SYMMETRIC_DEFAULT",
+    "key_state": "Enabled"
+  },
+  "label": "L5: live, read-only",
+  "objects": {
+    "decisions/": {
+      "bucket_key_enabled": true,
+      "key": "decisions/SYN-CASE-CLEAN-2/20261017T020003Z-95189655.json",
+      "kms_key_is_the_evidence_key": true,
+      "sse": "aws:kms"
+    },
+    "packets/": {
+      "bucket_key_enabled": true,
+      "key": "packets/PKT-SYN-CASE-CLEAN-2.json",
+      "kms_key_is_the_evidence_key": true,
+      "sse": "aws:kms"
+    },
+    "queue/": {
+      "bucket_key_enabled": true,
+      "key": "queue/SYN-CASE-WRONG-PATIENT.json",
+      "kms_key_is_the_evidence_key": true,
+      "sse": "aws:kms"
+    },
+    "recommendations/": {
+      "bucket_key_enabled": true,
+      "key": "recommendations/SYN-CASE-WRONG-PATIENT/20261017T020030Z-5aaae8fa.json",
+      "kms_key_is_the_evidence_key": true,
+      "sse": "aws:kms"
+    }
+  },
+  "passed": true,
+  "sha": "c99f3bc5d69634d2b8e9fe6d2c0c69fa9ae6f63e"
+}

@@ -1,0 +1,20 @@
+{
+  "alarm": "prior-auth-model-access-denied",
+  "date": "2026-10-16",
+  "history": [
+    {
+      "at": "2026-10-16T22:31:23.802000-04:00",
+      "summary": "Alarm updated from OK to ALARM"
+    },
+    {
+      "at": "2026-10-16T22:37:23.800000-04:00",
+      "summary": "Alarm updated from ALARM to OK"
+    }
+  ],
+  "method": "operator.emit_model_access_denied, as the runtime calls it",
+  "passed": true,
+  "sha": "c99f3bc5d69634d2b8e9fe6d2c0c69fa9ae6f63e",
+  "state_after_emit": "ALARM",
+  "state_after_quiet": "OK",
+  "state_before": "OK"
+}
