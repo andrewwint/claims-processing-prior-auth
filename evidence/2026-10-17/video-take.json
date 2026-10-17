@@ -1,4 +1,5 @@
 {
+  "approved": "PM, 2026-10-17, for upload",
   "captions": "PM-approved wording (record_video.CAPTIONS)",
   "case_id": "SYN-CASE-CF-1",
   "chain": "evidence/2026-10-17/chain-video-denial-cf-1.json (verified, seven of seven)",
@@ -13,7 +14,19 @@
     "tool": "scripts/scan_video.py"
   },
   "packet_view_guard": "passed: fresh run shown with C1 Met, C2 Met, C3 Not found",
+  "readme_gif": {
+    "fps": 8,
+    "identifier_scan": {
+      "frames": 43,
+      "hits": 0,
+      "positive_control": "caught"
+    },
+    "path": "docs/demo.gif",
+    "speed": "1x",
+    "width": 960
+  },
   "recorded_with": "scripts/record_video.py, code as committed in a28b027",
   "run_id": "20261017T184330Z-518a638a",
-  "take": "prior-auth-demo.mp4 (kept outside the repository)"
+  "take": "prior-auth-demo.mp4 (kept outside the repository)",
+  "test_take": "20261017T182109Z-d318fa3f (not used)"
 }

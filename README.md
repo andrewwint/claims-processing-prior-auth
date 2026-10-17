@@ -31,8 +31,12 @@ If you have ten minutes, read in this order:
    | 2    | The Strands agent (three gathering tools, Nova Pro) builds a cited packet; `decide()` approves                                   | **Shown on the deployed system.** Rows proven, except G8 and G11 (deferred: mutation run, evidence-rule redesign) and B7 (recorded, not tested locally) |
    | 3    | One note removed: routed to the reviewer, gap marked                                                                             | **Proven** |
    | 4    | The agent refused at the reviewer gateway, first by the authorizer, then by Cedar                                                | **Proven**                                                                          |
-   | 5    | A clinician decides with the same tool the agent was refused; the decision record chains to the recommendation                   | **Shown on the deployed system** with a scripted clinician sign-in; the hosted-UI sign-in by a person is pending (B8) |
+   | 5    | A clinician decides with the same tool the agent was refused; the decision record chains to the recommendation                   | **Proven**: a clinician signed in through the hosted UI and decided; the denial's record chains to the recommendation (B8) |
    | 6    | A trace with no chart text: a canary scan with a positive control                                                                | **Partial:** the trace content is proven (L1); the canary scan covers normal, refusal and clinician-decision paths, not injected error paths (L2) |
+
+   ![The demo, scripted: both gateways' tool lists, the clean case approved, the counterfactual routed with gap C3, the agent refused the denial tool, the clinician's hosted-UI sign-in and packet view, a denial refused without a reason and then recorded, and the clean telemetry scan.](docs/demo.gif)
+
+   *A scripted run, recorded with Playwright (`scripts/record_video.py`); every frame was scanned for identifiers before publishing (`scripts/scan_video.py`).*
 
    The harness: six cases × Nova Pro and Sonnet 4.6 × three trials, pre-registered in [evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md), reported in [evaluation/report.md](evaluation/report.md).
 
