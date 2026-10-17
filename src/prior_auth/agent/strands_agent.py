@@ -49,14 +49,30 @@ def gathering_tools(tools) -> list:
     return [t for t in tools if tool_short_name(t.tool_name) in GATHERING_TOOLS]
 
 
+SAMPLING = {"temperature": 0, "max_tokens": 2048}
+
+
+def sampling_sent(model: BedrockModel) -> dict:
+    """The sampling settings exactly as the Bedrock request carries them (M5)."""
+    request = model.format_request([{"role": "user", "content": [{"text": "x"}]}])
+    return dict(request.get("inferenceConfig", {}))
+
+
+def _usage(agent) -> dict:
+    try:
+        u = agent.event_loop_metrics.accumulated_usage
+        return {"input_tokens": int(u.get("inputTokens", 0)), "output_tokens": int(u.get("outputTokens", 0))}
+    except Exception:  # metrics never change an outcome
+        return {}
+
+
 def make_extract(mcp_client, model_id: str = DEFAULT_MODEL, region: str = "us-east-1"):
     def extract(case_id: str) -> Extraction:
         request = stores.request(case_id)
         tools = gathering_tools(mcp_client.list_tools_sync())
-        agent = Agent(
-            model=BedrockModel(model_id=model_id, region_name=region, temperature=0, max_tokens=2048),
-            tools=tools, system_prompt=SYSTEM_PROMPT, callback_handler=None,
-        )
+        model = BedrockModel(model_id=model_id, region_name=region, **SAMPLING)
+        agent = Agent(model=model, tools=tools, system_prompt=SYSTEM_PROMPT, callback_handler=None)
+        meta = lambda: {"model_id": model_id, "sampling": sampling_sent(model), "usage": _usage(agent)}
         prompt = (f"Case {case_id}. Member {request['member_id']}, payer {request['payer_id']}, "
                   f"CPT {request['cpt_code']}. Gather the evidence and cite it.")
         try:
@@ -64,18 +80,18 @@ def make_extract(mcp_client, model_id: str = DEFAULT_MODEL, region: str = "us-ea
         except ModelThrottledException as e:
             raise ModelUnavailable(str(e)) from e
         except MaxTokensReachedException:
-            return Extraction(stop_reason="max_tokens")
+            return Extraction(stop_reason="max_tokens", meta=meta())
         except StructuredOutputException:
-            return Extraction(malformed=True, stop_reason="structured_output_failed")
+            return Extraction(malformed=True, stop_reason="structured_output_failed", meta=meta())
         except ClientError as e:
             if e.response.get("Error", {}).get("Code") == "AccessDeniedException":
                 raise ModelAccessDenied(str(e)) from e
             raise ModelUnavailable(str(e)) from e
         out = result.structured_output
         if out is None:
-            return Extraction(malformed=True, stop_reason=str(result.stop_reason))
+            return Extraction(malformed=True, stop_reason=str(result.stop_reason), meta=meta())
         return Extraction(citations=[c.model_dump() for c in out.citations], summary=out.summary,
-                          stop_reason=str(result.stop_reason))
+                          stop_reason=str(result.stop_reason), meta=meta())
     return extract
 
 

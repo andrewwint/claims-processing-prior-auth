@@ -49,8 +49,9 @@ def main() -> None:
     user_pool_id = app.node.try_get_context("user_pool_id")
     agent_gateway_url = app.node.try_get_context("agent_gateway_url")
     if intake_client_id and user_pool_id and agent_gateway_url and Path(RUNTIME_CODE).is_dir():
+        opt_in = tuple(m for m in (app.node.try_get_context("model_opt_in") or "").split(",") if m)
         RuntimeStack(app, "PriorAuthRuntime", env=env, user_pool_id=user_pool_id,
-                     intake_client_id=intake_client_id, agent_gateway_url=agent_gateway_url)
+                     intake_client_id=intake_client_id, agent_gateway_url=agent_gateway_url, opt_in_models=opt_in)
     # D2 takes D1's recorded values explicitly (no cross-stack exports, which would
     # also lock the gateway stack against updates): the engine ID, the exact gateway
     # IDs, and the principal values recorded from real tokens (task 3.2).

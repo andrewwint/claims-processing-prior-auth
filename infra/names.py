@@ -43,3 +43,12 @@ WRITE_ONCE_PREFIXES = ("recommendations/", "decisions/")
 RUNTIME_NAME = "prior_auth_agent"
 IDENTITY_PROVIDER_NAME = "prior-auth-agent-m2m"
 EXTRACTION_MODEL_ID = "amazon.nova-pro-v1:0"
+# M9: the one model allow-list, enforced in the runtime code and in its IAM policy.
+# Nova Pro is the default, pinned to us-east-1. Sonnet 4.6 through the US inference
+# profile (three named Regions) is opt-in: off unless the deploy names it.
+MODELS = {
+    EXTRACTION_MODEL_ID: {"foundation_model": EXTRACTION_MODEL_ID, "regions": ("us-east-1",), "profile": False},
+    "us.anthropic.claude-sonnet-4-6": {"foundation_model": "anthropic.claude-sonnet-4-6",
+                                       "regions": ("us-east-1", "us-east-2", "us-west-2"), "profile": True},
+}
+OPT_IN_MODELS = ("us.anthropic.claude-sonnet-4-6",)

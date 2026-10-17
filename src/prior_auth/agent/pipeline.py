@@ -22,6 +22,9 @@ class Extraction:
     summary: str = ""
     stop_reason: str = "end_turn"
     malformed: bool = False
+    # Trial metadata (identifiers and counts only): the model, the sampling settings as sent
+    # in the Bedrock request, and the token usage. Never chart text.
+    meta: dict = field(default_factory=dict)
 
 
 class ModelAccessDenied(RuntimeError):
@@ -80,6 +83,8 @@ def run_case(case_id: str, call, extract, store_packet, cloudwatch=None, model_i
         recommend(None, {"decision": "route", "reason": reason, "gaps": list(gaps)})
         return route_case(case_id, reason, list(gaps), call, run_id)
 
+    trial: dict = {}
+
     def body(rec):
         if request is None:
             rec.set(route("no request record"))
@@ -101,6 +106,8 @@ def run_case(case_id: str, call, extract, store_packet, cloudwatch=None, model_i
             return
         try:
             ex = extract(case_id)
+            if ex.meta:
+                trial.update(ex.meta, stop_reason=ex.stop_reason)
         except ModelAccessDenied:
             if cloudwatch is not None:
                 operator.emit_model_access_denied(cloudwatch, model_id)
@@ -129,4 +136,5 @@ def run_case(case_id: str, call, extract, store_packet, cloudwatch=None, model_i
                   crit[0]["policy_version"])
         rec.set(act(decision, case_id, call, store_packet, packet, run_id) | {"packet": packet, "run_id": run_id})
 
-    return run_session(body, lambda: route("needs review"))
+    outcome = run_session(body, lambda: route("needs review"))
+    return outcome | ({"extraction": trial} if trial else {})

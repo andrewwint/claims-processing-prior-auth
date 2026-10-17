@@ -11,8 +11,8 @@ from aws_cdk import Aws, Stack, aws_bedrock_agentcore_alpha as agentcore, aws_ia
 from constructs import Construct
 
 from infra.evidence_stack import bucket_name
-from infra.names import (EVIDENCE_KEY_ALIAS, EXTRACTION_MODEL_ID, IDENTITY_PROVIDER_NAME, ROLE_NAMES,
-                         RUNTIME_NAME)
+from infra.names import (EVIDENCE_KEY_ALIAS, EXTRACTION_MODEL_ID, IDENTITY_PROVIDER_NAME, MODELS, OPT_IN_MODELS,
+                         ROLE_NAMES, RUNTIME_NAME)
 from prior_auth.agent import operator
 from prior_auth.agent.telemetry import RUNTIME_TELEMETRY_ENV
 
@@ -22,9 +22,21 @@ RUNTIME_CODE = "build/runtime"
 IDENTITY_SECRET_ACTION = "secretsmanager:GetSecretValue"
 
 
+def model_resources(model_ids, account: str) -> list[str]:
+    """The exact ARNs for the allow-listed models: foundation models in their named Regions,
+    plus the inference profile for a profile model."""
+    arns = []
+    for model_id in model_ids:
+        m = MODELS[model_id]
+        arns += [f"arn:aws:bedrock:{r}::foundation-model/{m['foundation_model']}" for r in m["regions"]]
+        if m["profile"]:
+            arns.append(f"arn:aws:bedrock:us-east-1:{account}:inference-profile/{model_id}")
+    return arns
+
+
 class RuntimeStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, *, user_pool_id: str, intake_client_id: str,
-                 agent_gateway_url: str, code_path: str = RUNTIME_CODE, **kwargs):
+                 agent_gateway_url: str, code_path: str = RUNTIME_CODE, opt_in_models=(), **kwargs):
         super().__init__(scope, construct_id, **kwargs)
         region, account = Aws.REGION, Aws.ACCOUNT_ID
         role = iam.Role(self, "RuntimeRole", role_name=ROLE_NAMES["runtime"],
@@ -32,10 +44,14 @@ class RuntimeStack(Stack):
                             "StringEquals": {"aws:SourceAccount": account},
                             "ArnLike": {"aws:SourceArn": f"arn:aws:bedrock-agentcore:{region}:{account}:*"}}))
         bucket = bucket_name()
+        unknown = set(opt_in_models) - set(OPT_IN_MODELS)
+        if unknown:
+            raise ValueError(f"not opt-in models: {sorted(unknown)}")
+        allowed = (EXTRACTION_MODEL_ID, *opt_in_models)
         statements = [
-            # M9: the allow-listed model only, in us-east-1.
+            # M9: the allow-listed models only, each in its named Regions.
             iam.PolicyStatement(actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
-                                resources=[f"arn:aws:bedrock:us-east-1::foundation-model/{EXTRACTION_MODEL_ID}"]),
+                                resources=model_resources(allowed, account)),
             iam.PolicyStatement(actions=["s3:PutObject"],
                                 resources=[f"arn:aws:s3:::{bucket}/packets/*", f"arn:aws:s3:::{bucket}/recommendations/*"]),
             iam.PolicyStatement(actions=["kms:GenerateDataKey", "kms:Encrypt"], resources=["*"],
@@ -79,5 +95,5 @@ class RuntimeStack(Stack):
                 allowed_clients=[intake_client_id]),
             environment_variables={**RUNTIME_TELEMETRY_ENV, "AGENT_GATEWAY_URL": agent_gateway_url,
                                    "EVIDENCE_BUCKET": bucket, "IDENTITY_PROVIDER_NAME": IDENTITY_PROVIDER_NAME,
-                                   "MODEL_ID": EXTRACTION_MODEL_ID},
+                                   "MODEL_ID": EXTRACTION_MODEL_ID, "MODEL_ALLOW_LIST": ",".join(allowed)},
         )
