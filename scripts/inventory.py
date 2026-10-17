@@ -46,6 +46,21 @@ def inventory(session: boto3.Session) -> dict[str, list[str]]:
     found["log delivery destination"] = _search(session.client("logs"), "describe_delivery_destinations",
                                                 "deliveryDestinations[].name")
     found["iam role"] = _search(session.client("iam"), "list_roles", "Roles[].RoleName")
+    found["agentcore runtime"] = _search(agentcore, "list_agent_runtimes", "agentRuntimes[].agentRuntimeName")
+    found["agentcore workload identity"] = _search(agentcore, "list_workload_identities", "workloadIdentities[].name")
+    found["agentcore oauth2 credential provider"] = [
+        p["name"] for p in agentcore.list_oauth2_credential_providers().get("credentialProviders", [])]
+    found["s3 bucket"] = [b["Name"] for b in session.client("s3").list_buckets()["Buckets"]]
+    found["runtime log group"] = [
+        n.removeprefix("/aws/bedrock-agentcore/runtimes/")
+        for n in _search(session.client("logs"), "describe_log_groups", "logGroups[].logGroupName",
+                         logGroupNamePrefix="/aws/bedrock-agentcore/runtimes/")]
+    # A deleted key stays PendingDeletion for its 7-day window; only an enabled key is a leftover.
+    kms = session.client("kms")
+    found["kms key (enabled)"] = [
+        a["AliasName"].removeprefix("alias/") for a in _search(kms, "list_aliases", "Aliases[]")
+        if "TargetKeyId" in a and kms.describe_key(KeyId=a["TargetKeyId"])["KeyMetadata"]["KeyState"] == "Enabled"
+    ]
     found["secret"] = [
         s["Name"] for s in _search(session.client("secretsmanager"), "list_secrets", "SecretList[]")
         if s["Name"].startswith(SECRET_PREFIX)

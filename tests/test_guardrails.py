@@ -1,5 +1,7 @@
+import sys
 import json
 
+import sys
 import pytest
 
 from infra.names import BUDGET_NAMES, is_project_name
@@ -168,7 +170,10 @@ def test_teardown_deletes_only_exact_log_group_names():
     import inspect
     from scripts import teardown
     src = inspect.getsource(teardown)
-    assert 'found["lambda log group"]' not in src and "for name in LOG_GROUPS" in src
+    # The exact Lambda log groups plus the runtime's own, named from its recorded ID; never from a search.
+    assert 'found["lambda log group"]' not in src and 'found["runtime log group"]' not in src
+    assert "(*LOG_GROUPS, *filter(None, [runtime_log_group()]))" in src and "for name in log_groups" in src
+    assert teardown.runtime_log_group() in (None,) or teardown.runtime_log_group().endswith("-DEFAULT")
 
 
 def test_deploy_requires_private_context_for_gateways_and_policies():
@@ -271,3 +276,48 @@ def test_deploy_records_the_sha(tmp_path):
     rows = [json.loads(line) for line in log.read_text().splitlines()]
     assert [(r["stack"], r["sha"], r["result"]) for r in rows] == [
         ("PriorAuthGateways", "abc123", "deployed"), ("PriorAuthPolicy", "abc123", "failed (1)")]
+
+
+# Teardown extension: the bucket is emptied as the teardown role before the stack that owns
+# that role is destroyed, by version ID with the governance bypass; nothing else is deleted first.
+def test_teardown_empties_the_bucket_before_destroying_the_evidence_stack(monkeypatch):
+    from scripts import teardown
+    steps = []
+    monkeypatch.setattr(teardown, "destroy", lambda stack: steps.append(f"destroy {stack}") or True)
+    monkeypatch.setattr(teardown, "empty_evidence_bucket", lambda s, a: steps.append("empty bucket") or 0)
+    monkeypatch.setattr(teardown.verify_teardown, "main", lambda: steps.append("verify") or 0)
+    monkeypatch.setattr(teardown.transaction_search, "restore", lambda xray, account: steps.append("restore ts"))
+
+    class Client:
+        exceptions = type("E", (), {"ResourceNotFoundException": KeyError})
+
+        def __getattr__(self, name):
+            return lambda **kw: steps.append(name) or {"Account": "000000000000"}
+
+    monkeypatch.setattr(teardown.boto3, "Session", lambda **kw: type("S", (), {"client": lambda self, n: Client()})())
+    monkeypatch.setattr(sys, "argv", ["teardown", "--yes"])
+    assert teardown.main() == 0
+    order = [s for s in steps if s.startswith(("destroy", "empty", "verify"))]
+    assert order == ["destroy PriorAuthRuntime", "destroy PriorAuthPolicy", "destroy PriorAuthGateways",
+                     "empty bucket", "destroy PriorAuthEvidence", "verify"]
+    assert "delete_oauth2_credential_provider" in steps
+
+
+def test_teardown_deletes_evidence_by_version_with_the_bypass():
+    import inspect
+    from scripts import teardown
+    src = inspect.getsource(teardown.empty_evidence_bucket)
+    assert '"VersionId": v["VersionId"]' in src and "BypassGovernanceRetention=True" in src
+    assert "prior-auth-teardown" == teardown.ROLE_NAMES["teardown"] and "assume_role" in src
+
+
+def test_teardown_role_cannot_create_delete_markers():
+    import json as _json
+    import aws_cdk as cdk
+    from aws_cdk.assertions import Template
+    from infra.evidence_stack import EvidenceStack
+    t = Template.from_stack(EvidenceStack(cdk.App(), "E", env=cdk.Environment(account="000000000000", region="us-east-1")))
+    role = next(r for r in t.find_resources("AWS::IAM::Role").values()
+                if r["Properties"].get("RoleName") == "prior-auth-teardown")
+    actions = _json.dumps(role["Properties"]["Policies"])
+    assert "s3:DeleteObjectVersion" in actions and '"s3:DeleteObject"' not in actions

@@ -49,6 +49,12 @@ class EvidenceStack(Stack):
         self.bucket.add_to_resource_policy(iam.PolicyStatement(
             sid="RecordsAreNeverReplaced", effect=iam.Effect.DENY, principals=[iam.AnyPrincipal()],
             actions=["s3:PutObject"], resources=records, conditions={"Null": {"s3:if-match": "false"}}))
+        # A delete marker would let a later conditional create succeed and hide the record; only
+        # the teardown role may delete under the record prefixes.
+        self.bucket.add_to_resource_policy(iam.PolicyStatement(
+            sid="RecordsAreNotDeleted", effect=iam.Effect.DENY, principals=[iam.AnyPrincipal()],
+            actions=["s3:DeleteObject"], resources=records,
+            conditions={"ArnNotEquals": {"aws:PrincipalArn": role_arn("teardown")}}))
         self.bucket.add_to_resource_policy(iam.PolicyStatement(
             sid="NoWritesOutsideKnownPrefixes", effect=iam.Effect.DENY, principals=[iam.AnyPrincipal()],
             actions=["s3:PutObject"],
@@ -69,6 +75,8 @@ class EvidenceStack(Stack):
         iam.Role(self, "TeardownRole", role_name=ROLE_NAMES["teardown"],
                  assumed_by=iam.AccountRootPrincipal(),
                  inline_policies={"teardown": iam.PolicyDocument(statements=[iam.PolicyStatement(
-                     actions=["s3:ListBucket", "s3:ListBucketVersions", "s3:DeleteObject", "s3:DeleteObjectVersion",
+                     # Version deletes only: no plain DeleteObject, so not even teardown can hide a
+                     # record behind a delete marker.
+                     actions=["s3:ListBucket", "s3:ListBucketVersions", "s3:DeleteObjectVersion",
                               "s3:BypassGovernanceRetention", "s3:DeleteBucket", "s3:GetObjectRetention"],
                      resources=[self.bucket.bucket_arn, self.bucket.arn_for_objects("*")])])})

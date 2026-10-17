@@ -119,3 +119,6 @@ def test_records_are_create_only_and_never_replaced(evidence):
         assert "/packets/*" not in text and "/queue/*" not in text
     assert create_only["Condition"] == {"Null": {"s3:if-none-match": "true"}}
     assert never_replaced["Condition"] == {"Null": {"s3:if-match": "false"}}
+    not_deleted = by_sid["RecordsAreNotDeleted"]
+    assert not_deleted["Effect"] == "Deny" and not_deleted["Action"] == "s3:DeleteObject"
+    assert "prior-auth-teardown" in json.dumps(not_deleted["Condition"]["ArnNotEquals"])
