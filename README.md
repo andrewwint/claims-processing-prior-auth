@@ -1,6 +1,8 @@
-# prior-auth-agentcore
+# claims-processing-prior-auth
 
 Reference implementation for the article **"Build the Case, Let the Clinician Decide."**
+
+**Scope.** This repository covers the pre-service prior-authorization gate: from the X12 278 request to the determination, with an eligibility step on synthetic coverage data. Post-service claims (837, 277CA, adjudication, 835) are out of scope; the same human gate applies at adjudication's clinical pend.
 
 An agent on Amazon Bedrock AgentCore assembles a prior-authorization case: it gathers the evidence, checks it, and cites every statement. A clinician makes the decision.
 

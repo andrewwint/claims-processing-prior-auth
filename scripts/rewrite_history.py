@@ -97,8 +97,8 @@ def main() -> int:
     print(f"rewritten: {len(remap)} commits remapped; {changed} deploy entries carry a new published_sha")
     rc = ps.main(["--repo", str(clone)])
     print("\nNext, only with Andrew's go-ahead (PM 2026-10-17, Sunday, last step before the flip):\n"
-          "  1. rename this GitHub repo to prior-auth-agentcore-private (it stays private)\n"
-          "  2. create a new, private repo prior-auth-agentcore and push the rewritten clone\n"
+          "  1. keep the original repository private and archived\n"
+          "  2. push the rewritten clone to the new, private repository (claims-processing-prior-auth)\n"
           "  3. run make scan against it again, then make it public")
     return rc
 

@@ -1,5 +1,5 @@
 [project]
-name = "prior-auth-agentcore"
+name = "claims-processing-prior-auth"
 version = "0.1.0"
 description = "Reference implementation for 'Build the Case, Let the Clinician Decide'"
 requires-python = ">=3.11"
