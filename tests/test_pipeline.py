@@ -231,3 +231,11 @@ def test_runtime_telemetry_env_carries_both_content_settings():
     from prior_auth.agent.telemetry import RUNTIME_TELEMETRY_ENV
     assert RUNTIME_TELEMETRY_ENV["OTEL_SEMCONV_STABILITY_OPT_IN"] == "gen_ai_unredacted_attributes="
     assert RUNTIME_TELEMETRY_ENV["OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT"] == "false"
+
+
+# Beat 6 positive control: the test-only runtime path accepts only the fixed token format.
+def test_positive_control_accepts_only_the_control_format():
+    from prior_auth.agent import runtime_app
+    assert runtime_app.plant_control("CANARY-CONTROL-0123456789abcdef") == {"outcome": "positive_control_planted"}
+    for bad in ("CANARY-CONTROL-0123", "patient text", None, "CANARY-CONTROL-0123456789abcdef extra"):
+        assert runtime_app.plant_control(bad)["outcome"] == "rejected"

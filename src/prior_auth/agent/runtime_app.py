@@ -6,19 +6,33 @@ model gathers through three tools; decide() acts. Telemetry content settings
 come from the runtime's environment (prior_auth.agent.telemetry).
 """
 
+import json
 import os
+import re
 
 import boto3
 from bedrock_agentcore.identity.auth import requires_access_token
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from strands.tools.mcp import MCPClient
 
-from prior_auth.agent.pipeline import run_case
+from prior_auth.agent.pipeline import _mark_span, run_case
 from prior_auth.agent.strands_agent import make_call, make_extract
 from prior_auth.evidence_store import put_packet, put_recommendation
 
 app = BedrockAgentCoreApp()
 REGION = os.environ.get("AWS_REGION", "us-east-1")
+# The canary scan's positive control (evidence-record-and-trace D8): a test-only path that
+# plants a control token in one span attribute and one log line. The token's format is
+# fixed, so this path can carry nothing else; no case is run.
+CONTROL_TOKEN = re.compile(r"CANARY-CONTROL-[0-9a-f]{16}")
+
+
+def plant_control(token) -> dict:
+    if not isinstance(token, str) or not CONTROL_TOKEN.fullmatch(token):
+        return {"outcome": "rejected", "reason": "malformed positive control"}
+    _mark_span("pa.positive_control", token)
+    print(json.dumps({"pa.positive_control": token}), flush=True)
+    return {"outcome": "positive_control_planted"}
 
 
 @requires_access_token(provider_name=os.environ.get("IDENTITY_PROVIDER_NAME", "prior-auth-agent-m2m"),
@@ -38,6 +52,8 @@ def _public(outcome: dict) -> dict:
 
 @app.entrypoint
 def invoke(payload: dict) -> dict:
+    if "positive_control" in payload:
+        return plant_control(payload["positive_control"])
     case_id = payload.get("case_id")
     if not isinstance(case_id, str):
         return {"outcome": "rejected", "reason": "case_id is required"}
