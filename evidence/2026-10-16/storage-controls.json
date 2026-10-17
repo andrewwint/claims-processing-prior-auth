@@ -1,0 +1,145 @@
+{
+  "date": "2026-10-16",
+  "method": "head-object on real records; refusals by iam:SimulatePrincipalPolicy with the deployed bucket policy",
+  "object_lock_default": {
+    "Days": 1,
+    "Mode": "GOVERNANCE"
+  },
+  "passed": true,
+  "sha": "22291ca1aef60abc34d624f1e0ef337c6e02f02f",
+  "simulated": [
+    {
+      "action": "s3:PutObject",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "decisions/",
+      "role": "prior-auth-runtime-role"
+    },
+    {
+      "action": "s3:PutObject",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "decisions/",
+      "role": "prior-auth-agent-tools-role"
+    },
+    {
+      "action": "s3:PutObject",
+      "decision": "allowed",
+      "expected": "allowed",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "decisions/",
+      "role": "prior-auth-approval-service-role"
+    },
+    {
+      "action": "s3:PutObject",
+      "decision": "allowed",
+      "expected": "allowed",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "decisions/",
+      "role": "prior-auth-reviewer-tools-role"
+    },
+    {
+      "action": "s3:DeleteObject",
+      "decision": "implicitDeny",
+      "expected": "implicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "recommendations/",
+      "role": "prior-auth-runtime-role"
+    },
+    {
+      "action": "s3:DeleteObjectVersion",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "recommendations/",
+      "role": "prior-auth-runtime-role"
+    },
+    {
+      "action": "s3:BypassGovernanceRetention",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "recommendations/",
+      "role": "prior-auth-runtime-role"
+    },
+    {
+      "action": "s3:PutObjectRetention",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "recommendations/",
+      "role": "prior-auth-runtime-role"
+    },
+    {
+      "action": "s3:BypassGovernanceRetention",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "queue/",
+      "role": "prior-auth-agent-tools-role"
+    },
+    {
+      "action": "s3:BypassGovernanceRetention",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "decisions/",
+      "role": "prior-auth-reviewer-tools-role"
+    },
+    {
+      "action": "s3:BypassGovernanceRetention",
+      "decision": "allowed",
+      "expected": "allowed",
+      "kms_key": "evidence",
+      "ok": true,
+      "prefix": "decisions/",
+      "role": "prior-auth-teardown"
+    },
+    {
+      "action": "s3:PutObject",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "other",
+      "ok": true,
+      "prefix": "decisions/",
+      "role": "prior-auth-reviewer-tools-role"
+    },
+    {
+      "action": "s3:PutObject",
+      "decision": "explicitDeny",
+      "expected": "explicitDeny",
+      "kms_key": "other",
+      "ok": true,
+      "prefix": "recommendations/",
+      "role": "prior-auth-runtime-role"
+    }
+  ],
+  "stored_records": {
+    "decision": {
+      "key": "decisions/SYN-CASE-CF-1/20261017T001220Z-7da8444a.json",
+      "kms_key_is_evidence_key": true,
+      "object_lock_mode": "GOVERNANCE",
+      "retain_until": "2026-10-18 00:12:28.975000+00:00",
+      "sse": "aws:kms"
+    },
+    "recommendation": {
+      "key": "recommendations/SYN-CASE-CF-1/20261017T001220Z-7da8444a.json",
+      "kms_key_is_evidence_key": true,
+      "object_lock_mode": "GOVERNANCE",
+      "retain_until": "2026-10-18 00:12:25.954000+00:00",
+      "sse": "aws:kms"
+    }
+  }
+}

@@ -52,14 +52,24 @@ def _run_case(case_id: str):
         from scripts.intake import intake_token, invoke
         arn = _json.loads(_Path(".local/runtime.json").read_text())["arn"]
         result = invoke(case_id, arn, intake_token(out, session))
-        print(f"{case_id} -> {result['outcome']}" + (f" (gaps: {', '.join(result['gaps'])})" if result.get("gaps") else ""))
+        print(f"{case_id} -> {result['outcome']}" + (f" (gaps: {', '.join(result['gaps'])})" if result.get("gaps") else "")
+              + f"  run {result.get('run_id')}")
     return run
 
 
-def not_built(beat: int, change: str):
-    def run(session, out) -> None:
-        print(f"Beat {beat} is delivered by `{change}` and is not built yet.")
-    return run
+def beat5(session, out) -> None:
+    print("Start the workbench and sign in as a clinician:")
+    print("  python -m scripts.workbench    ->  http://localhost:8765/")
+    print("Then verify the decision's chain (decision -> recommendation -> span):")
+    print("  python -m scripts.verify_chain <case_id> <run_id>")
+    print("Scripted fallback (SRP clinician, same tool): python -m scripts.record_beat5")
+
+
+def beat6(session, out) -> None:
+    print("Positive control, then the clean scan (each waits for spans to land):")
+    print("  python -m scripts.canary_scan control")
+    print("  python -m scripts.canary_scan clean")
+    print("Recorded reports: evidence/2026-10-16/canary-scan-control.json, canary-scan-clean.json")
 
 
 BEATS = {
@@ -67,8 +77,8 @@ BEATS = {
     "2": _run_case("SYN-CASE-CLEAN-1"),
     "3": _run_case("SYN-CASE-CF-1"),
     "4": beat4,
-    "5": not_built(5, "clinician-workbench"),
-    "6": not_built(6, "evidence-record-and-trace"),
+    "5": beat5,
+    "6": beat6,
 }
 
 

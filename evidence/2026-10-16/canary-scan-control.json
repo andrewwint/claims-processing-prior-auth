@@ -1,0 +1,47 @@
+{
+  "control_token": "CANARY-CONTROL-3154f760e403fa07",
+  "date": "2026-10-16",
+  "found_in_every_planted_sink": true,
+  "found_in_runtime_span": true,
+  "mode": "control",
+  "passed": true,
+  "runtime_response": {
+    "outcome": "positive_control_planted"
+  },
+  "scan": {
+    "events_scanned": {
+      "/aws/lambda/prior-auth-agent-tools": 1,
+      "/aws/lambda/prior-auth-approval-service": 1,
+      "/aws/lambda/prior-auth-pre-token": 1,
+      "/aws/lambda/prior-auth-reviewer-tools": 1,
+      "aws/spans": 0,
+      "runtime": 13,
+      "xray": 1
+    },
+    "hits": {
+      "/aws/lambda/prior-auth-agent-tools": [
+        "control"
+      ],
+      "/aws/lambda/prior-auth-approval-service": [
+        "control"
+      ],
+      "/aws/lambda/prior-auth-pre-token": [
+        "control"
+      ],
+      "/aws/lambda/prior-auth-reviewer-tools": [
+        "control"
+      ],
+      "runtime": [
+        "control"
+      ],
+      "xray": [
+        "control"
+      ]
+    }
+  },
+  "sha": "22291ca1aef60abc34d624f1e0ef337c6e02f02f",
+  "span_source": "runtime log group `spans` stream (ADOT via X-Ray Transaction Search), plus aws/spans and X-Ray BatchGetTraces",
+  "spans_seen": {
+    "CANARY-CONTROL-3154f760e403fa07": 1
+  }
+}

@@ -4,6 +4,7 @@ An in-memory S3 stands in for the evidence bucket; the handlers are the real one
 """
 
 import hashlib
+import json
 import types
 
 import pytest
@@ -114,3 +115,60 @@ def test_auto_approval_writes_a_chained_decision(s3):
     assert decision["decision"] == "auto_approval" and decision["reviewer_identity_source"] == "service"
     again, _ = approval_service._record_auto_approval("PKT-CLEAN-1", "CLEAN-1", s3)
     assert again == ["this run already has a decision"]
+
+
+# L6: verify_chain recomputes every link; a broken link fails verification.
+class FakeLogs:
+    def __init__(self, spans):
+        self.spans = spans
+
+    def describe_log_groups(self, logGroupNamePrefix):
+        return {"logGroups": [{"logGroupName": logGroupNamePrefix + "-DEFAULT"}]}
+
+    def get_paginator(self, name):
+        spans = self.spans
+        return types.SimpleNamespace(paginate=lambda **kw: [{"events": [
+            {"message": json.dumps(s)} for s in spans if kw["filterPattern"].strip('"') in json.dumps(s)]}])
+
+
+class FakeSession:
+    def __init__(self, s3, logs):
+        self.clients = {"s3": s3, "logs": logs,
+                        "sts": types.SimpleNamespace(get_caller_identity=lambda: {"Account": "000000000000"})}
+
+    def client(self, name):
+        return self.clients[name]
+
+
+def chained(s3, monkeypatch):
+    from scripts import verify_chain
+    monkeypatch.setattr(verify_chain, "EVIDENCE_BUCKET_PREFIX", "evidence")
+    monkeypatch.setenv("EVIDENCE_BUCKET", "evidence-000000000000")
+
+    rec_hash = evidence_store.put_recommendation(s3, "evidence-000000000000", records.recommendation_record(
+        case_id="CF-1", run_id="RUN-1", packet={"packet_id": "PKT-CF-1", "findings": []},
+        decision={"decision": "route"}, policy_version=None, received_at="t", recommended_at="t"))
+    agent_tools.route_to_reviewer({"case_id": "CF-1", "run_id": "RUN-1", "reason": "r", "gaps": []}, s3)
+    reviewer_tools.record_clinician_approval({"case_id": "CF-1", "reviewer": "c"}, s3)
+    span = {"traceId": "T", "spanId": "S", "name": "POST /invocations",
+            "attributes": {"pa.recommendation_record_sha256": rec_hash, "pa.run_id": "RUN-1"}}
+    return verify_chain, span
+
+
+def test_verify_chain_passes_for_an_intact_chain(s3, monkeypatch):
+    verify_chain, span = chained(s3, monkeypatch)
+    assert verify_chain.verify(FakeSession(s3, FakeLogs([span])), "CF-1", "RUN-1")["verified"]
+
+
+def test_verify_chain_fails_when_the_recommendation_bytes_change(s3, monkeypatch):
+    verify_chain, span = chained(s3, monkeypatch)
+    key = evidence_store.recommendation_key("CF-1", "RUN-1")
+    s3.objects[key] = s3.objects[key].replace(b'"route"', b'"approve"')
+    result = verify_chain.verify(FakeSession(s3, FakeLogs([span])), "CF-1", "RUN-1")
+    assert not result["verified"] and not result["checks"]["recommendation_hash_matches_stored_bytes"]
+
+
+def test_verify_chain_fails_without_the_span(s3, monkeypatch):
+    verify_chain, _ = chained(s3, monkeypatch)
+    result = verify_chain.verify(FakeSession(s3, FakeLogs([])), "CF-1", "RUN-1")
+    assert not result["verified"] and not result["checks"]["span_carries_recommendation_hash"]
