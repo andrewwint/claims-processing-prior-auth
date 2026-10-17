@@ -1,20 +1,20 @@
-{"content_committed_in": "c202eef", "dirty_at_deploy": true, "event": "beat 1 combined deploy", "note": "backfilled 2026-10-16: deployed from an uncommitted tree; the deployed code was committed immediately after", "stack": "PriorAuthGateways+PriorAuthPolicy"}
-{"content_committed_in": "26c1a39", "dirty_at_deploy": true, "event": "real gathering tools", "note": "backfilled 2026-10-16: deployed with src/prior_auth/agent/strands_agent.py and a test uncommitted (the Lambdas never import that module); committed immediately after", "stack": "PriorAuthGateways"}
-{"at": "2026-10-16T23:23:26+00:00", "result": "deployed", "sha": "b2805665cf0ea13d316691c60bc5ec871a76cc6a", "stack": "PriorAuthGateways"}
-{"at": "2026-10-16T23:23:44+00:00", "result": "deployed", "sha": "253d8f1ab8ce5b7be4feeb41ecec04eea62d7748", "stack": "PriorAuthPolicy"}
-{"at": "2026-10-16T23:36:06+00:00", "result": "deployed", "sha": "7970f5aad42bdaf1757879768d28426669d48c95", "stack": "PriorAuthEvidence"}
-{"at": "2026-10-16T23:37:56+00:00", "result": "deployed", "sha": "53b83c2233627437c153f7569d5a963c60a3e11a", "stack": "PriorAuthGateways"}
-{"at": "2026-10-16T23:39:52+00:00", "result": "deployed", "sha": "65f911a4d3c4216d4d1aabdd2552fe9c7fa00171", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-16T23:52:06+00:00", "result": "deployed", "sha": "b685b212851e17d1da766d4adfc3838cc3f7db2f", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-16T23:55:19+00:00", "result": "deployed", "sha": "f85cf9df93fce6fc2ce634f819a3e663b8c1d4ac", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-17T00:01:49+00:00", "result": "deployed", "sha": "ec49468c8092cb10bb3aed5d9333f2e1a17ea1fa", "stack": "PriorAuthGateways"}
-{"at": "2026-10-17T00:03:00+00:00", "result": "deployed", "sha": "bb2593e352e732be1a426495b16386ec2254523a", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-17T00:15:38+00:00", "result": "deployed", "sha": "d009b280ed3f926b8f0050b5954e23b3b2329f03", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-17T00:30:32+00:00", "result": "deployed", "sha": "2b05a82cd6dbee542a80076d171121591603cc91", "stack": "PriorAuthGateways"}
-{"at": "2026-10-17T00:31:27+00:00", "result": "deployed", "sha": "35348dd1a9e1856fd6aec4db5d54317d07ef4cf2", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-17T00:51:41+00:00", "result": "deployed", "sha": "88d376bae6287d022bf4552d272c9fc9dafd72cb", "stack": "PriorAuthEvidence"}
-{"at": "2026-10-17T00:52:54+00:00", "result": "deployed", "sha": "b9fe36cf08fdc1414a41866d6cbe5a9c7bff179e", "stack": "PriorAuthGateways"}
-{"at": "2026-10-17T01:02:25+00:00", "result": "deployed", "sha": "0a8a669b86cc3915df5b001b7909053b63baf483", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-17T01:55:32+00:00", "result": "deployed", "sha": "b407785da571c740e7d4f0c228fad0e3639af7fb", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-17T02:01:56+00:00", "result": "deployed", "sha": "2703f3b12db30dedddef70fd741effcab478f7e6", "stack": "PriorAuthRuntime"}
-{"at": "2026-10-17T02:29:59+00:00", "result": "deployed", "sha": "79e7fc8dcc265d395ebc604b251e025ef95baa40", "stack": "PriorAuthRuntime"}
+{"content_committed_in": "c202eef", "content_committed_in_published_history": "c202eef", "dirty_at_deploy": true, "event": "beat 1 combined deploy", "note": "backfilled 2026-10-16: deployed from an uncommitted tree; the deployed code was committed immediately after", "stack": "PriorAuthGateways+PriorAuthPolicy"}
+{"content_committed_in": "26c1a39", "content_committed_in_published_history": "26c1a39", "dirty_at_deploy": true, "event": "real gathering tools", "note": "backfilled 2026-10-16: deployed with src/prior_auth/agent/strands_agent.py and a test uncommitted (the Lambdas never import that module); committed immediately after", "stack": "PriorAuthGateways"}
+{"at": "2026-10-16T23:23:26+00:00", "result": "deployed", "sha": "b2805665cf0ea13d316691c60bc5ec871a76cc6a", "sha_in_published_history": "b2805665cf0ea13d316691c60bc5ec871a76cc6a", "stack": "PriorAuthGateways"}
+{"at": "2026-10-16T23:23:44+00:00", "result": "deployed", "sha": "253d8f1ab8ce5b7be4feeb41ecec04eea62d7748", "sha_in_published_history": "253d8f1ab8ce5b7be4feeb41ecec04eea62d7748", "stack": "PriorAuthPolicy"}
+{"at": "2026-10-16T23:36:06+00:00", "result": "deployed", "sha": "7970f5aad42bdaf1757879768d28426669d48c95", "sha_in_published_history": "7970f5aad42bdaf1757879768d28426669d48c95", "stack": "PriorAuthEvidence"}
+{"at": "2026-10-16T23:37:56+00:00", "result": "deployed", "sha": "53b83c2233627437c153f7569d5a963c60a3e11a", "sha_in_published_history": "53b83c2233627437c153f7569d5a963c60a3e11a", "stack": "PriorAuthGateways"}
+{"at": "2026-10-16T23:39:52+00:00", "result": "deployed", "sha": "65f911a4d3c4216d4d1aabdd2552fe9c7fa00171", "sha_in_published_history": "65f911a4d3c4216d4d1aabdd2552fe9c7fa00171", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-16T23:52:06+00:00", "result": "deployed", "sha": "b685b212851e17d1da766d4adfc3838cc3f7db2f", "sha_in_published_history": "b685b212851e17d1da766d4adfc3838cc3f7db2f", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-16T23:55:19+00:00", "result": "deployed", "sha": "f85cf9df93fce6fc2ce634f819a3e663b8c1d4ac", "sha_in_published_history": "f85cf9df93fce6fc2ce634f819a3e663b8c1d4ac", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-17T00:01:49+00:00", "result": "deployed", "sha": "ec49468c8092cb10bb3aed5d9333f2e1a17ea1fa", "sha_in_published_history": "ec49468c8092cb10bb3aed5d9333f2e1a17ea1fa", "stack": "PriorAuthGateways"}
+{"at": "2026-10-17T00:03:00+00:00", "result": "deployed", "sha": "bb2593e352e732be1a426495b16386ec2254523a", "sha_in_published_history": "bb2593e352e732be1a426495b16386ec2254523a", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-17T00:15:38+00:00", "result": "deployed", "sha": "d009b280ed3f926b8f0050b5954e23b3b2329f03", "sha_in_published_history": "d009b280ed3f926b8f0050b5954e23b3b2329f03", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-17T00:30:32+00:00", "result": "deployed", "sha": "2b05a82cd6dbee542a80076d171121591603cc91", "sha_in_published_history": "2b05a82cd6dbee542a80076d171121591603cc91", "stack": "PriorAuthGateways"}
+{"at": "2026-10-17T00:31:27+00:00", "result": "deployed", "sha": "35348dd1a9e1856fd6aec4db5d54317d07ef4cf2", "sha_in_published_history": "35348dd1a9e1856fd6aec4db5d54317d07ef4cf2", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-17T00:51:41+00:00", "result": "deployed", "sha": "88d376bae6287d022bf4552d272c9fc9dafd72cb", "sha_in_published_history": "ca9c45cdd124dd5c3dc177b23eb0f13d1dc981ba", "stack": "PriorAuthEvidence"}
+{"at": "2026-10-17T00:52:54+00:00", "result": "deployed", "sha": "b9fe36cf08fdc1414a41866d6cbe5a9c7bff179e", "sha_in_published_history": "43155fc369c37dde42535b8d513206a8bed92d39", "stack": "PriorAuthGateways"}
+{"at": "2026-10-17T01:02:25+00:00", "result": "deployed", "sha": "0a8a669b86cc3915df5b001b7909053b63baf483", "sha_in_published_history": "6d321d5fb73f677a81f7775eae2e9624b341dab4", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-17T01:55:32+00:00", "result": "deployed", "sha": "b407785da571c740e7d4f0c228fad0e3639af7fb", "sha_in_published_history": "2ead260b7fe7f17e9cef2cc1db1654eedc35ae00", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-17T02:01:56+00:00", "result": "deployed", "sha": "2703f3b12db30dedddef70fd741effcab478f7e6", "sha_in_published_history": "4e0ac02e6555d2dcff8a1f6b4dffc02e9efd01ab", "stack": "PriorAuthRuntime"}
+{"at": "2026-10-17T02:29:59+00:00", "result": "deployed", "sha": "79e7fc8dcc265d395ebc604b251e025ef95baa40", "sha_in_published_history": "a2bd43ce15c48086d886346c63f514c9d3043c80", "stack": "PriorAuthRuntime"}
