@@ -4,6 +4,7 @@ runtime's MODEL_ALLOW_LIST, and a live call naming a model off the list.
 Usage: python -m scripts.record_model_allow_list <label>
 """
 
+import fnmatch
 import json
 import subprocess
 import sys
@@ -26,13 +27,25 @@ def main() -> int:
     session = boto3.Session(region_name="us-east-1")
     iam = session.client("iam")
     role = ROLE_NAMES["runtime"]
+    documents = [("inline:" + n, iam.get_role_policy(RoleName=role, PolicyName=n)["PolicyDocument"])
+                 for n in iam.list_role_policies(RoleName=role)["PolicyNames"]]
+    attached = iam.list_attached_role_policies(RoleName=role)["AttachedPolicies"]
+    for a in attached:
+        version = iam.get_policy(PolicyArn=a["PolicyArn"])["Policy"]["DefaultVersionId"]
+        documents.append(("managed:" + a["PolicyName"], iam.get_policy_version(
+            PolicyArn=a["PolicyArn"], VersionId=version)["PolicyVersion"]["Document"]))
     grants = []
-    for name in iam.list_role_policies(RoleName=role)["PolicyNames"]:
-        doc = iam.get_role_policy(RoleName=role, PolicyName=name)["PolicyDocument"]
+    for source, doc in documents:
         for st in doc["Statement"]:
-            actions = st["Action"] if isinstance(st["Action"], list) else [st["Action"]]
-            if any(a.startswith("bedrock:InvokeModel") for a in actions):
-                grants.append({"resources": st["Resource"] if isinstance(st["Resource"], list) else [st["Resource"]],
+            if st.get("Effect") != "Allow":
+                continue
+            actions = st.get("Action", [])
+            actions = actions if isinstance(actions, list) else [actions]
+            # Anything that could invoke a model: InvokeModel*, bedrock:Invoke*, bedrock:*, *.
+            if any(fnmatch.fnmatch("bedrock:InvokeModel", a) or fnmatch.fnmatch("bedrock:InvokeModelWithResponseStream", a)
+                   or a in ("*", "bedrock:*") for a in actions) or "NotAction" in st:
+                grants.append({"source": source, "actions": actions,
+                               "resources": st.get("Resource") if isinstance(st.get("Resource"), list) else [st.get("Resource")],
                                "condition": st.get("Condition")})
     runtime = json.loads(Path(".local/runtime.json").read_text())
     env = session.client("bedrock-agentcore-control").get_agent_runtime(
@@ -43,7 +56,7 @@ def main() -> int:
     resources = [r for g in grants for r in g["resources"]]
     record = {"label": label, "date": date.today().isoformat(),
               "sha": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
-              "runtime_role_model_grants": grants, "model_allow_list_env": env.get("MODEL_ALLOW_LIST"),
+              "policies_read": [s for s, _ in documents], "runtime_role_model_grants": grants, "model_allow_list_env": env.get("MODEL_ALLOW_LIST"),
               "probe_off_list_model": {"model_id": OFF_LIST, "response": probe}}
     record["nova_pro_only"] = (resources == ["arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0"]
                                and record["model_allow_list_env"] == "amazon.nova-pro-v1:0"

@@ -114,10 +114,22 @@ def head_sha() -> str:
     return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
 
 
-def record_deploy(stack: str, sha: str, returncode: int, log: Path = DEPLOY_LOG) -> None:
+# Command-line context whose values are configuration, not identifiers, so the log can carry them.
+LOGGED_CONTEXT_VALUES = ("model_opt_in", "b4_layer2_test")
+
+
+def logged_context(extra: list[str]) -> dict:
+    """Command-line context keys; values only for LOGGED_CONTEXT_VALUES (others are identifiers)."""
+    return {k: (v if k in LOGGED_CONTEXT_VALUES else "<set>") for k, v in cli_context(extra).items()}
+
+
+def record_deploy(stack: str, sha: str, returncode: int, log: Path = DEPLOY_LOG, extra: list[str] = ()) -> None:
     log.parent.mkdir(parents=True, exist_ok=True)
     entry = {"stack": stack, "sha": sha, "result": "deployed" if returncode == 0 else f"failed ({returncode})",
              "at": datetime.now(timezone.utc).isoformat(timespec="seconds")}
+    context = logged_context(list(extra))
+    if context:
+        entry["context"] = context
     with log.open("a") as f:
         f.write(json.dumps(entry, sort_keys=True) + "\n")
 
@@ -185,7 +197,7 @@ def main(argv: list[str]) -> int:
         print(f"refusing to deploy {stack}: {e}", file=sys.stderr)
         return 1 if not isinstance(e, Refused) else 2
     rc = subprocess.run(["npx", "-y", CDK_CLI, *cdk_args(stack, extra)]).returncode
-    record_deploy(stack, sha, rc)
+    record_deploy(stack, sha, rc, extra=extra)
     return rc
 
 

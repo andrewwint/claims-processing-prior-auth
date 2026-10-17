@@ -13,11 +13,42 @@ Six synthetic cases, three trials each per model, run end to end on the deployed
 | `amazon.nova-pro-v1:0` | 0 of 12 (95% upper bound 25.0%) | 5 of 18 (27.8%) | 5 of 6 | 0 | 0 | 13.0 s / 16.1 s | $0.0042 |
 | `us.anthropic.claude-sonnet-4-6` | 0 of 12 (95% upper bound 25.0%) | 6 of 18 (33.3%) | 6 of 6 | 0 | 0 | 14.3 s / 18.0 s | $0.0207 |
 
+## Did the designed check fire?
+
+For every routed needs-review trial: the check each case was built to trigger, and whether it fired. Reconstructed from each run's stored recommendation record, not re-run ([annotate.py](annotate.py)).
+
+| Model | Case | Trial | Built to trigger | Fired | Other failures |
+|---|---|---|---|---|---|
+| `amazon.nova-pro-v1:0` | SYN-CASE-CF-1 | 1 | C3 Not found (evidence removed) | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-CF-2 | 1 | C2 Not found (evidence removed) | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-FORGED | 1 | same patient: forged document not in the chart index | yes | C1, C2, C3 cited pages that do not exist, so source match refused them |
+| `amazon.nova-pro-v1:0` | SYN-CASE-WRONG-PATIENT | 1 | same patient: another patient's document | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-CF-1 | 2 | C3 Not found (evidence removed) | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-CF-2 | 2 | C2 Not found (evidence removed) | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-FORGED | 2 | same patient: forged document not in the chart index | yes | C1, C2, C3 cited pages that do not exist, so source match refused them |
+| `amazon.nova-pro-v1:0` | SYN-CASE-WRONG-PATIENT | 2 | same patient: another patient's document | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-CF-1 | 3 | C3 Not found (evidence removed) | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-CF-2 | 3 | C2 Not found (evidence removed) | yes | none |
+| `amazon.nova-pro-v1:0` | SYN-CASE-FORGED | 3 | same patient: forged document not in the chart index | yes | C1, C2, C3 cited pages that do not exist, so source match refused them |
+| `amazon.nova-pro-v1:0` | SYN-CASE-WRONG-PATIENT | 3 | same patient: another patient's document | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-CF-1 | 1 | C3 Not found (evidence removed) | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-CF-2 | 1 | C2 Not found (evidence removed) | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-FORGED | 1 | same patient: forged document not in the chart index | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-WRONG-PATIENT | 1 | same patient: another patient's document | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-CF-1 | 2 | C3 Not found (evidence removed) | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-CF-2 | 2 | C2 Not found (evidence removed) | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-FORGED | 2 | same patient: forged document not in the chart index | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-WRONG-PATIENT | 2 | same patient: another patient's document | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-CF-1 | 3 | C3 Not found (evidence removed) | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-CF-2 | 3 | C2 Not found (evidence removed) | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-FORGED | 3 | same patient: forged document not in the chart index | yes | none |
+| `us.anthropic.claude-sonnet-4-6` | SYN-CASE-WRONG-PATIENT | 3 | same patient: another patient's document | yes | none |
+
 ## Approvable trials that were routed
 
 Not re-run. The cause is reconstructed from each run's stored recommendation record: its citations are re-checked against the trusted chart ([annotate.py](annotate.py)).
 
-- `amazon.nova-pro-v1:0` SYN-CASE-CLEAN-2 trial 1: C1 cited SYN-DOC-102-PT page 3 line 3 (no such line: the document has 1 page); C2 cited SYN-DOC-102-MRI page 3 line 3 (no such line: the document has 1 page); C3 cited SYN-DOC-102-FUNC page 3 line 3 (no such line: the document has 1 page). Checks: source match: value for C1 is shorter than 4 characters; source match: value for C2 is shorter than 4 characters; source match: value for C3 is shorter than 4 characters. Routed to a clinician; nothing was approved.
+- `amazon.nova-pro-v1:0` SYN-CASE-CLEAN-2 trial 1: C1 cited SYN-DOC-102-PT page 3 line 3 (no such line: the document has 1 page); C2 cited SYN-DOC-102-MRI page 3 line 3 (no such line: the document has 1 page); C3 cited SYN-DOC-102-FUNC page 3 line 3 (no such line: the document has 1 page). Checks: C1, C2, C3 cited pages that do not exist, so source match refused them. Routed to a clinician; nothing was approved.
 
 Operator-alert trials excluded from the rates: 0.
 Total model cost of the run: $0.4489.

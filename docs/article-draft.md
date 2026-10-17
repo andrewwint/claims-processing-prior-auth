@@ -146,6 +146,8 @@ I used the same one-change method in [The Reader Who Never Asks](https://medium.
 
 A few rules keep the comparison honest. Run each case several times and show every trial. Count a response cut off at the token limit as a failure, not a skip. Record each model's sampling settings, because some models only accept their defaults. Label the cases as synthetic and author-labeled, never as clinical ground truth.
 
+On six synthetic cases, three trials each, Nova Pro and Sonnet 4.6 each made zero false approvals in twelve trials that needed review. That's a small sample: the 95% upper bound is still 25%. Sonnet cleared one more approvable case, at about five times the cost.
+
 Make one real call to every candidate before you build. Model families disagree about which parameters they accept, and some return a reasoning block before the answer. You want that surprise on day one.
 
 ## Map it to AgentCore

@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-16",
+  "label": "recheck",
+  "model_allow_list_env": "amazon.nova-pro-v1:0",
+  "nova_pro_only": true,
+  "policies_read": [
+    "inline:RuntimeRoleDefaultPolicy31263C89"
+  ],
+  "probe_off_list_model": {
+    "model_id": "us.anthropic.claude-sonnet-4-6",
+    "response": {
+      "outcome": "rejected",
+      "reason": "model is not on the allow-list"
+    }
+  },
+  "runtime_role_model_grants": [
+    {
+      "actions": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "condition": null,
+      "resources": [
+        "arn:aws:bedrock:us-east-1::foundation-model/amazon.nova-pro-v1:0"
+      ],
+      "source": "inline:RuntimeRoleDefaultPolicy31263C89"
+    }
+  ],
+  "sha": "eb1cab2708d3a155d43c534164ff0746c4457546"
+}

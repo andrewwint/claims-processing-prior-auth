@@ -102,10 +102,16 @@ def beat5(session, out) -> None:
 
 
 def beat6(session, out) -> None:
-    print("Positive control, then the clean scan (each waits for spans to land):")
-    print("  python -m scripts.canary_scan control")
-    print("  python -m scripts.canary_scan clean")
-    print("Recorded reports: evidence/2026-10-16/canary-scan-control.json, canary-scan-clean.json")
+    """Shows the recorded scans. The control was planted through a runtime path that has since
+    been removed, so it is not rerun; the clean scan can be rerun with `canary_scan clean`."""
+    import json as _json
+    from pathlib import Path as _Path
+    control = _json.loads(_Path("evidence/2026-10-16/canary-scan-control.json").read_text())
+    clean = _json.loads(_Path("evidence/2026-10-16/canary-scan-clean.json").read_text())
+    print(f"Positive control (recorded): found in {', '.join(sorted(control['scan']['hits']))}; passed: {control['passed']}")
+    n = clean["needles"]
+    print(f"Clean run (recorded): {sum(clean['scan']['events_scanned'].values())} events, {n['canaries']} canaries, "
+          f"{n['chart_lines']} chart lines, {n['decision_reasons']} decision reasons -> {len(clean['scan']['hits'])} hits")
 
 
 BEATS = {

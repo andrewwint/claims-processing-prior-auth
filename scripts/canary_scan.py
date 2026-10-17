@@ -190,6 +190,10 @@ def main() -> int:
     if len(sys.argv) != 2 or sys.argv[1] not in ("control", "clean"):
         print(__doc__, file=sys.stderr)
         return 2
+    if sys.argv[1] == "control":
+        print("refusing: the runtime's control path was removed after the control was recorded "
+              "(evidence/2026-10-16/canary-scan-control.json); rerunning needs commit d009b28 deployed", file=sys.stderr)
+        return 2
     record = run(sys.argv[1])
     out = gc.outputs()
     runtime = json.loads(Path(".local/runtime.json").read_text())
@@ -197,6 +201,8 @@ def main() -> int:
     text = redact(json.dumps(record, indent=2, sort_keys=True, default=str), named)
     assert not find_unredacted(text)
     path = Path(f"evidence/{record['date']}/canary-scan-{record['mode']}.json")
+    if path.exists():
+        path = path.with_name(f"canary-scan-{record['mode']}-{record['sha'][:12]}.json")  # never overwrite a recorded scan
     path.write_text(text + "\n")
     print(json.dumps({k: record[k] for k in ("passed", "spans_seen")} | {"scan": record["scan"]}, indent=2))
     print("->", path)

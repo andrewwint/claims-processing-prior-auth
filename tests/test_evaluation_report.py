@@ -80,3 +80,20 @@ def test_routed_approvable_trials_show_their_reconstructed_cause(tmp_path, monke
     text = report.render([trial(case="SYN-CASE-CLEAN-2", label="approve", run_id="R1", reason="checks failed")])
     assert "C1 cited D page 3 line 3 (no such line: the document has 1 page)" in text
     assert "nothing was approved" in text
+
+
+def test_designed_check_is_judged_per_change_type():
+    gap = {"type": "remove_evidence", "criterion": "C3"}
+    assert report.designed_check_fired(gap, {"gaps": ["C3"]}) and not report.designed_check_fired(gap, {"gaps": ["C1"]})
+    forged = {"type": "forge_unindexed_doc", "criterion": "C3"}
+    assert report.designed_check_fired(forged, {"check_failures": ["same patient: X is not in the chart index"]})
+    assert not report.designed_check_fired(forged, {"check_failures": ["criterion not met: C3"]})
+    other = {"type": "other_patient_doc", "criterion": "C3"}
+    assert report.designed_check_fired(other, {"check_failures": ["same patient: D belongs to another patient"]})
+
+
+def test_nonexistent_citations_are_stated_plainly():
+    note = {"citations": [{"criterion_id": "C1", "cited_line_exists": False}, {"criterion_id": "C2"}],
+            "check_failures": ["source match: value for C1 is shorter than 4 characters", "criterion not met: C2"]}
+    assert report.plain_failures(note) == ["criterion not met: C2",
+                                           "C1 cited pages that do not exist, so source match refused them"]

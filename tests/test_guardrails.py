@@ -321,3 +321,13 @@ def test_teardown_role_cannot_create_delete_markers():
                 if r["Properties"].get("RoleName") == "prior-auth-teardown")
     actions = _json.dumps(role["Properties"]["Policies"])
     assert "s3:DeleteObjectVersion" in actions and '"s3:DeleteObject"' not in actions
+
+
+def test_deploy_log_records_configuration_context_but_not_identifiers(tmp_path):
+    log = tmp_path / "deploys.jsonl"
+    deploy.record_deploy("PriorAuthRuntime", "abc", 0, log,
+                         extra=["-c", "model_opt_in=us.anthropic.claude-sonnet-4-6", "-c", "user_pool_id=us-east-1_SECRET1"])
+    entry = json.loads(log.read_text())
+    assert entry["context"] == {"model_opt_in": "us.anthropic.claude-sonnet-4-6", "user_pool_id": "<set>"}
+    deploy.record_deploy("PriorAuthRuntime", "abc", 0, log)
+    assert "context" not in json.loads(log.read_text().splitlines()[1])

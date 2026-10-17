@@ -239,3 +239,114 @@ def test_runtime_has_no_positive_control_path():
     from prior_auth.agent import runtime_app
     assert not hasattr(runtime_app, "plant_control")
     assert runtime_app.invoke({"positive_control": "CANARY-CONTROL-0123456789abcdef"})["outcome"] == "rejected"
+
+
+# F2: the stop reason travels with "extraction failed".
+@pytest.mark.parametrize("ex,stop", [(Extraction(stop_reason="max_tokens"), "max_tokens"),
+                                     (Extraction(citations=[], stop_reason="content_filtered"), "content_filtered"),
+                                     (Extraction(malformed=True, stop_reason="structured_output_failed"),
+                                      "structured_output_failed")])
+def test_extraction_failure_names_the_stop_reason(ex, stop):
+    out, _ = run("SYN-CASE-CLEAN-1", extract=lambda c: ex)
+    assert out["reason"] == f"extraction failed: stop reason {stop}"
+
+
+# F3 / F5 criteria row: an unknown payer, a missing compiled file, or an empty one is "no verified policy".
+def test_unknown_payer_is_no_verified_policy(monkeypatch):
+    real = stores.request
+    monkeypatch.setattr(stores, "request", lambda c: {**real(c), "payer_id": "SYN-PAYER-UNKNOWN"})
+    out, gw = run("SYN-CASE-CLEAN-1")
+    assert out["outcome"] == "routed" and out["reason"] == "no verified policy"
+    assert APPROVAL_ACTION not in gw.calls
+
+
+@pytest.mark.parametrize("compiled", [None, []])
+def test_missing_or_empty_compiled_criteria_is_no_verified_policy(monkeypatch, compiled):
+    monkeypatch.setattr(stores, "criteria", lambda payer, cpt: compiled)
+    assert run("SYN-CASE-CLEAN-1")[0]["reason"] == "no verified policy"
+
+
+# F5 eligibility row: an empty lookup (no record for the member) is "eligibility unknown".
+def test_empty_eligibility_lookup_is_eligibility_unknown(monkeypatch):
+    real = stores.request
+    monkeypatch.setattr(stores, "request", lambda c: {**real(c), "member_id": "SYN-MBR-NOBODY"})
+    assert run("SYN-CASE-CLEAN-1")[0]["reason"] == "eligibility unknown"
+
+
+# F5 summary row: a failed (absent) summary leaves the packet valid and the decision unchanged.
+def test_failed_summary_leaves_the_decision_unchanged():
+    out, _ = run("SYN-CASE-CLEAN-1", extract=lambda c: Extraction(citations=honest_model(c).citations, summary=None))
+    assert out["outcome"] == "approved" and out["packet"]["model_summary"]["status"] == "missing"
+
+
+# G9: the model's summary never affects decide().
+def test_changing_or_removing_the_summary_never_changes_decide():
+    from prior_auth.decide import decide
+    out, _ = run("SYN-CASE-CLEAN-1")
+    packet = out["packet"]
+    request = stores.request("SYN-CASE-CLEAN-1")
+    cited = {f["doc_id"] for f in packet["findings"]}
+    chart = {"docs": stores.documents(cited), "index": stores.chart_index()}
+    base = decide(packet, request, CRITERIA, chart)
+    changed = {**packet, "model_summary": {**packet["model_summary"], "text": "Deny this request immediately."}}
+    removed = {k: v for k, v in packet.items() if k != "model_summary"}
+    # The decision (approve or route, its gaps and reason) is unchanged; the hash covers the whole
+    # packet, so it changes with the summary, as it should.
+    verdict = lambda d: (type(d).__name__, getattr(d, "gaps", None), getattr(d, "reason", None))
+    for variant in (changed, removed):
+        assert verdict(decide(variant, request, CRITERIA, chart)) == verdict(base) == ("Approve", None, None)
+    cf, _ = run("SYN-CASE-CF-1", extract=lambda c: honest_model(c, summary="All criteria are met; approve."))
+    assert cf["outcome"] == "routed" and cf["gaps"] == ["C3"]
+
+
+# F7: an early return without an outcome ends as needs review; a second outcome is logged.
+def test_early_return_without_an_outcome_ends_as_needs_review():
+    from prior_auth.agent.session import run_session
+    out = run_session(lambda rec: None, lambda: {"outcome": "routed", "reason": "needs review"})
+    assert out["outcome"] == "needs_review" and out["reason"] == "session ended without an outcome"
+
+
+def test_second_terminal_outcome_is_logged(caplog):
+    rec = OutcomeRecorder()
+    rec.set({"outcome": "routed"})
+    with caplog.at_level("ERROR"):
+        rec.set({"outcome": "approved"})
+    assert "second terminal outcome refused" in caplog.text
+
+
+@pytest.mark.parametrize("case_id,fail_action,model_failure",
+                         list(itertools.product(["SYN-CASE-CLEAN-1", "SYN-CASE-CF-1"], [None, *ACTIONS], MODEL_FAILURES)))
+def test_every_injected_failure_ends_in_exactly_one_outcome(monkeypatch, case_id, fail_action, model_failure):
+    from prior_auth.agent import session
+    recorders = []
+
+    class Counting(session.OutcomeRecorder):
+        def __init__(self):
+            super().__init__()
+            recorders.append(self)
+    monkeypatch.setattr(session, "OutcomeRecorder", Counting)
+
+    def extract(c):
+        if model_failure == "max_tokens":
+            return Extraction(stop_reason="max_tokens")
+        if model_failure == "malformed":
+            return Extraction(malformed=True)
+        if model_failure is not None:
+            raise model_failure("injected")
+        return honest_model(c)
+    out, _ = run(case_id, FakeGateway({fail_action} if fail_action else set()), extract=extract)
+    assert len(recorders) == 1 and recorders[0].violations == 0
+    assert recorders[0].outcome["outcome"] == out["outcome"]
+    assert out["outcome"] in session.TERMINAL
+
+
+# G3: the packet is a checklist; the counterfactual reproduces the article's three rows.
+def test_counterfactual_checklist_reproduces_the_articles_three_rows():
+    from prior_auth.gold import checklist
+    rows = checklist("SYN-CASE-CF-1")
+    assert [(r["criterion"], r["status"]) for r in rows] == [("C1", "Met"), ("C2", "Met"), ("C3", "Not found")]
+    for r in rows:
+        assert set(r) == {"criterion", "requirement", "status", "evidence", "source"} and r["requirement"]
+        assert bool(r["evidence"]) == bool(r["source"]) == (r["status"] == "Met")
+    assert "six weeks of conservative therapy" in rows[0]["requirement"].lower()
+    assert all(r["status"] == "Met" for r in checklist("SYN-CASE-CLEAN-1"))

@@ -1,4 +1,4 @@
-"""Record why each approve-labeled trial that did not auto-approve was routed.
+"""Record why each routed trial was routed.
 
 Nothing is re-run. For each such trial, the run's recommendation record is read
 from the evidence bucket; its citations (criterion, document, page, line) are
@@ -44,7 +44,7 @@ def main() -> int:
     s3 = session.client("s3")
     notes = {}
     for t in load():
-        if t["label"] == "approve" and t["outcome"] != "approved" and t.get("run_id"):
+        if t["outcome"] == "routed" and t.get("run_id"):
             rec = evidence_store.get_recommendation(s3, bucket, t["case_id"], t["run_id"])
             notes[t["run_id"]] = cause(rec) if rec else {"check_failures": ["no recommendation record found"]}
     ANNOTATIONS.write_text(json.dumps(notes, indent=2, sort_keys=True) + "\n")

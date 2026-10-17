@@ -108,3 +108,37 @@ def test_labels_agree_with_the_rules_on_gold_citations(case_id):
                "cpt_code": case["cpt_code"]}
     verdict = checks.recompute(packet, request, criteria, chart)
     assert verdict.approvable == (case["label"] == "approve"), verdict.failures or verdict.gaps
+
+
+# M2: each derived case differs from its parent by exactly its one declared change. Documents are
+# compared by kind and by body (every line after the header, which carries the document's own canary).
+def _bodies(case_id):
+    case = json.loads((ROOT / "data/cases/cases.json").read_text())["cases"][case_id]
+    out = {}
+    for d in case["documents"]:
+        doc = json.loads((ROOT / f"data/charts/{d}.json").read_text())
+        out[d] = (doc["kind"], json.dumps([doc["pages"][0][1:], *doc["pages"][1:]]))
+    return case, out
+
+
+@pytest.mark.parametrize("case_id", ["SYN-CASE-CF-1", "SYN-CASE-CF-2", "SYN-CASE-FORGED", "SYN-CASE-WRONG-PATIENT"])
+def test_each_derived_case_differs_from_its_parent_by_exactly_the_declared_change(case_id):
+    case, docs = _bodies(case_id)
+    parent_case, parent = _bodies(case["provenance"]["parent"])
+    index = json.loads((ROOT / "data/charts/index.json").read_text())["index"]
+    change = case["provenance"]["change"]
+    kept = sorted(v for d, v in docs.items() if index.get(d) == case["patient_id"])
+    if change["type"] == "remove_evidence":
+        removed = [v for v in parent.values() if v not in docs.values()]
+        assert len(removed) == 1 and len(docs) == len(parent) - 1
+        assert sorted(docs.values()) == sorted(v for v in parent.values() if v not in removed)
+    else:
+        added = [d for d in docs if index.get(d) != case["patient_id"]]
+        assert len(added) == 1 and len(docs) == len(parent)
+        # Everything else is the parent's chart, unchanged, minus the document the addition stands in for.
+        parent_same_kind = [v for v in parent.values() if v[0] == docs[added[0]][0]]
+        assert sorted(kept) == sorted(v for v in parent.values() if v not in parent_same_kind)
+        if change["type"] == "forge_unindexed_doc":
+            assert added[0] not in index
+        else:
+            assert index[added[0]] not in (None, case["patient_id"])

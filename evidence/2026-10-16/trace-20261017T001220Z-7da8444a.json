@@ -1,0 +1,645 @@
+{
+  "date": "2026-10-16",
+  "run_id": "20261017T001220Z-7da8444a",
+  "sha": "eb1cab2708d3a155d43c534164ff0746c4457546",
+  "source": "the runtime log group's spans stream",
+  "spans": [
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.auth.account.access_key",
+        "aws.auth.credential_provider",
+        "aws.auth.region",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.region",
+        "aws.remote.operation",
+        "aws.remote.resource.identifier",
+        "aws.remote.resource.type",
+        "aws.remote.service",
+        "aws.request_id",
+        "aws.span.kind",
+        "http.response.status_code",
+        "http.status_code",
+        "retry_attempts",
+        "rpc.method",
+        "rpc.service",
+        "rpc.system",
+        "server.address",
+        "server.port",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "Bedrock AgentCore.GetResourceOauth2Token",
+      "seconds": 0.076,
+      "values": {
+        "http.status_code": 200
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send server/discover",
+      "seconds": 0.1,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send initialize",
+      "seconds": 0.075,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/call AgentTools___check_eligibility",
+      "seconds": 0.285,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/list",
+      "seconds": 0.162,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/call AgentTools___fetch_policy_criteria",
+      "seconds": 0.195,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/list",
+      "seconds": 0.142,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.auth.account.access_key",
+        "aws.auth.region",
+        "aws.genai.span_kind",
+        "aws.genai.token_count_total",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.region",
+        "aws.remote.operation",
+        "aws.remote.resource.identifier",
+        "aws.remote.resource.type",
+        "aws.remote.service",
+        "aws.request_id",
+        "aws.span.kind",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.request.max_tokens",
+        "gen_ai.request.model",
+        "gen_ai.request.temperature",
+        "gen_ai.response.finish_reasons",
+        "gen_ai.system",
+        "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens",
+        "http.response.status_code",
+        "http.status_code",
+        "retry_attempts",
+        "rpc.method",
+        "rpc.service",
+        "rpc.system",
+        "server.address",
+        "server.port",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "chat amazon.nova-pro-v1:0",
+      "seconds": 1.535,
+      "values": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.model": "amazon.nova-pro-v1:0",
+        "gen_ai.response.finish_reasons": [
+          "tool_use"
+        ],
+        "gen_ai.usage.input_tokens": 1006,
+        "gen_ai.usage.output_tokens": 187,
+        "http.status_code": 200
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.genai.span_kind",
+        "aws.genai.token_count_total",
+        "aws.local.environment",
+        "aws.local.service",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.request.model",
+        "gen_ai.server.request.duration",
+        "gen_ai.server.time_to_first_token",
+        "gen_ai.system",
+        "gen_ai.usage.completion_tokens",
+        "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens",
+        "gen_ai.usage.prompt_tokens",
+        "gen_ai.usage.total_tokens",
+        "session.id"
+      ],
+      "name": "chat",
+      "seconds": 1.553,
+      "values": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.model": "amazon.nova-pro-v1:0",
+        "gen_ai.server.request.duration": 1517,
+        "gen_ai.usage.completion_tokens": 187,
+        "gen_ai.usage.input_tokens": 1006,
+        "gen_ai.usage.output_tokens": 187,
+        "gen_ai.usage.prompt_tokens": 1006
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/call AgentTools___check_eligibility",
+      "seconds": 0.215,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.genai.span_kind",
+        "aws.local.environment",
+        "aws.local.service",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.system",
+        "gen_ai.tool.call.id",
+        "gen_ai.tool.description",
+        "gen_ai.tool.json_schema",
+        "gen_ai.tool.name",
+        "gen_ai.tool.status",
+        "session.id"
+      ],
+      "name": "execute_tool AgentTools___check_eligibility",
+      "seconds": 0.218,
+      "values": {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": "AgentTools___check_eligibility"
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/call AgentTools___extract_clinical_evidence",
+      "seconds": 0.222,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.genai.span_kind",
+        "aws.local.environment",
+        "aws.local.service",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.system",
+        "gen_ai.tool.call.id",
+        "gen_ai.tool.description",
+        "gen_ai.tool.json_schema",
+        "gen_ai.tool.name",
+        "gen_ai.tool.status",
+        "session.id"
+      ],
+      "name": "execute_tool AgentTools___extract_clinical_evidence",
+      "seconds": 0.224,
+      "values": {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": "AgentTools___extract_clinical_evidence"
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/call AgentTools___fetch_policy_criteria",
+      "seconds": 0.252,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.genai.span_kind",
+        "aws.local.environment",
+        "aws.local.service",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.system",
+        "gen_ai.tool.call.id",
+        "gen_ai.tool.description",
+        "gen_ai.tool.json_schema",
+        "gen_ai.tool.name",
+        "gen_ai.tool.status",
+        "session.id"
+      ],
+      "name": "execute_tool AgentTools___fetch_policy_criteria",
+      "seconds": 0.254,
+      "values": {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": "AgentTools___fetch_policy_criteria"
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.service",
+        "event_loop.cycle_id",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.system",
+        "session.id"
+      ],
+      "name": "execute_event_loop_cycle",
+      "seconds": 1.809,
+      "values": {
+        "gen_ai.operation.name": "execute_event_loop_cycle"
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.auth.account.access_key",
+        "aws.auth.region",
+        "aws.genai.span_kind",
+        "aws.genai.token_count_total",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.region",
+        "aws.remote.operation",
+        "aws.remote.resource.identifier",
+        "aws.remote.resource.type",
+        "aws.remote.service",
+        "aws.request_id",
+        "aws.span.kind",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.request.max_tokens",
+        "gen_ai.request.model",
+        "gen_ai.request.temperature",
+        "gen_ai.response.finish_reasons",
+        "gen_ai.system",
+        "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens",
+        "http.response.status_code",
+        "http.status_code",
+        "retry_attempts",
+        "rpc.method",
+        "rpc.service",
+        "rpc.system",
+        "server.address",
+        "server.port",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "chat amazon.nova-pro-v1:0",
+      "seconds": 2.779,
+      "values": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.model": "amazon.nova-pro-v1:0",
+        "gen_ai.response.finish_reasons": [
+          "tool_use"
+        ],
+        "gen_ai.usage.input_tokens": 1636,
+        "gen_ai.usage.output_tokens": 371,
+        "http.status_code": 200
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.genai.span_kind",
+        "aws.genai.token_count_total",
+        "aws.local.environment",
+        "aws.local.service",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.request.model",
+        "gen_ai.server.request.duration",
+        "gen_ai.server.time_to_first_token",
+        "gen_ai.system",
+        "gen_ai.usage.completion_tokens",
+        "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens",
+        "gen_ai.usage.prompt_tokens",
+        "gen_ai.usage.total_tokens",
+        "session.id"
+      ],
+      "name": "chat",
+      "seconds": 2.78,
+      "values": {
+        "gen_ai.operation.name": "chat",
+        "gen_ai.request.model": "amazon.nova-pro-v1:0",
+        "gen_ai.server.request.duration": 2774,
+        "gen_ai.usage.completion_tokens": 371,
+        "gen_ai.usage.input_tokens": 1636,
+        "gen_ai.usage.output_tokens": 371,
+        "gen_ai.usage.prompt_tokens": 1636
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.genai.span_kind",
+        "aws.local.environment",
+        "aws.local.service",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.system",
+        "gen_ai.tool.call.id",
+        "gen_ai.tool.description",
+        "gen_ai.tool.json_schema",
+        "gen_ai.tool.name",
+        "gen_ai.tool.status",
+        "session.id"
+      ],
+      "name": "execute_tool ExtractionOutput",
+      "seconds": 0.001,
+      "values": {
+        "gen_ai.operation.name": "execute_tool",
+        "gen_ai.tool.name": "ExtractionOutput"
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.service",
+        "event_loop.cycle_id",
+        "event_loop.parent_cycle_id",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.system",
+        "session.id"
+      ],
+      "name": "execute_event_loop_cycle",
+      "seconds": 2.783,
+      "values": {
+        "gen_ai.operation.name": "execute_event_loop_cycle"
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.genai.span_kind",
+        "aws.genai.token_count_total",
+        "aws.local.environment",
+        "aws.local.service",
+        "gen_ai.agent.name",
+        "gen_ai.agent.tools",
+        "gen_ai.event.end_time",
+        "gen_ai.event.start_time",
+        "gen_ai.operation.name",
+        "gen_ai.provider.name",
+        "gen_ai.request.model",
+        "gen_ai.system",
+        "gen_ai.usage.cache_creation.input_tokens",
+        "gen_ai.usage.cache_read.input_tokens",
+        "gen_ai.usage.cache_read_input_tokens",
+        "gen_ai.usage.cache_write_input_tokens",
+        "gen_ai.usage.completion_tokens",
+        "gen_ai.usage.input_tokens",
+        "gen_ai.usage.output_tokens",
+        "gen_ai.usage.prompt_tokens",
+        "gen_ai.usage.total_tokens",
+        "session.id"
+      ],
+      "name": "invoke_agent Strands Agents",
+      "seconds": 4.595,
+      "values": {
+        "gen_ai.operation.name": "invoke_agent",
+        "gen_ai.request.model": "amazon.nova-pro-v1:0",
+        "gen_ai.usage.completion_tokens": 558,
+        "gen_ai.usage.input_tokens": 2642,
+        "gen_ai.usage.output_tokens": 558,
+        "gen_ai.usage.prompt_tokens": 2642
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.auth.account.access_key",
+        "aws.auth.region",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.region",
+        "aws.remote.operation",
+        "aws.remote.resource.identifier",
+        "aws.remote.resource.type",
+        "aws.remote.service",
+        "aws.request_id",
+        "aws.s3.bucket",
+        "aws.span.kind",
+        "http.response.status_code",
+        "http.status_code",
+        "retry_attempts",
+        "rpc.method",
+        "rpc.service",
+        "rpc.system",
+        "server.address",
+        "server.port",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "S3.PutObject",
+      "seconds": 0.097,
+      "values": {
+        "http.status_code": 200
+      }
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.remote.operation",
+        "aws.remote.service",
+        "aws.span.kind",
+        "jsonrpc.request.id",
+        "mcp.method.name",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "MCP send tools/call AgentTools___route_to_reviewer",
+      "seconds": 0.396,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.service",
+        "session.id"
+      ],
+      "name": "mcp.session",
+      "seconds": 6.145,
+      "values": {}
+    },
+    {
+      "attribute_keys": [
+        "PlatformType",
+        "aws.local.environment",
+        "aws.local.operation",
+        "aws.local.service",
+        "aws.span.kind",
+        "http.flavor",
+        "http.host",
+        "http.method",
+        "http.response.status_code",
+        "http.route",
+        "http.scheme",
+        "http.server_name",
+        "http.status_code",
+        "http.target",
+        "http.url",
+        "net.host.port",
+        "net.peer.ip",
+        "net.peer.port",
+        "pa.case_id",
+        "pa.recommendation_record_sha256",
+        "pa.run_id",
+        "session.id",
+        "telemetry.extended"
+      ],
+      "name": "POST /invocations",
+      "seconds": 6.428,
+      "values": {
+        "http.status_code": 200,
+        "pa.case_id": "SYN-CASE-CF-1",
+        "pa.recommendation_record_sha256": "6ddf9c86f7595c425d93cf646e1d6b9b540fd51741293735d4383b55424dbfd6",
+        "pa.run_id": "20261017T001220Z-7da8444a"
+      }
+    }
+  ],
+  "trace_id": "6ad2bd5c19bf722f4a45d0fa1fcf1413"
+}

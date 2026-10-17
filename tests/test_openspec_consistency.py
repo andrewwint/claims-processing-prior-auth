@@ -85,3 +85,13 @@ def test_empty_output_rules_doc_matches_the_design_table():
     design = (CHANGES / "case-packet-and-failure-routing" / "design.md").read_text()
     table = design[design.index("### D6."):design.index("### D7.")].split("\n", 1)[1].strip()
     assert table in (ROOT / "docs" / "empty-output-rules.md").read_text()
+
+
+def test_every_test_the_ledger_cites_exists():
+    """A ledger row may not cite a test that does not exist."""
+    ledger = (ROOT / "openspec" / "claims-ledger.md").read_text()
+    sources = {p.name: p.read_text() for p in (ROOT / "tests").glob("*.py")}
+    everything = "".join(sources.values())
+    missing = [n for n in set(re.findall(r"\b(test_[a-z0-9_]+)\b", ledger))
+               if f"def {n}(" not in everything and f"{n}.py" not in sources]
+    assert missing == []

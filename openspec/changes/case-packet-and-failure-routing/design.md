@@ -110,7 +110,7 @@ This replaces any global "empty output" rule.
 | Extraction | throttled or timed out after retries | routed, "extraction failed", with the error class |
 | Extraction | access denied | `operator_alert`: metric and CloudWatch alarm (F4) |
 | Model summary | empty or failed | the packet stays valid, the summary is marked "missing", and the decision is unaffected |
-| Any step | unexpected exception | routed, "needs review", naming the step |
+| Any step | unexpected exception | routed, "needs review" ("session ended without an outcome"); the exception class is logged |
 | `record_approval` | refused by the approval service, denied by Cedar, or errored | routed to the reviewer with the reason; counted as a decide-vs-service disagreement |
 | `route_to_reviewer` | fails | `operator_alert`: the case cannot reach a person, so an operator must act |
 

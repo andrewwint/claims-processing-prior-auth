@@ -1,4 +1,66 @@
 {
+  "20261017T010251Z-967987eb": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-103-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-103-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T010306Z-0d8ec22b": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-104-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-104-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C2"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C2"
+      ],
+      "reason": "criteria not met"
+    }
+  },
   "20261017T010337Z-58dff3fc": {
     "check_failures": [
       "source match: value for C1 is shorter than 4 characters",
@@ -41,6 +103,829 @@
       "gaps": [
         "C1",
         "C2",
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T010350Z-77557106": {
+    "check_failures": [
+      "source match: value for C1 is shorter than 4 characters",
+      "source match: value for C2 is shorter than 4 characters",
+      "same patient: SYN-DOC-106-FUNC-FORGED is not in the chart index",
+      "source match: value for C3 is shorter than 4 characters"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-106-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-106-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-106-FUNC-FORGED",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      }
+    ],
+    "gaps": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T010405Z-00ccf64f": {
+    "check_failures": [
+      "same patient: SYN-DOC-102-FUNC belongs to another patient"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-105-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-105-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-102-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T010417Z-ffad9b31": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-103-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-103-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T010430Z-a6727393": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-104-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-104-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C2"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C2"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T010513Z-79f0a47c": {
+    "check_failures": [
+      "source match: value for C1 is shorter than 4 characters",
+      "source match: value for C2 is shorter than 4 characters",
+      "same patient: SYN-DOC-106-FUNC-FORGED is not in the chart index",
+      "source match: value for C3 is shorter than 4 characters"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-106-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-106-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-106-FUNC-FORGED",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      }
+    ],
+    "gaps": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T010527Z-74e9f999": {
+    "check_failures": [
+      "same patient: SYN-DOC-102-FUNC belongs to another patient"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-105-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-105-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-102-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T010539Z-46d90332": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-103-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-103-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T010551Z-cf275b5d": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-104-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-104-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C2"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C2"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T010631Z-4630ed5a": {
+    "check_failures": [
+      "source match: value for C1 is shorter than 4 characters",
+      "source match: value for C2 is shorter than 4 characters",
+      "same patient: SYN-DOC-106-FUNC-FORGED is not in the chart index",
+      "source match: value for C3 is shorter than 4 characters"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-106-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-106-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      },
+      {
+        "cited_line_exists": false,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-106-FUNC-FORGED",
+        "document_pages": 1,
+        "line": 3,
+        "page": 3
+      }
+    ],
+    "gaps": [
+      "C1",
+      "C2",
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C1",
+        "C2",
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T010645Z-9b4b06ef": {
+    "check_failures": [
+      "same patient: SYN-DOC-102-FUNC belongs to another patient"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-105-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-105-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-102-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T015622Z-6f9a2a81": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-103-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-103-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T015637Z-9c18d209": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-104-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-104-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C2"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C2"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T015725Z-29a5c358": {
+    "check_failures": [
+      "same patient: SYN-DOC-106-FUNC-FORGED is not in the chart index"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-106-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-106-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-106-FUNC-FORGED",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T015739Z-5ceea5b8": {
+    "check_failures": [
+      "same patient: SYN-DOC-102-FUNC belongs to another patient"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-105-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-105-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-102-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T015754Z-755a2bfe": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-103-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-103-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T015808Z-d32ceab1": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-104-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-104-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C2"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C2"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T015849Z-76b34da0": {
+    "check_failures": [
+      "same patient: SYN-DOC-106-FUNC-FORGED is not in the chart index"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-106-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-106-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-106-FUNC-FORGED",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T015902Z-610640fa": {
+    "check_failures": [
+      "same patient: SYN-DOC-102-FUNC belongs to another patient"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-105-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-105-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-102-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T015917Z-adb1a3c6": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-103-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-103-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T015931Z-356abac6": {
+    "check_failures": [],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-104-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-104-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C2"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C2"
+      ],
+      "reason": "criteria not met"
+    }
+  },
+  "20261017T020017Z-9799abd2": {
+    "check_failures": [
+      "same patient: SYN-DOC-106-FUNC-FORGED is not in the chart index"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-106-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-106-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-106-FUNC-FORGED",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
+        "C3"
+      ],
+      "reason": "checks failed"
+    }
+  },
+  "20261017T020030Z-5aaae8fa": {
+    "check_failures": [
+      "same patient: SYN-DOC-102-FUNC belongs to another patient"
+    ],
+    "citations": [
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C1",
+        "doc_id": "SYN-DOC-105-PT",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C2",
+        "doc_id": "SYN-DOC-105-MRI",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      },
+      {
+        "cited_line_exists": true,
+        "criterion_id": "C3",
+        "doc_id": "SYN-DOC-102-FUNC",
+        "document_pages": 1,
+        "line": 3,
+        "page": 1
+      }
+    ],
+    "gaps": [
+      "C3"
+    ],
+    "recommendation": {
+      "decision": "route",
+      "gaps": [
         "C3"
       ],
       "reason": "checks failed"

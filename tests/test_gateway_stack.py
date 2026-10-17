@@ -286,3 +286,21 @@ def test_emit_model_access_denied_writes_the_alarm_metric():
     emit_model_access_denied(CW(), "amazon.nova-pro-v1:0")
     assert sent[0]["Namespace"] == "PriorAuth/Operator"
     assert sent[0]["MetricData"][0]["MetricName"] == "ModelAccessDenied"
+
+
+def test_the_emitted_metric_is_the_one_the_alarm_watches(template):
+    """CloudWatch treats each dimension set as a separate metric: at least one datapoint must carry
+    exactly the alarm's dimensions (found live, 2026-10-17: a ModelId-only datapoint never fired it)."""
+    from prior_auth.agent.operator import emit_model_access_denied
+    sent = []
+
+    class CW:
+        def put_metric_data(self, **kw):
+            sent.append(kw)
+
+    emit_model_access_denied(CW(), "amazon.nova-pro-v1:0")
+    alarm = _one(template, "AWS::CloudWatch::Alarm", AlarmName="prior-auth-model-access-denied")
+    watched = sorted((d["Name"], d["Value"]) for d in alarm.get("Dimensions", []))
+    emitted = [sorted((d["Name"], d["Value"]) for d in m.get("Dimensions", [])) for m in sent[0]["MetricData"]
+               if m["MetricName"] == alarm["MetricName"]]
+    assert sent[0]["Namespace"] == alarm["Namespace"] and watched in emitted

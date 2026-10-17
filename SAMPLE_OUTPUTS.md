@@ -1,10 +1,10 @@
 # Sample outputs
 
-An agent on Amazon Bedrock AgentCore assembles a prior-authorization case; a clinician decides ([README](README.md), [article](docs/article-draft.md)).
+An agent on Amazon Bedrock AgentCore assembles a prior-authorization case; a clinician decides ([README](README.md), [article draft](docs/article-draft.md)).
 
 Real runs on the deployed system, with synthetic data only. Each sample is generated from a committed, redacted evidence file named beside it (`python -m scripts.sample_outputs`); account IDs, ARNs, gateway URLs, client IDs and tokens are masked.
 
-> **Reproducibility.** The boundary results (tool lists, refusals, Cedar denials, write-once, the chain checks) are deterministic. The model's citations are not, even at temperature 0: in the harness, one of six Nova Pro trials on an approvable case cited lines that do not exist and was routed to a clinician instead of approved. A different run can cite differently; it cannot approve without passing every check.
+> **Reproducibility.** The boundary results (tool lists, refusals, Cedar denials, write-once, the chain checks) are deterministic. The model's citations are not, even at temperature 0: in the harness, one of six Nova Pro trials on an approvable case cited pages that do not exist and was routed to a clinician instead of approved. A different run can cite differently; it cannot approve without passing every check.
 
 1. [Two gateways, side by side](#1-two-gateways-side-by-side)
 2. [Clean case: a cited packet, approved](#2-clean-case-a-cited-packet-approved)
@@ -59,6 +59,14 @@ Stored packet: SSE `aws:kms`, Object Lock `GOVERNANCE`, sha256 `3c698cbb4c2914d0
 ```
 
 `SYN-CASE-CF-1` is `SYN-CASE-CLEAN-1` with the functional assessment removed. Nothing is denied; the case goes to a clinician with C3 marked. <sub>Source: [`evidence/2026-10-16/beats-2-and-3.json`](evidence/2026-10-16/beats-2-and-3.json)</sub>
+
+The packet the clinician sees is a checklist. Computed here by the real checks and `decide()` from the case's gold citations ([`src/prior_auth/gold.py`](src/prior_auth/gold.py)):
+
+| Criterion | Requirement | Status | Evidence | Source |
+|---|---|---|---|---|
+| C1 | At least six weeks of conservative therapy, documented as completed visits. | **Met** | Eight visits over seven weeks; conservative therapy completed. | SYN-DOC-103-PT p1 l3 |
+| C2 | Imaging confirms the diagnosis: disc herniation with nerve root compression. | **Met** | Impression: L4-L5 disc herniation with nerve root compression. | SYN-DOC-103-MRI p1 l3 |
+| C3 | Functional limitation documented with an Oswestry Disability Index of at least 40 percent. | **Not found** |  |  |
 
 ## 4. The agent refused at the reviewer gateway
 

@@ -97,22 +97,33 @@ def render(trials: list[dict]) -> str:
             f"{s['auto_on_approve']} of {s['n_approve']} | {s['disagreements']} | {s['truncated']} | "
             f"{s['p50']:.1f} s / {s['p95']:.1f} s | ${s['cost_per_trial']:.4f} |")
     notes = annotations()
-    if notes:
+    review = [t for t in trials if t["label"] == "needs review" and t["outcome"] == "routed" and t.get("run_id") in notes]
+    if review:
+        lines += ["", "## Did the designed check fire?", "",
+                  "For every routed needs-review trial: the check each case was built to trigger, and whether it fired. "
+                  "Reconstructed from each run's stored recommendation record, not re-run ([annotate.py](annotate.py)).", "",
+                  "| Model | Case | Trial | Built to trigger | Fired | Other failures |", "|---|---|---|---|---|---|"]
+        for t in review:
+            note = notes[t["run_id"]]
+            change = CASE_CHANGES.get(t["case_id"], {})
+            fired = designed_check_fired(change, note)
+            other = [f for f in plain_failures(note) if DESIGNED.get(change.get("type"), "\0") not in f]
+            lines.append(f"| `{t['model_id']}` | {t['case_id']} | {t['trial']} | {describe(change)} | "
+                         f"{'yes' if fired else 'no'} | {'; '.join(other) if other else 'none'} |")
+    approvable = [t for t in trials if t["label"] == "approve" and t["outcome"] != "approved" and t.get("run_id") in notes]
+    if approvable:
         lines += ["", "## Approvable trials that were routed", "",
                   "Not re-run. The cause is reconstructed from each run's stored recommendation record: its "
                   "citations are re-checked against the trusted chart ([annotate.py](annotate.py)).", ""]
-        for t in trials:
-            note = notes.get(t.get("run_id"))
-            if not note:
-                continue
+        for t in approvable:
+            note = notes[t["run_id"]]
             cites = "; ".join(
                 f"{c['criterion_id']} cited {c['doc_id']} page {c['page']} line {c['line']}"
                 + ("" if c.get("cited_line_exists", True) else f" (no such line: the document has "
                    f"{c.get('document_pages')} page{'s' if c.get('document_pages') != 1 else ''})")
                 for c in note.get("citations", []))
             lines.append(f"- `{t['model_id']}` {t['case_id']} trial {t['trial']}: {cites}. "
-                         f"Checks: {'; '.join(note.get('check_failures', []))}. Routed to a clinician; "
-                         f"nothing was approved.")
+                         f"Checks: {'; '.join(plain_failures(note))}. Routed to a clinician; nothing was approved.")
     excluded = [t for t in trials if t["outcome"] == "operator_alert"]
     lines += ["", f"Operator-alert trials excluded from the rates: {len(excluded)}.",
               f"Total model cost of the run: ${sum(cost(t) for t in trials):.4f}.", "",
@@ -133,6 +144,45 @@ def render(trials: list[dict]) -> str:
 def annotations(path: Path = None) -> dict:
     path = path or ANNOTATIONS
     return json.loads(path.read_text()) if path.exists() else {}
+
+
+# The check each needs-review case was built to trigger (data/cases/cases.json provenance).
+DESIGNED = {"forge_unindexed_doc": "is not in the chart index", "other_patient_doc": "belongs to another patient"}
+
+
+def _case_changes() -> dict:
+    cases = json.loads((HERE.parent / "data" / "cases" / "cases.json").read_text())["cases"]
+    return {cid: (c.get("provenance") or {}).get("change") or {} for cid, c in cases.items()}
+
+
+CASE_CHANGES = _case_changes()
+
+
+def describe(change: dict) -> str:
+    if change.get("type") == "remove_evidence":
+        return f"{change['criterion']} Not found (evidence removed)"
+    if change.get("type") == "forge_unindexed_doc":
+        return "same patient: forged document not in the chart index"
+    if change.get("type") == "other_patient_doc":
+        return "same patient: another patient's document"
+    return "n/a"
+
+
+def plain_failures(note: dict) -> list[str]:
+    """The check failures, with citations to pages that do not exist stated as such (the source-match
+    check reports them as values shorter than its minimum, because the filled value is empty)."""
+    missing = [c["criterion_id"] for c in note.get("citations", []) if not c.get("cited_line_exists", True)]
+    out = [f for f in note.get("check_failures", [])
+           if not any(f == f"source match: value for {cid} is shorter than 4 characters" for cid in missing)]
+    if missing:
+        out.append(f"{', '.join(missing)} cited pages that do not exist, so source match refused them")
+    return out
+
+
+def designed_check_fired(change: dict, note: dict) -> bool:
+    if change.get("type") == "remove_evidence":
+        return change["criterion"] in (note.get("gaps") or [])
+    return any(DESIGNED.get(change.get("type"), "\0") in f for f in note.get("check_failures", []))
 
 
 def load(path: Path = TRIALS) -> list[dict]:

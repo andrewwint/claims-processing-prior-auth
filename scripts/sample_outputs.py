@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 from prior_auth import stores
+from prior_auth.gold import checklist
 from scripts.redact import find_unredacted, redact
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -80,7 +81,12 @@ def beat3() -> list[str]:
     return ["## 3. One note removed: routed, gap marked", "",
             *_block(json.dumps({k: r[k] for k in ("outcome", "reason", "gaps")}, indent=2), "json"), "",
             "`SYN-CASE-CF-1` is `SYN-CASE-CLEAN-1` with the functional assessment removed. Nothing is denied; "
-            "the case goes to a clinician with C3 marked. " + _src("beats23"), ""]
+            "the case goes to a clinician with C3 marked. " + _src("beats23"), "",
+            "The packet the clinician sees is a checklist. Computed here by the real checks and `decide()` from the "
+            "case's gold citations ([`src/prior_auth/gold.py`](src/prior_auth/gold.py)):", "",
+            "| Criterion | Requirement | Status | Evidence | Source |", "|---|---|---|---|---|",
+            *[f"| {r['criterion']} | {r['requirement']} | **{r['status']}** | {r['evidence']} | {r['source']} |"
+              for r in checklist("SYN-CASE-CF-1")], ""]
 
 
 def beat4() -> list[str]:
@@ -169,13 +175,13 @@ def harness() -> list[str]:
 def render() -> str:
     lines = ["# Sample outputs", "",
              "An agent on Amazon Bedrock AgentCore assembles a prior-authorization case; a clinician decides "
-             "([README](README.md), [article](docs/article-draft.md)).", "",
+             "([README](README.md), [article draft](docs/article-draft.md)).", "",
              "Real runs on the deployed system, with synthetic data only. Each sample is generated from a committed, "
              "redacted evidence file named beside it (`python -m scripts.sample_outputs`); account IDs, ARNs, "
              "gateway URLs, client IDs and tokens are masked.", "",
              "> **Reproducibility.** The boundary results (tool lists, refusals, Cedar denials, write-once, the "
              "chain checks) are deterministic. The model's citations are not, even at temperature 0: in the harness, "
-             "one of six Nova Pro trials on an approvable case cited lines that do not exist and was routed to a "
+             "one of six Nova Pro trials on an approvable case cited pages that do not exist and was routed to a "
              "clinician instead of approved. A different run can cite differently; it cannot approve without "
              "passing every check.", "",
              "1. [Two gateways, side by side](#1-two-gateways-side-by-side)",

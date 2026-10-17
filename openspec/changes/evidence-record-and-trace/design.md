@@ -97,7 +97,7 @@ So decision records are produced through the real gateway, authorizer and Cedar 
   - both tool Lambda log groups: `/aws/lambda/prior-auth-agent-tools` and `/aws/lambda/prior-auth-reviewer-tools`
   - error paths, through an injected failure in each step, so exception messages are scanned too
 - **Positive control** before the clean run:
-  1. Plant a unique canary in one span attribute and one log line, through a test-only path.
+  1. Plant a unique canary in one span attribute and one log line, through a test-only path. (Recorded 2026-10-16; the path was then removed, because the intake client could reach it.)
   2. The scan must find both.
   3. Then the clean run must find zero.
 
@@ -109,7 +109,7 @@ Not used. The Memory IAM deny and its evidence are deferred to `post-monday-hard
 
 ### D10. Trace path (PM, 2026-10-16)
 
-`aws/spans` has received no spans since July, though Transaction Search is ACTIVE. The diagnosis is time-boxed to one hour. If spans still don't arrive, the canary scan reads X-Ray traces (`BatchGetTraces`) as its span source, and the evidence records which path was used.
+`aws/spans` had received no spans since July, though Transaction Search was ACTIVE (it began receiving spans during the 2026-10-16 clean run; the runtime's own spans needed the ADOT entry point and `logs:PutResourcePolicy`). The diagnosis is time-boxed to one hour. If spans still don't arrive, the canary scan reads X-Ray traces (`BatchGetTraces`) as its span source, and the evidence records which path was used.
 
 ## Risks / Trade-offs
 

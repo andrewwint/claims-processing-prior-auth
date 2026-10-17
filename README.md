@@ -20,11 +20,11 @@ If you have ten minutes, read in this order:
    | Beat | What it shows                                                                                                                    | Status                                                                              |
    | ---- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
    | 1    | Both gateways side by side: the agent's five case-building tools and no denial tool; the reviewer gateway's clinician-only tools | **Proven**                                                                          |
-   | 2    | The Strands agent (three gathering tools, Nova Pro) builds a cited packet; `decide()` approves                                   | **Proven**                                                                          |
-   | 3    | One note removed: routed to the reviewer, gap marked                                                                             | **Proven**                                                                          |
+   | 2    | The Strands agent (three gathering tools, Nova Pro) builds a cited packet; `decide()` approves                                   | **Shown on the deployed system.** Rows proven, except G8 and G11 (deferred: mutation run, evidence-rule redesign) and B7 (recorded, not tested locally) |
+   | 3    | One note removed: routed to the reviewer, gap marked                                                                             | **Proven** |
    | 4    | The agent refused at the reviewer gateway, first by the authorizer, then by Cedar                                                | **Proven**                                                                          |
-   | 5    | A clinician decides with the same tool the agent was refused; the decision record chains to the recommendation                   | **Proven** (scripted clinician sign-in; a hosted-UI sign-in by a person is pending)  |
-   | 6    | A trace with no chart text: a canary scan with a positive control                                                                | **Proven** for normal, refusal and clinician-decision paths; error paths: partial    |
+   | 5    | A clinician decides with the same tool the agent was refused; the decision record chains to the recommendation                   | **Shown on the deployed system** with a scripted clinician sign-in; the hosted-UI sign-in by a person is pending (B8) |
+   | 6    | A trace with no chart text: a canary scan with a positive control                                                                | **Partial:** the trace content is proven (L1); the canary scan covers normal, refusal and clinician-decision paths, not injected error paths (L2) |
 
    The harness: six cases × Nova Pro and Sonnet 4.6 × three trials, pre-registered in [evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md), reported in [evaluation/report.md](evaluation/report.md).
 
@@ -99,7 +99,7 @@ This repository is a reference implementation that can be torn down the same day
 This repository is built backwards from a five-minute demo. These are deliberately out of scope, and each one is planned in [`openspec/changes/post-monday-hardening`](openspec/changes/post-monday-hardening/proposal.md).
 
 - **Reviewer identity is reported, not verified.** See the threat model above.
-- **One tenant.** There are no tenant groups in use, no cross-tenant tests, and no per-tenant keys. The workbench page reads the review queue with the operator's local AWS credentials. Only decisions go through the reviewer gateway under the clinician's token.
+- **One tenant.** The tenant groups exist in Cognito, but nothing is scoped by them: no tenant-scoped prefixes, no cross-tenant tests, and no per-tenant keys. The workbench page reads the review queue with the operator's local AWS credentials. Only decisions go through the reviewer gateway under the clinician's token.
 - **Evidence rules are narrow.** They cover the demo cases. Adversarial review found further gaps that would let a negated or hedged line count as support:
   - negators outside the list ("w/o", "neg.", "cannot confirm", typographic apostrophes, fullwidth or zero-width characters)
   - negation in a section header above the line
@@ -113,11 +113,9 @@ This repository is built backwards from a five-minute demo. These are deliberate
 - **The decision clock** is tested against the 7-day and 72-hour windows only, not edge cases.
 - **No redeploy-from-scratch test.** A verified teardown runs after the demo period.
 - **No mutation testing** of the checks module.
-- **The decision's hash is in a log line, not a span.** The chain decision → recommendation → runtime span is verified from stored bytes (`scripts/verify_chain.py`). The reviewer Lambda logs the decision record's hash, but no span carries it.
 - **Some storage refusals are simulated.** The runtime and tool roles trust only their service principals, so their refusals (writes to `decisions/`, deletes, retention changes, governance bypass, another KMS key) are evaluated with the IAM policy simulator against the deployed bucket policy, not by live calls. Write-once is shown live.
 - **Governance mode, with one bypass role.** The teardown role (assumable by account administrators) can delete every version of a record and so let a different one be created on the same run. Nobody else can delete, hide or replace a record. Production uses compliance mode.
 - **The workbench is a local demo page.** Sessions live in memory; it serves one operator on 127.0.0.1.
-- **The runtime keeps a test-only path** for the canary scan's positive control. It accepts only a fixed-format control token and runs no case.
 - **Direct Lambda invocation** by account administrators bypasses both gateway layers (see the threat model above).
 
 ## Data
