@@ -105,14 +105,11 @@ This repository is built backwards from a five-minute demo. These are deliberate
 - **Operator alerting is a metric and a CloudWatch alarm.** There is no SNS topic; the alarm's state change is the evidence.
 - **Memory is not used,** and no Memory evidence is recorded. **No Knowledge Base:** policy lookup is an exact match on (payer, CPT).
 - **The decision clock** is tested against the 7-day and 72-hour windows only, not edge cases.
-- **No redeploy-from-scratch test.** One verified teardown is recorded.
+- **No redeploy-from-scratch test.** A verified teardown runs after the demo period.
 - **No mutation testing** of the checks module.
 - **The decision's hash is in a log line, not a span.** The chain decision → recommendation → runtime span is verified from stored bytes (`scripts/verify_chain.py`). The reviewer Lambda logs the decision record's hash, but no span carries it.
 - **Some storage refusals are simulated.** The runtime and tool roles trust only their service principals, so their refusals (writes to `decisions/`, deletes, retention changes, governance bypass, another KMS key) are evaluated with the IAM policy simulator against the deployed bucket policy, not by live calls. Write-once is shown live.
-- **The evidence key's policy is the CDK default.** It grants the account root `kms:*`, so key use is scoped by IAM (each role's grants are conditioned on the key's alias), not by the key policy. The design's "encrypt only for writers, decrypt only for the reviewer service and the verifier" is not enforced at the key, and the approval service also decrypts (it reads packets).
-- **The runtime role may set log resource policies** on `/aws/bedrock-agentcore/runtimes/*` (`logs:PutResourcePolicy`), which AgentCore uses to deliver spans to the agent's log group. Whether CloudWatch Logs applies that resource scope or treats the action as account-wide is not verified.
 - **Governance mode, with one bypass role.** The teardown role (assumable by account administrators) can delete every version of a record and so let a different one be created on the same run. Nobody else can delete, hide or replace a record. Production uses compliance mode.
-- **Fixture approvals write no decision record.** The D1 fixture packets (`SYN-PKT-*`), kept so the boundary checks can be rerun, are approved or refused by the approval service but are not runs, so no recommendation or decision record exists for them. Live packets (`PKT-<case>`) always get one.
 - **The workbench is a local demo page.** Sessions live in memory; it serves one operator on 127.0.0.1.
 - **The runtime keeps a test-only path** for the canary scan's positive control. It accepts only a fixed-format control token and runs no case.
 - **Direct Lambda invocation** by account administrators bypasses both gateway layers (see the threat model above).
