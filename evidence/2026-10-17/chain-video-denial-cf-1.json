@@ -1,0 +1,27 @@
+{
+  "case_id": "SYN-CASE-CF-1",
+  "checks": {
+    "decision_exists": true,
+    "decision_names_this_run": true,
+    "decision_points_at_recommendation": true,
+    "decision_trace_carries_decision_hash": true,
+    "recommendation_hash_matches_stored_bytes": true,
+    "span_carries_recommendation_hash": true,
+    "span_names_this_run": true
+  },
+  "decision": "adverse_determination",
+  "decision_key": "decisions/SYN-CASE-CF-1/20261017T184330Z-518a638a.json",
+  "decision_record_sha256": "f978fdbc1a7e63c60b62d23f904db3ba898b77d34b4d3ba592c0f342ad892191",
+  "decision_segment": {
+    "trace_id": "1-6ad3c21b-4a8dba2950cd25b226720b16"
+  },
+  "recommendation_record_sha256": "fde13264ee0ee82567c0d21172e8312da7f7d4a93ea9245c1d24dfec7a23f7ec",
+  "run_id": "20261017T184330Z-518a638a",
+  "span": {
+    "name": "POST /invocations",
+    "run_id": "20261017T184330Z-518a638a",
+    "span_id": "188b08c75e51258e",
+    "trace_id": "6ad3c1cb62607288798d3e092f3ab760"
+  },
+  "verified": true
+}
