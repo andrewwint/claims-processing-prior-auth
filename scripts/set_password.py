@@ -16,7 +16,12 @@ from scripts import gateway_client as gc
 
 def main() -> int:
     username = sys.argv[1] if len(sys.argv) > 1 else "syn-clinician-1"
+    print("The pool requires at least 16 characters (no other rules); a passphrase works.")
+    print("Note: make smoke and scripts.record_beat5 reset this user's password; set it after running them.")
     password = getpass.getpass(f"New password for {username}: ")
+    if len(password) < 16:
+        print("Too short: at least 16 characters.", file=sys.stderr)
+        return 1
     if password != getpass.getpass("Again: "):
         print("The passwords differ.", file=sys.stderr)
         return 1
