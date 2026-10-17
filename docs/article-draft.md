@@ -173,4 +173,4 @@ An agent can shorten the wait for a decision. It can clear the obvious approvals
 
 The design follows from that one rule. Take the denial tool away and enforce it outside the prompt. Ground every claim in a cited source. Send every failure to a person. Keep a record an auditor can follow, with no chart text in the logs. Choose models by how rarely they approve what they should not.
 
-The reference implementation is on GitHub at \[REPO LINK\]. Every claim about how the system behaves maps to a test or a recorded artifact there, and every regulatory claim cites its source.
+The reference implementation is on GitHub at [andrewwint/claims-processing-prior-auth](https://github.com/andrewwint/claims-processing-prior-auth). Every claim about how the system behaves maps to a test or a recorded artifact there, and every regulatory claim cites its source.
