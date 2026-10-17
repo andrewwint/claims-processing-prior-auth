@@ -14,8 +14,9 @@ def test_positive_control_fails_without_deployment_identifiers():
 
 
 def test_hits_are_masked_never_printed_whole():
-    hits = ps.scan_text("arn:aws:iam::987654321098:role/x", [], set())
-    assert hits and all("987654321098" not in value for _, value, _ in hits)
+    account = "9876" + "54321098"  # built at run time, so this file never matches the scan itself
+    hits = ps.scan_text(f"arn:aws:iam::{account}:role/x", [], set())
+    assert hits and all(account not in value for _, value, _ in hits)
 
 
 def test_the_scanner_does_not_match_its_own_source():
@@ -32,3 +33,8 @@ def test_every_allowlist_entry_is_justified_and_never_a_restricted_word():
     for e in entries:
         assert all(isinstance(e.get(k), str) and e[k].strip() for k in ("value", "where", "why")), e
         assert not any(w in e["value"].lower() for w in ps.RESTRICTED_WORDS), e
+
+
+def test_the_control_plants_values_that_are_never_allowlisted():
+    planted = "4040" + "30302020"
+    assert planted not in ps.allowed()

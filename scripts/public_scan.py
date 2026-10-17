@@ -93,7 +93,7 @@ def scan_text(text: str, exact: list[str], allow: set[str]) -> list[tuple[str, s
 def positive_control(exact: list[str], allow: set[str]) -> list[str]:
     """Every needle kind must catch a planted value; returns the kinds that did not."""
     # Built at run time, so this file's own text never matches.
-    acct = "9876" + "54321098"
+    acct = "4040" + "30302020"  # never allowlisted
     planted = {
         "deployment identifier": exact[0] if exact else None,
         "restricted word": "see the " + RESTRICTED_WORDS[0] + " report",
