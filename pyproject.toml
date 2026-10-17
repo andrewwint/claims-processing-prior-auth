@@ -20,6 +20,10 @@ runtime = [
 
 [dependency-groups]
 dev = ["pytest==9.1.1", "pycognito==2024.5.1"]
+workbench = [
+    "authlib==1.6.5",
+    "requests==2.34.2",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
