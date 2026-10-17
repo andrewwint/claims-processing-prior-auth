@@ -128,6 +128,12 @@ Also kept: one evidence bucket with the hash chain and its verify script (L4, L6
 | R5 | The rules ban automated adverse decisions, not automated processing; approving a clearly covered request is allowed. | Washington RCW 48.43.830(3)(a) as amended: "Algorithms may be used to process and approve prior authorization requests". Colorado C.R.S. 10-16-112.7(5)(a): AI "may be used to assist with utilization review, including expedited approvals". | citation | proven (primary sources, 2026-10-16) |
 | R6 | Requests arrive as X12 278 transactions or as FHIR bundles following the Da Vinci Prior Authorization Support implementation guide. | The HL7 Da Vinci PAS implementation guide, and the CMS-0057-F text on the Prior Authorization API. | citation | open (citation only; no build work). |
 
+## Publication
+
+| # | Claim | Evidence that proves it | Type | Change | Status |
+|---|---|---|---|---|---|
+| V1 | The article's demo video shows the system "running on AgentCore, with synthetic data". | The video is recorded against the published commit (its SHA shown or stated), from `scripts/demo.py --redact` and the workbench, with no account IDs, ARNs, gateway URLs, client IDs or tokens on screen. The `[DEMO VIDEO LINK]` placeholder in the article is replaced only after that review. | recorded | `clinician-workbench` | open (PM, 2026-10-16: recorded Saturday by Andrew, after his workbench sign-in) |
+
 ## Not tracked here
 
 Author experience, earlier articles (the text-to-SQL, OKF and one-change articles) and personal context (the clinic, the earlier platform work) are the author's own statements, not claims about this implementation. Design opinions (for example, that translation belongs in front of the agent) are not tracked either.
