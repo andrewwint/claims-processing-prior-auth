@@ -1,0 +1,141 @@
+{
+  "all_same": true,
+  "checks": {
+    "agent_rejected_at_reviewer_approval_tool": {
+      "baseline": "beat1-and-approval-checks-9a45b1b.json#agent_rejected_at_reviewer_approval_tool",
+      "live": {
+        "error_code": -32002,
+        "http_status": 403
+      },
+      "recorded": {
+        "error_code": -32002,
+        "http_status": 403
+      },
+      "same": true
+    },
+    "agent_rejected_at_reviewer_denial_tool": {
+      "baseline": "beat1-and-approval-checks-9a45b1b.json#agent_rejected_at_reviewer_denial_tool",
+      "live": {
+        "error_code": -32002,
+        "http_status": 403
+      },
+      "recorded": {
+        "error_code": -32002,
+        "http_status": 403
+      },
+      "same": true
+    },
+    "agent_tools_list": {
+      "baseline": "beat1-and-approval-checks-9a45b1b.json#beat1_agent_gateway_tools_list",
+      "live": {
+        "http_status": 200,
+        "tools": [
+          "AgentTools___check_eligibility",
+          "AgentTools___extract_clinical_evidence",
+          "AgentTools___fetch_policy_criteria",
+          "AgentTools___route_to_reviewer",
+          "ApprovalService___record_approval"
+        ]
+      },
+      "recorded": {
+        "http_status": 200,
+        "tools": [
+          "AgentTools___check_eligibility",
+          "AgentTools___extract_clinical_evidence",
+          "AgentTools___fetch_policy_criteria",
+          "AgentTools___route_to_reviewer",
+          "ApprovalService___record_approval"
+        ]
+      },
+      "same": true
+    },
+    "approval_failing_packet_refused": {
+      "baseline": "beat1-and-approval-checks-9a45b1b.json#approval_failing_packet_refused",
+      "live": {
+        "approved": false,
+        "http_status": 200,
+        "reasons": [
+          "criterion not met: C3"
+        ],
+        "status": "refused"
+      },
+      "recorded": {
+        "approved": false,
+        "http_status": 200,
+        "reasons": [
+          "criterion not met: C3"
+        ],
+        "status": "refused"
+      },
+      "same": true
+    },
+    "approval_forged_value_packet_refused": {
+      "baseline": "beat1-and-approval-checks-9a45b1b.json#approval_forged_value_packet_refused",
+      "live": {
+        "approved": false,
+        "http_status": 200,
+        "reasons": [
+          "source match: value for C2 not at SYN-DOC-MRI-001 p1 l3",
+          "criterion not met: C2"
+        ],
+        "status": "refused"
+      },
+      "recorded": {
+        "approved": false,
+        "http_status": 200,
+        "reasons": [
+          "source match: value for C2 not at SYN-DOC-MRI-001 p1 l3",
+          "criterion not met: C2"
+        ],
+        "status": "refused"
+      },
+      "same": true
+    },
+    "approval_missing_hash_denied_by_cedar": {
+      "baseline": "calls.json#B6_record_approval_missing_hash_denied_by_policy",
+      "live": {
+        "error_code": -32002,
+        "http_status": 200
+      },
+      "recorded": {
+        "error_code": -32002,
+        "http_status": 200
+      },
+      "same": true
+    },
+    "approval_passing_packet_approved": {
+      "baseline": "beat1-and-approval-checks-9a45b1b.json#approval_passing_packet_approved",
+      "live": {
+        "approved": true,
+        "http_status": 200,
+        "status": "recorded"
+      },
+      "recorded": {
+        "approved": true,
+        "http_status": 200,
+        "status": "recorded"
+      },
+      "same": true
+    },
+    "reviewer_tools_list_clinician": {
+      "baseline": "beat1-and-approval-checks-9a45b1b.json#beat1_reviewer_gateway_tools_list_clinician",
+      "live": {
+        "http_status": 200,
+        "tools": [
+          "ReviewerTools___record_adverse_determination",
+          "ReviewerTools___record_clinician_approval"
+        ]
+      },
+      "recorded": {
+        "http_status": 200,
+        "tools": [
+          "ReviewerTools___record_adverse_determination",
+          "ReviewerTools___record_clinician_approval"
+        ]
+      },
+      "same": true
+    }
+  },
+  "date": "2026-10-16",
+  "sha": "d95c82bd5328bc722909ad442432c1ba2b4224f0"
+}
