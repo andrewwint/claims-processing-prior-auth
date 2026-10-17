@@ -1,0 +1,19 @@
+{
+  "_about": "Reviewed values the public scan's generic patterns match but that are safe to publish. Each entry names the value, where it appears and why. Exact deployment identifiers and restricted words can never be allowed here. tests/test_public_scan.py checks every entry is justified.",
+  "allowed": [
+    {"value": "23616783+andrewwint@users.noreply.github.com", "where": "commit metadata", "why": "GitHub's public no-reply address for the repository owner; used deliberately instead of a personal email."},
+    {"value": "noreply@anthropic.com", "where": "commit trailers", "why": "The Co-Authored-By trailer's public no-reply address."},
+    {"value": "someone@example.com", "where": "tests/test_redact.py", "why": "Fake fixture on the reserved example.com domain."},
+    {"value": "alerts@example.com", "where": "tests/test_budget_stack.py", "why": "Fake fixture on the reserved example.com domain."},
+    {"value": "000000000000", "where": "tests", "why": "Fake account ID used as the CDK test environment."},
+    {"value": "111111111111", "where": "tests/test_guardrails.py", "why": "Fake account ID in a guardrail fixture."},
+    {"value": "222222222222", "where": "tests/test_guardrails.py", "why": "Fake account ID in a guardrail fixture."},
+    {"value": "123456789012", "where": "tests", "why": "AWS's documented example account ID, in redaction fixtures."},
+    {"value": "arn:aws:bedrock-agentcore:us-east-1:123456789012:gateway/prior-auth-reviewer-abc123", "where": "tests/test_policies.py", "why": "Fake ARN on the example account."},
+    {"value": "arn:aws:iam::123456789012:role/prior-auth-runtime-role", "where": "tests/test_demo_redact.py", "why": "Fake ARN on the example account."},
+    {"value": "AKIAABCDEFGHIJKLMNOP", "where": "tests/test_redact.py", "why": "Fake access key shape in a redaction fixture."},
+    {"value": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiIxMjMifQ.c2lnbmF0dXJl", "where": "tests/test_redact.py", "why": "Fake JWT (subject 123, signature 'signature')."},
+    {"value": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ4In0.c2ln", "where": "tests/test_demo_redact.py", "why": "Fake JWT (subject x)."},
+    {"value": "AWSReservedSSO_AdministratorAccess_0123abcd4567ef89", "where": "tests/test_demo_redact.py", "why": "Fake SSO role suffix in a redaction fixture."}
+  ]
+}
