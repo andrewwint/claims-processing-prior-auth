@@ -134,6 +134,7 @@ This repository is built backwards from a five-minute demo. These are deliberate
 - **The decision clock** is tested against the 7-day and 72-hour windows only, not edge cases.
 - **No redeploy-from-scratch test.** A verified teardown runs after the demo period.
 - **No mutation testing** of the checks module.
+- **Sampling settings are recorded as built, not captured.** Each trial records the sampling settings rebuilt from the model client's request builder, not taken from the request on the wire.
 - **Some storage refusals are simulated.** The runtime and tool roles trust only their service principals, so their refusals (writes to `decisions/`, deletes, retention changes, governance bypass, another KMS key) are evaluated with the IAM policy simulator against the deployed bucket policy, not by live calls. Write-once is shown live.
 - **Governance mode, with one bypass role.** The teardown role (assumable by account administrators) can delete every version of a record and so let a different one be created on the same run. Nobody else can delete, hide or replace a record. Production uses compliance mode.
 - **The workbench is a local demo page.** Sessions live in memory; it serves one operator on 127.0.0.1.

@@ -125,7 +125,7 @@ The answer is two records with two jobs.
 
 The trace answers "what happened" without holding a word of the chart. The hash in the trace proves the evidence record was not changed after the fact. The timestamps answer the CMS clock.
 
-Defaults work against you here. In this build, two separate settings each sent chart text to telemetry, one into spans and one into log records. Turning off either one alone still leaked. Only a planted canary, searched for everywhere, proved both were closed.
+Defaults work against you here. In this build, two separate settings each sent chart text to telemetry, one into spans and one into log records. Turning off either one alone still leaked. Only a planted canary, searched for in every span and log record the runs produced, proved both were closed.
 
 I did this kind of work at Crisis Text Line: PII redaction, data contracts, and audit hardening on a platform holding some of the most sensitive conversations there are. The lesson carries over. Decide what may never appear in a log before you write the first logging line.
 
@@ -144,7 +144,7 @@ The cases are synthetic, because real charts do not belong in a test harness. Th
 
 I used the same one-change method in [The Reader Who Never Asks](https://medium.com/@andrewwint/the-reader-who-never-asks-46534ee4c702), where one word split how models read a sentence. In prior authorization, the change is one missing note.
 
-A few rules keep the comparison honest. Run each case several times and show every trial. Count a response cut off at the token limit as a failure, not a skip. Record each model's sampling settings, because some models only accept their defaults. Label the cases as synthetic and author-labeled, never as clinical ground truth.
+A few rules keep the comparison honest. Run each case several times and show every trial. Count a response cut off at the token limit as a failure, not a skip. Record the sampling settings each model was given, because model families accept different ones; here, one candidate rejects temperature and top-p together. Label the cases as synthetic and author-labeled, never as clinical ground truth.
 
 On six synthetic cases, three trials each, Nova Pro and Sonnet 4.6 each made zero false approvals in twelve trials that needed review. That's a small sample: the 95% upper bound is still 25%. Sonnet cleared one more approvable case, at about five times the cost.
 

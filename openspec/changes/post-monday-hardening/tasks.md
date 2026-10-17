@@ -7,4 +7,5 @@
 - [ ] 3.1 Memory deny on the runtime and tool roles, plus a recorded `list-memories` (A5).
 - [ ] 3.2 Per-tenant customer-managed keys.
 - [ ] 3.3 Decision-clock edge cases (L7).
+- [ ] 3.4 Error-path canary scan (L2, A6): inject a failure at each step on the deployed runtime and scan the exception paths for chart text, with a positive control (PM, 2026-10-17).
 - [ ] 4.1 Redeploy test: after a verified teardown, a fresh deploy from code, with the smoke checks re-recorded.
