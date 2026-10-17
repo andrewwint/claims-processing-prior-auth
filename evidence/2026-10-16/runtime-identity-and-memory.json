@@ -1,0 +1,37 @@
+{
+  "agentcore_memories_in_account": [],
+  "app_clients": {
+    "agent": "<agent-client-id>",
+    "clinician": "<clinician-client-id>",
+    "intake": "<intake-client-id>"
+  },
+  "date": "2026-10-16",
+  "runtime": {
+    "authorizer_allowed_clients": [
+      "<intake-client-id>"
+    ],
+    "environment": {
+      "AGENT_GATEWAY_URL": "<agent-gateway-url>",
+      "EVIDENCE_BUCKET": "prior-auth-evidence-<account-id>",
+      "IDENTITY_PROVIDER_NAME": "prior-auth-agent-m2m",
+      "MODEL_ALLOW_LIST": "amazon.nova-pro-v1:0",
+      "MODEL_ID": "amazon.nova-pro-v1:0",
+      "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT": "false",
+      "OTEL_SEMCONV_STABILITY_OPT_IN": "gen_ai_unredacted_attributes="
+    },
+    "has_memory_configuration": false,
+    "network_mode": "PUBLIC",
+    "status": "READY"
+  },
+  "runtime_role_memory_denies": [
+    {
+      "actions": [
+        "bedrock-agentcore:CreateMemory",
+        "bedrock-agentcore:CreateEvent",
+        "bedrock-agentcore:RetrieveMemoryRecords"
+      ],
+      "resource": "*"
+    }
+  ],
+  "sha": "fe6102950089312cce5fb294cd206f3d16543071"
+}
