@@ -20,6 +20,10 @@ runtime = [
 
 [dependency-groups]
 dev = ["pytest==9.1.1", "pycognito==2024.5.1"]
+video = [
+    "ocrmac==1.0.0",
+    "playwright==1.55.0",
+]
 workbench = [
     "authlib==1.6.5",
     "requests==2.34.2",

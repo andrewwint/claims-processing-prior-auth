@@ -50,3 +50,15 @@ def test_tool_result_parses_success_and_refusals():
 
 def test_bound_to_loopback_only():
     assert wb.HOST == "127.0.0.1"
+
+
+def test_a_routed_run_shows_its_evidence_from_the_recommendation_record():
+    """Routed runs store no packet; the checklist comes from the recommendation's citations,
+    with values read from the trusted chart (the model's values are never used)."""
+    from prior_auth.gold import gold_citations
+    rec = {"citations": gold_citations("SYN-CASE-CF-1")}
+    rebuilt = wb.findings_from_recommendation(rec, "SYN-CASE-CF-1")
+    rows = wb.criterion_rows(CRITERIA, {"reason": "criteria not met", "gaps": ["C3"]}, rebuilt)
+    assert [r["status"] for r in rows] == ["Met", "Met", "Not found"]
+    assert rows[0]["source"].startswith("SYN-DOC-103-PT, page 1, line ") and "visits" in rows[0]["detail"]
+    assert wb.findings_from_recommendation(None, "SYN-CASE-CF-1") is None

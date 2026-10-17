@@ -60,6 +60,18 @@ def criterion_rows(criteria: list[dict], queued: dict, packet: dict | None) -> l
     return rows
 
 
+def findings_from_recommendation(recommendation: dict | None, case_id: str) -> dict | None:
+    """The run's evidence when its packet is not stored (only approvals store one): the
+    recommendation record's citations, with each value filled from the trusted chart, exactly
+    as the packet's findings are built."""
+    from prior_auth import checks
+    if not recommendation or not recommendation.get("citations"):
+        return None
+    case = stores.cases().get(case_id) or {}
+    docs = stores.documents(case.get("documents", []))
+    return {"findings": checks.findings_from_citations(recommendation["citations"], docs)}
+
+
 def packet_matches(packet: dict | None, recommendation: dict | None, run_id: str) -> bool:
     """The packet shown must be the one this run recommended (packets are keyed by case)."""
     return bool(packet and recommendation and packet.get("run_id") == run_id
@@ -127,9 +139,10 @@ class Workbench:
         recommendation = evidence_store.get_recommendation(self.s3, self.bucket, case_id, run_id)
         packet = evidence_store.get_packet(self.s3, self.bucket, f"PKT-{case_id}")
         matches = packet_matches(packet, recommendation, run_id)
+        rebuilt = None if matches else findings_from_recommendation(recommendation, case_id)
         return {"queued": queued, "request": request, "recommendation": recommendation,
-                "packet": packet if matches else None, "packet_matches": matches,
-                "rows": criterion_rows(criteria, queued, packet if matches else None),
+                "packet": packet if matches else None, "packet_matches": matches, "rebuilt": rebuilt is not None,
+                "rows": criterion_rows(criteria, queued, packet if matches else rebuilt),
                 "decision": evidence_store.get_decision(self.s3, self.bucket, case_id, run_id)}
 
     def decide(self, access_token: str, case_id: str, run_id: str, action: str, reason: str, reviewer: str) -> dict:
@@ -265,9 +278,14 @@ def make_handler(app: Workbench):
             summary = ((view["packet"] or {}).get("model_summary") or {}).get("text")
             summary_box = (f'<div class="box"><b>{SUMMARY_LABEL}</b><br>{html.escape(summary)}</div>' if summary
                            else f'<div class="box"><b>{SUMMARY_LABEL}</b><br><span class="muted">none</span></div>')
-            mismatch = "" if view["packet_matches"] else (
-                '<p class="muted">The stored packet is not the one this run recommended; '
-                'criteria are shown from the routing record only.</p>')
+            if view["packet_matches"]:
+                mismatch = ""
+            elif view.get("rebuilt"):
+                mismatch = ('<p class="muted">Evidence from this run\'s recommendation record: its citations, '
+                            'with each line read from the trusted chart.</p>')
+            else:
+                mismatch = ('<p class="muted">No evidence record for this run; criteria are shown from the '
+                            'routing record only.</p>')
             if view["decision"]:
                 d = view["decision"]
                 action = (f'<div class="box"><b>Decided:</b> {html.escape(d["decision"])} by '
