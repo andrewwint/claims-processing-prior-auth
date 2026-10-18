@@ -138,7 +138,7 @@ def beat6() -> list[str]:
     planted = sorted(control["scan"]["hits"])
     n = clean["needles"]
     events = sum(clean["scan"]["events_scanned"].values())
-    return ["## 6. A trace with no chart text", "",
+    return ["## 6. Observability: traces and logs with no chart text", "",
             "Positive control first: a control token was planted through the runtime (one span attribute, one log "
             "line, through a test-only path since removed) and written as a line into each Lambda log group. The "
             f"scan found it in every place it was planted: {', '.join(f'`{s}`' for s in planted)}.", "",
@@ -191,7 +191,7 @@ def render() -> str:
              "4. [The agent refused at the reviewer gateway](#4-the-agent-refused-at-the-reviewer-gateway)",
              "5. [Audit trail: a clinician decides, and the record chains back to the agent]"
              "(#5-audit-trail-a-clinician-decides-and-the-record-chains-back-to-the-agent)",
-             "6. [A trace with no chart text](#6-a-trace-with-no-chart-text)",
+             "6. [Observability: traces and logs with no chart text](#6-observability-traces-and-logs-with-no-chart-text)",
              "7. [The harness](#7-the-harness)", ""]
     for section in (beat1, beat2, beat3, beat4, beat5, beat6, harness):
         lines += section()

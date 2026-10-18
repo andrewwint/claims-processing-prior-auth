@@ -11,7 +11,7 @@ Real runs on the deployed system, with synthetic data only. Each sample is gener
 3. [One note removed: routed, gap marked](#3-one-note-removed-routed-gap-marked)
 4. [The agent refused at the reviewer gateway](#4-the-agent-refused-at-the-reviewer-gateway)
 5. [Audit trail: a clinician decides, and the record chains back to the agent](#5-audit-trail-a-clinician-decides-and-the-record-chains-back-to-the-agent)
-6. [A trace with no chart text](#6-a-trace-with-no-chart-text)
+6. [Observability: traces and logs with no chart text](#6-observability-traces-and-logs-with-no-chart-text)
 7. [The harness](#7-the-harness)
 
 ## 1. Two gateways, side by side
@@ -112,7 +112,7 @@ verified: True
 
 <sub>Source: [`evidence/2026-10-16/beat5-clinician-decision.json`](evidence/2026-10-16/beat5-clinician-decision.json)</sub> · <sub>Source: [`evidence/2026-10-16/chain-clinician-denial-cf-1.json`](evidence/2026-10-16/chain-clinician-denial-cf-1.json)</sub>
 
-## 6. A trace with no chart text
+## 6. Observability: traces and logs with no chart text
 
 Positive control first: a control token was planted through the runtime (one span attribute, one log line, through a test-only path since removed) and written as a line into each Lambda log group. The scan found it in every place it was planted: `/aws/lambda/prior-auth-agent-tools`, `/aws/lambda/prior-auth-approval-service`, `/aws/lambda/prior-auth-pre-token`, `/aws/lambda/prior-auth-reviewer-tools`, `runtime`, `xray`.
 
