@@ -94,6 +94,9 @@ def beat4() -> list[str]:
     layer2 = _load("layer2")
     msg2 = POLICY_SUFFIX.sub(r"\1", layer2["body"]["error"]["message"])
     return ["## 4. Boundary: the AI agent is blocked from issuing denials", "",
+            "Two independent layers: the gateway's authorizer refuses any token that isn't a clinician's, and Cedar "
+            "forbids the action for the agent's identity even when a token gets past the authorizer, as the test "
+            "configuration below shows.", "",
             "Layer 1, the gateway's authorizer (the agent's token is not a clinician client):", "",
             *_block(f"HTTP {layer1['http_status']}  {layer1['body']['error']['message']}"), "",
             "Layer 2, Cedar (recorded under a temporary test configuration that let the agent's token past layer 1, "

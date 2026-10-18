@@ -70,6 +70,8 @@ The packet the clinician sees is a checklist. Computed here by the real checks a
 
 ## 4. Boundary: the AI agent is blocked from issuing denials
 
+Two independent layers: the gateway's authorizer refuses any token that isn't a clinician's, and Cedar forbids the action for the agent's identity even when a token gets past the authorizer, as the test configuration below shows.
+
 Layer 1, the gateway's authorizer (the agent's token is not a clinician client):
 
 ```
