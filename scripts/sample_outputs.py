@@ -122,11 +122,12 @@ def beat5() -> list[str]:
         rows.append(f"| {LABELS[k]} | {calls[k]['http_status']} | {what} |")
     chain = _load("chain")
     checks = "\n".join(f"  {'ok ' if v else 'FAIL'} {k}" for k, v in chain["checks"].items())
-    return ["## 5. A clinician decides; the record chains", "",
+    return ["## 5. Audit trail: a clinician decides, and the record chains back to the agent", "",
             "The same denial tool, through the reviewer gateway, under a clinician's token (scripted sign-in; the "
             "workbench page calls the same tool after a hosted-UI sign-in):", "",
             "| Call | HTTP | Result |", "|---|---|---|", *rows, "",
-            "`python -m scripts.verify_chain <case> <run>`: every hash recomputed from the stored bytes.", "",
+            "Each hash is recomputed from stored bytes: decision -> recommendation -> runtime span, and decision -> its "
+            "trace (`python -m scripts.verify_chain <case> <run>`).", "",
             *_block(f"decision {chain['decision']} -> recommendation -> runtime span, decision -> trace segment\n"
                     f"{checks}\nverified: {chain['verified']}"), "",
             _src("beat5") + " · " + _src("chain"), ""]
@@ -188,7 +189,8 @@ def render() -> str:
              "2. [Clean case: a cited packet, approved](#2-clean-case-a-cited-packet-approved)",
              "3. [One note removed: routed, gap marked](#3-one-note-removed-routed-gap-marked)",
              "4. [The agent refused at the reviewer gateway](#4-the-agent-refused-at-the-reviewer-gateway)",
-             "5. [A clinician decides; the record chains](#5-a-clinician-decides-the-record-chains)",
+             "5. [Audit trail: a clinician decides, and the record chains back to the agent]"
+             "(#5-audit-trail-a-clinician-decides-and-the-record-chains-back-to-the-agent)",
              "6. [A trace with no chart text](#6-a-trace-with-no-chart-text)",
              "7. [The harness](#7-the-harness)", ""]
     for section in (beat1, beat2, beat3, beat4, beat5, beat6, harness):

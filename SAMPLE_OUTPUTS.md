@@ -10,7 +10,7 @@ Real runs on the deployed system, with synthetic data only. Each sample is gener
 2. [Clean case: a cited packet, approved](#2-clean-case-a-cited-packet-approved)
 3. [One note removed: routed, gap marked](#3-one-note-removed-routed-gap-marked)
 4. [The agent refused at the reviewer gateway](#4-the-agent-refused-at-the-reviewer-gateway)
-5. [A clinician decides; the record chains](#5-a-clinician-decides-the-record-chains)
+5. [Audit trail: a clinician decides, and the record chains back to the agent](#5-audit-trail-a-clinician-decides-and-the-record-chains-back-to-the-agent)
 6. [A trace with no chart text](#6-a-trace-with-no-chart-text)
 7. [The harness](#7-the-harness)
 
@@ -84,7 +84,7 @@ HTTP 200  JSON-RPC -32002  Tool Execution Denied: Tool call not allowed due to p
 
 <sub>Source: [`evidence/2026-10-16/d1/calls.json`](evidence/2026-10-16/d1/calls.json)</sub> · <sub>Source: [`evidence/2026-10-16/d1/b4-layer2-agent-call.json`](evidence/2026-10-16/d1/b4-layer2-agent-call.json)</sub>
 
-## 5. A clinician decides; the record chains
+## 5. Audit trail: a clinician decides, and the record chains back to the agent
 
 The same denial tool, through the reviewer gateway, under a clinician's token (scripted sign-in; the workbench page calls the same tool after a hosted-UI sign-in):
 
@@ -96,7 +96,7 @@ The same denial tool, through the reviewer gateway, under a clinician's token (s
 | Clinician, a second decision on the same run | 200 | refused: this run already has a decision |
 | Clinician, a decision naming a stale run | 200 | refused: the queue now names a different run; reload the case |
 
-`python -m scripts.verify_chain <case> <run>`: every hash recomputed from the stored bytes.
+Each hash is recomputed from stored bytes: decision -> recommendation -> runtime span, and decision -> its trace (`python -m scripts.verify_chain <case> <run>`).
 
 ```
 decision adverse_determination -> recommendation -> runtime span, decision -> trace segment
