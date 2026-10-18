@@ -1,4 +1,4 @@
-# AgentCore for Health Insurance Prior Authorization: Fast Approvals, Human Denials
+# **AgentCore for Health Insurance Prior Authorization: Fast Approvals, Human Denials**
 
 ### Under CMS-0057-F, agents on Amazon Bedrock AgentCore auto-approve clear cases; only a clinician issues an adverse determination.
 
@@ -14,21 +14,21 @@ This article designs a prior authorization agent on Amazon Bedrock AgentCore fro
 
 ## Start with the gate
 
-Prior authorization is the approval a payer gives before a service happens. On the claims lifecycle it sits pre-service, on the X12 278 request and response. Decisions made here shape everything downstream.
+Prior authorization is the payer's approval before a service happens, carried on the X12 278 request and response. Decisions made here shape everything downstream.
 
 ![Where prior authorization sits in claims processing](transaction-code-sequence-system-boundaries.png)
 
-_Where prior authorization sits in claims processing. This article covers the pre-service gate; the same human gate reappears at adjudication's clinical pend._
+*Where prior authorization sits in claims processing. This article covers the pre-service gate; the same human gate reappears at adjudication's clinical pend.*
 
 Requests arrive two ways: as X12 278 transactions, or as FHIR bundles following the Da Vinci Prior Authorization Support guide. Translating between them is integration work. It belongs in front of the agent, not inside it.
 
 Two sets of rules now frame those decisions.
 
-| Rule                                                                                                                                                                                                         | What it requires                                                                                                      | What it means for an agent                                             |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| State AI laws, 2026 to 2027 ([Washington E2SSB 5395](https://app.leg.wa.gov/billsummary?BillNumber=5395&Year=2025&Initiative=false), [Colorado HB26-1139](https://leg.colorado.gov/bills/hb26-1139))         | AI may assist review but cannot be the sole basis to deny care. Washington's law also covers delaying or modifying it | The agent recommends. A licensed clinician owns every adverse decision |
-| [CMS-0057-F](https://www.cms.gov/initiatives/burden-reduction/overview/interoperability/policies-regulations/cms-interoperability-prior-authorization-final-rule-cms-0057-f), decision timeframes (Jan 2026) | Standard decisions in 7 calendar days, expedited in 72 hours, a specific reason on every denial                       | Speed matters, and every denial needs a reason a person can read       |
-| CMS-0057-F, Prior Authorization API (Jan 2027)                                                                                                                                                               | Payers expose prior authorization through a FHIR API                                                                  | Requests arrive as structured data, ready for an agent to work         |
+| Rule | What it requires | What it means for an agent |
+| --- | --- | --- |
+| State AI laws, 2026 to 2027 ([Washington E2SSB 5395](https://app.leg.wa.gov/billsummary?BillNumber=5395&Year=2025&Initiative=false), [Colorado HB26-1139](https://leg.colorado.gov/bills/hb26-1139)) | AI may assist review but cannot be the sole basis to deny care. Washington's law also covers delaying or modifying it | The agent recommends. A licensed clinician owns every adverse decision |
+| [CMS-0057-F](https://www.cms.gov/initiatives/burden-reduction/overview/interoperability/policies-regulations/cms-interoperability-prior-authorization-final-rule-cms-0057-f), decision timeframes (Jan 2026) | Standard decisions in 7 calendar days, expedited in 72 hours, a specific reason on every denial | Speed matters, and every denial needs a reason a person can read |
+| CMS-0057-F, Prior Authorization API (Jan 2027) | Payers expose prior authorization through a FHIR API | Requests arrive as structured data, ready for an agent to work |
 
 The rules are asymmetric. They do not ban automated processing. They ban automated adverse decisions: denying care, and in Washington, delaying or modifying it too. Approving a clearly covered request is allowed, and the CMS clocks reward it. That asymmetry is why the agent can hold an approval tool and never a denial tool.
 
@@ -56,16 +56,16 @@ I learned this the hard way with text-to-SQL. In [Why Your AI Agent Should Never
 
 The same move works here. The agent never gets a tool that can deny.
 
-| Tool                           | What it does                                         | Agent may call                     |
-| ------------------------------ | ---------------------------------------------------- | ---------------------------------- |
-| `check_eligibility`            | Coverage and benefits for the member and service     | Yes                                |
-| `fetch_policy_criteria`        | Verified criteria for the CPT code and payer         | Yes                                |
-| `extract_clinical_evidence`    | Pulls findings from the record, each with its source | Yes                                |
-| `record_approval`              | Approves a request whose criteria are all met        | Yes, under policy                  |
-| `route_to_reviewer`            | Sends the case packet to a clinician queue           | Yes                                |
-| `record_adverse_determination` | Denies, delays, or modifies care                     | No. Only the reviewer app holds it |
+| Tool | What it does | Agent may call |
+| --- | --- | --- |
+| `check_eligibility` | Coverage and benefits for the member and service | Yes |
+| `fetch_policy_criteria` | Verified criteria for the CPT code and payer | Yes |
+| `extract_clinical_evidence` | Pulls findings from the record, each with its source | Yes |
+| `record_approval` | Approves a request whose criteria are all met | Yes, under policy |
+| `route_to_reviewer` | Sends the case packet to a clinician queue | Yes |
+| `record_adverse_determination` | Denies, delays, or modifies care | No. Only the reviewer app holds it |
 
-AgentCore Gateway fronts every tool, and Policy in AgentCore evaluates each call against Cedar rules before the tool runs. So the boundary is written twice. The agent's gateway does not expose the denial tool at all. That tool lives on a separate reviewer gateway that only clinicians can sign in to. A Cedar `forbid` stands behind it, naming the agent's identity and anyone without the clinician role, so the call fails even if the agent reaches the tool.
+AgentCore Gateway fronts every tool, and Policy in AgentCore evaluates each call against Cedar rules before the tool runs. So the boundary is written twice. The denial tool is not on the agent's gateway at all; it lives on a separate reviewer gateway that only clinicians can sign in to. Behind that, a Cedar `forbid` names the agent's identity and anyone without the clinician role, so the call fails even if the agent reaches the tool.
 
 ```
 forbid(
@@ -87,17 +87,15 @@ For prior authorization, each payer policy compiles into one verified file per p
 
 The packet then reads like a checklist.
 
-| Criterion                         | Evidence in the record                  | Source                            | Status    |
-| --------------------------------- | --------------------------------------- | --------------------------------- | --------- |
-| Six weeks of conservative therapy | PT notes, eight visits over seven weeks | Therapy note, page and line cited | Met       |
-| Imaging confirms the diagnosis    | MRI report names the finding            | Radiology report, line cited      | Met       |
-| Functional limitation documented  | No measure found                        | None                              | Not found |
+| Criterion | Evidence in the record | Source | Status |
+| --- | --- | --- | --- |
+| Six weeks of conservative therapy | PT notes, eight visits over seven weeks | Therapy note, page and line cited | Met |
+| Imaging confirms the diagnosis | MRI report names the finding | Radiology report, line cited | Met |
+| Functional limitation documented | No measure found | None | Not found |
 
 Four checks run before the packet moves. Output must match its schema. Every extracted value must appear in the source it cites. The cited text must satisfy the criterion's evidence rule, because a real quote on the right line can still prove nothing. Every citation must come from this patient's record.
 
-All criteria met, every citation verified, and every check passed means the agent may call `record_approval`. Anything else goes to a clinician, with the gaps marked.
-
-Inside the agent, that decision is code. The model reads the chart and writes the summary. It never chooses which tool ends the case.
+When every criterion is met and every check passes, code, not the model, calls `record_approval`. Anything else goes to a clinician with the gaps marked. The model reads the chart and writes the summary; it never chooses which tool ends the case.
 
 ## Fail toward a human
 
@@ -107,14 +105,14 @@ The common pattern is a broad `except` that falls back to a default and keeps go
 
 So every failure has one destination.
 
-| What goes wrong           | Wrong default                | Right default                                   |
-| ------------------------- | ---------------------------- | ----------------------------------------------- |
-| Evidence extraction fails | Empty evidence, keep going   | Route to reviewer, labeled "extraction failed"  |
-| Model returns no text     | Treat as no criteria         | Route to reviewer, with the stop reason         |
+| What goes wrong | Wrong default | Right default |
+| --- | --- | --- |
+| Evidence extraction fails | Empty evidence, keep going | Route to reviewer, labeled "extraction failed" |
+| Model returns no text | Treat as no criteria | Route to reviewer, with the stop reason |
 | Policy criteria not found | Generic placeholder criteria | Route to reviewer, labeled "no verified policy" |
-| Model access denied       | Fall back to string matching | Fail loudly, alert the operator                 |
+| Model access denied | Fall back to string matching | Fail loudly, alert the operator |
 
-There is a subtler trap. Empty output does not mean the same thing at every step. No criteria for a code might be a missing policy. No evidence might be a thin chart. Each step needs its own empty-output rule, written and tested on purpose.
+Empty output also means different things at different steps. No criteria might be a missing policy; no evidence might be a thin chart. Each step needs its own empty-output rule, written and tested on purpose.
 
 The rule underneath all of it: a failure may slow a case down. It may never push a case toward denial.
 
@@ -122,13 +120,13 @@ The rule underneath all of it: a failure may slow a case down. It may never push
 
 An auditor will not ask whether your agent is accurate. They will ask about one case. What did the agent recommend? On what evidence? Who decided, and when?
 
-That is a lineage problem, and it has a built-in tension. To prove what a model recommended, you have to keep it. Keeping it puts protected health information somewhere. Logs are the worst place for it.
+That is a lineage problem with a built-in tension. Proving what a model recommended means keeping it, and keeping it puts protected health information somewhere. Logs are the worst place for it.
 
 The answer is two records with two jobs.
 
-| Record          | Holds                                                                                                                                    | Lives in                                                  |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Trace           | Case ID, step, model ID, token counts, latency, stop reason, content hashes                                                              | AgentCore Observability, exported over OpenTelemetry      |
+| Record | Holds | Lives in |
+| --- | --- | --- |
+| Trace | Case ID, step, model ID, token counts, latency, stop reason, content hashes | AgentCore Observability, exported over OpenTelemetry |
 | Evidence record | The packet, the recommendation, citations, policy version, the reviewer's identity as the clinician app reports it, decision, timestamps | Encrypted, write-once storage under customer-managed keys |
 
 The trace answers "what happened" without holding a word of the chart. The hash in the trace proves the evidence record was not changed after the fact. The timestamps answer the CMS clock.
@@ -143,12 +141,12 @@ Once the agent cannot deny, it can only make two mistakes. It can approve a case
 
 That gives the bake-off two numbers to watch.
 
-| Metric                   | Defined as                                                                                                                             | Direction                           |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| False auto-approval rate | Cases the agent approved that should have gone to a clinician. In a test harness, the case author's label stands in for that clinician | As close to zero as you can get     |
-| Auto-approval rate       | Share of requests that clear without a human touch                                                                                     | Higher, once the first number holds |
+| Metric | Defined as | Direction |
+| --- | --- | --- |
+| False auto-approval rate | Cases the agent approved that should have gone to a clinician. In a test harness, the case author's label stands in for that clinician | As close to zero as you can get |
+| Auto-approval rate | Share of requests that clear without a human touch | Higher, once the first number holds |
 
-The cases are synthetic, because real charts do not belong in a test harness. The useful ones are counterfactual. Take a case that clearly meets criteria. Remove one piece of evidence. Keep everything else fixed. The agent should stop approving and route to a reviewer.
+The cases are synthetic, because real charts do not belong in a test harness. Take a case that clearly meets criteria and remove one piece of evidence, nothing else. The agent should stop approving and route to a reviewer.
 
 I used the same one-change method in [Two AI Models, One Word, Two Different Readings](https://medium.com/@andrewwint/the-reader-who-never-asks-46534ee4c702), where one word split how models read a sentence. In prior authorization, the change is one missing note.
 
@@ -156,7 +154,7 @@ A few rules keep the comparison honest. Run each case several times and show eve
 
 On six synthetic cases, three trials each, Nova Pro and Sonnet 4.6 each made zero false approvals in twelve trials that needed review. That's a small sample: the 95% upper bound is still 25%. Sonnet cleared one more approvable case, at about five times the cost.
 
-Make one real call to every candidate before you build. Model families disagree about which sampling parameters they accept. You want that surprise on day one.
+Make one real call to every candidate before you build. You want that surprise on day one.
 
 ## Map it to AgentCore
 
@@ -164,18 +162,16 @@ Each concern above lands on a specific AgentCore service. None of them depends o
 
 ![Architecture on Amazon Bedrock AgentCore](architecture.png)
 
-_The agent's side builds and checks the case. The only path to a denial runs through the clinician's own sign-in and a separate gateway. The agent's one route to the denial tool is blocked twice: the gateway refuses its token, and Cedar forbids the call._
+*The agent's side builds and checks the case. The only path to a denial runs through the clinician's own sign-in and a separate gateway. The agent's one route to the denial tool is blocked twice: the gateway refuses its token, and Cedar forbids the call.*
 
-| Concern                                    | AgentCore service | How it is used                                                                                                                                                                                                                                          |
-| ------------------------------------------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Run the agent, one case at a time          | Runtime           | An isolated session per prior authorization request                                                                                                                                                                                                     |
-| Expose only safe tools                     | Gateway           | Two gateways. The agent's holds the five case-building tools. The reviewer's holds the denial tool, for clinicians only                                                                                                                                 |
-| Make denial impossible for the agent       | Policy            | Cedar rules evaluated on every tool call, with a `forbid` on adverse determinations                                                                                                                                                                     |
-| Reach payer systems without shared secrets | Identity          | Clinicians and the agent sign in as separate identities. The agent's gateway token comes from AgentCore Identity, which keeps the client secret in its vault, and tools run under the gateway's role. No secret is in the agent's code or configuration |
-| Keep context inside the case               | Memory            | Not used for patient data. Context lives only in the case's Runtime session                                                                                                                                                                             |
-| Prove what happened                        | Observability     | OpenTelemetry traces with IDs, timings, and hashes, never chart text                                                                                                                                                                                    |
-
-Two things are kept apart on purpose. The evidence record lives in encrypted, write-once storage the agent cannot rewrite. And the denial tool is reachable only through the reviewer gateway, under the clinician's own identity.
+| Concern | AgentCore service | How it is used |
+| --- | --- | --- |
+| Run the agent, one case at a time | Runtime | An isolated session per prior authorization request |
+| Expose only safe tools | Gateway | Two gateways. The agent's holds the five case-building tools. The reviewer's holds the denial tool, for clinicians only |
+| Make denial impossible for the agent | Policy | Cedar rules evaluated on every tool call, with a `forbid` on adverse determinations |
+| Reach payer systems without shared secrets | Identity | Clinicians and the agent sign in as separate identities. The agent's gateway token comes from AgentCore Identity, which keeps the client secret in its vault, and tools run under the gateway's role. No secret is in the agent's code or configuration |
+| Keep context inside the case | Memory | Not used for patient data. Context lives only in the case's Runtime session |
+| Prove what happened | Observability | OpenTelemetry traces with IDs, timings, and hashes, never chart text |
 
 Model choice becomes configuration. One allow-list names the models the agent may use, enforced in code and in IAM, with Regions pinned. Cross-Region routing is something you opt into, not something you discover.
 
