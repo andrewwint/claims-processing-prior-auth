@@ -54,7 +54,7 @@ def beat1() -> list[str]:
     checks = _load("tools")["checks"]
     agent = checks["agent_tools_list"]["live"]["tools"]
     reviewer = checks["reviewer_tools_list_clinician"]["live"]["tools"]
-    return ["## 1. Two gateways, side by side", "",
+    return ["## 1. Roles: the AI agent's gateway and the clinician's, side by side", "",
             "`python -m scripts.demo --redact 1`: each gateway's `tools/list`, under the agent's and a clinician's token.", "",
             *_block("Agent gateway (agent identity):\n" + "\n".join(f"   {t}" for t in agent)
                     + "\nReviewer gateway (clinician identity):\n" + "\n".join(f"   {t}" for t in reviewer)),
@@ -67,7 +67,7 @@ def beat1() -> list[str]:
 def beat2() -> list[str]:
     beat = _load("beats23")["beats"]["beat2"]
     rows = [f"| {c} | `{d}` p{p} l{n} | {_line(d, p, n)} |" for c, d, p, n in beat["stored_packet"]["citations"]]
-    return ["## 2. Clean case: a cited packet, approved", "",
+    return ["## 2. Fast approval: the AI agent's cited packet, approved in seconds", "",
             f"`{beat['case_id']}` → **{beat['response']['outcome']}**. The model returned citations only; the values "
             "are filled by code from the trusted chart, then the approval service re-ran every check on the stored "
             "packet before recording the approval.", "",
@@ -78,7 +78,7 @@ def beat2() -> list[str]:
 
 def beat3() -> list[str]:
     r = _load("beats23")["beats"]["beat3"]["response"]
-    return ["## 3. One note removed: routed, gap marked", "",
+    return ["## 3. Human review: one note removed, routed to a clinician with the gap marked", "",
             *_block(json.dumps({k: r[k] for k in ("outcome", "reason", "gaps")}, indent=2), "json"), "",
             "`SYN-CASE-CF-1` is `SYN-CASE-CLEAN-1` with the functional assessment removed. Nothing is denied; "
             "the case goes to a clinician with C3 marked. " + _src("beats23"), "",
@@ -93,7 +93,7 @@ def beat4() -> list[str]:
     layer1 = _load("layer1")["B4_layer1_agent_token_on_reviewer"]
     layer2 = _load("layer2")
     msg2 = POLICY_SUFFIX.sub(r"\1", layer2["body"]["error"]["message"])
-    return ["## 4. The agent refused at the reviewer gateway", "",
+    return ["## 4. Boundary: the AI agent is blocked from issuing denials", "",
             "Layer 1, the gateway's authorizer (the agent's token is not a clinician client):", "",
             *_block(f"HTTP {layer1['http_status']}  {layer1['body']['error']['message']}"), "",
             "Layer 2, Cedar (recorded under a temporary test configuration that let the agent's token past layer 1, "
@@ -216,10 +216,10 @@ def render() -> str:
              "one of six Nova Pro trials on an approvable case cited pages that do not exist and was routed to a "
              "clinician instead of approved. A different run can cite differently; it cannot approve without "
              "passing every check.", "",
-             "1. [Two gateways, side by side](#1-two-gateways-side-by-side)",
-             "2. [Clean case: a cited packet, approved](#2-clean-case-a-cited-packet-approved)",
-             "3. [One note removed: routed, gap marked](#3-one-note-removed-routed-gap-marked)",
-             "4. [The agent refused at the reviewer gateway](#4-the-agent-refused-at-the-reviewer-gateway)",
+             "1. [Roles: the AI agent's gateway and the clinician's, side by side](#1-roles-the-ai-agents-gateway-and-the-clinicians-side-by-side)",
+             "2. [Fast approval: the AI agent's cited packet, approved in seconds](#2-fast-approval-the-ai-agents-cited-packet-approved-in-seconds)",
+             "3. [Human review: one note removed, routed to a clinician with the gap marked](#3-human-review-one-note-removed-routed-to-a-clinician-with-the-gap-marked)",
+             "4. [Boundary: the AI agent is blocked from issuing denials](#4-boundary-the-ai-agent-is-blocked-from-issuing-denials)",
              "5. [Audit trail: a clinician decides, and the record chains back to the agent]"
              "(#5-audit-trail-a-clinician-decides-and-the-record-chains-back-to-the-agent)",
              "6. [Observability: traces and logs with no chart text](#6-observability-traces-and-logs-with-no-chart-text)",

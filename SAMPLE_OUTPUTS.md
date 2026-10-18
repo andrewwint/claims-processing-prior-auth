@@ -6,15 +6,15 @@ Real runs on the deployed system, with synthetic data only. Each sample is gener
 
 > **Reproducibility.** The boundary results (tool lists, refusals, Cedar denials, write-once, the chain checks) are deterministic. The model's citations are not, even at temperature 0: in the harness, one of six Nova Pro trials on an approvable case cited pages that do not exist and was routed to a clinician instead of approved. A different run can cite differently; it cannot approve without passing every check.
 
-1. [Two gateways, side by side](#1-two-gateways-side-by-side)
-2. [Clean case: a cited packet, approved](#2-clean-case-a-cited-packet-approved)
-3. [One note removed: routed, gap marked](#3-one-note-removed-routed-gap-marked)
-4. [The agent refused at the reviewer gateway](#4-the-agent-refused-at-the-reviewer-gateway)
+1. [Roles: the AI agent's gateway and the clinician's, side by side](#1-roles-the-ai-agents-gateway-and-the-clinicians-side-by-side)
+2. [Fast approval: the AI agent's cited packet, approved in seconds](#2-fast-approval-the-ai-agents-cited-packet-approved-in-seconds)
+3. [Human review: one note removed, routed to a clinician with the gap marked](#3-human-review-one-note-removed-routed-to-a-clinician-with-the-gap-marked)
+4. [Boundary: the AI agent is blocked from issuing denials](#4-boundary-the-ai-agent-is-blocked-from-issuing-denials)
 5. [Audit trail: a clinician decides, and the record chains back to the agent](#5-audit-trail-a-clinician-decides-and-the-record-chains-back-to-the-agent)
 6. [Observability: traces and logs with no chart text](#6-observability-traces-and-logs-with-no-chart-text)
 7. [Model bake-off: Nova Pro vs. Sonnet 4.6, same gate](#7-model-bake-off-nova-pro-vs-sonnet-46-same-gate)
 
-## 1. Two gateways, side by side
+## 1. Roles: the AI agent's gateway and the clinician's, side by side
 
 `python -m scripts.demo --redact 1`: each gateway's `tools/list`, under the agent's and a clinician's token.
 
@@ -34,7 +34,7 @@ The agent's gateway has no denial tool. <sub>Source: [`evidence/2026-10-16/bound
 
 Of these five, the Strands agent is given the three gathering tools. `decide()`, in code, is the only caller of `route_to_reviewer` and `record_approval`. <sub>Pinned by [`tests/test_pipeline.py::test_strands_agent_gets_exactly_the_three_gathering_tools`](tests/test_pipeline.py).</sub>
 
-## 2. Clean case: a cited packet, approved
+## 2. Fast approval: the AI agent's cited packet, approved in seconds
 
 `SYN-CASE-CLEAN-1` → **approved**. The model returned citations only; the values are filled by code from the trusted chart, then the approval service re-ran every check on the stored packet before recording the approval.
 
@@ -46,7 +46,7 @@ Of these five, the Strands agent is given the three gathering tools. `decide()`,
 
 Stored packet: SSE `aws:kms`, Object Lock `GOVERNANCE`, sha256 `3c698cbb4c2914d0…`. <sub>Source: [`evidence/2026-10-16/beats-2-and-3.json`](evidence/2026-10-16/beats-2-and-3.json)</sub>
 
-## 3. One note removed: routed, gap marked
+## 3. Human review: one note removed, routed to a clinician with the gap marked
 
 ```json
 {
@@ -68,7 +68,7 @@ The packet the clinician sees is a checklist. Computed here by the real checks a
 | C2 | Imaging confirms the diagnosis: disc herniation with nerve root compression. | **Met** | Impression: L4-L5 disc herniation with nerve root compression. | SYN-DOC-103-MRI p1 l3 |
 | C3 | Functional limitation documented with an Oswestry Disability Index of at least 40 percent. | **Not found** |  |  |
 
-## 4. The agent refused at the reviewer gateway
+## 4. Boundary: the AI agent is blocked from issuing denials
 
 Layer 1, the gateway's authorizer (the agent's token is not a clinician client):
 
