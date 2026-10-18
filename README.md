@@ -1,6 +1,6 @@
 # claims-processing-prior-auth
 
-Reference implementation for the article **"Build the Case, Let the Clinician Decide."**
+Reference implementation for the article **"AgentCore for Health Insurance Prior Authorization: Fast Approvals, Human Denials."**
 
 **Scope.** This repository covers the pre-service prior-authorization gate: from the X12 278 request to the determination, with an eligibility step on synthetic coverage data. Post-service claims (837, 277CA, adjudication, 835) are out of scope; the same human gate applies at adjudication's clinical pend.
 

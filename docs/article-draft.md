@@ -1,6 +1,6 @@
-# **AgentCore for Health Insurance Prior Authorization: Fast Approvals, Human Denials**
+# AgentCore for Health Insurance Prior Authorization: Fast Approvals, Human Denials
 
-### Under CMS-0057-F, agents on Amazon Bedrock AgentCore auto-approve clear cases; only a clinician issues an adverse determination.
+### Agents on Amazon Bedrock AgentCore auto-approve clear cases against CMS-0057-F's clocks; only a clinician issues an adverse determination.
 
 By Andrew Wint
 
@@ -44,7 +44,7 @@ The agent works the whole pre-service path. It stops at one place.
 
 The agent approves only when every criterion is met and every check passes. A miss or any failure goes to a clinician with the case already built. Only the clinician can deny.
 
-Here it is running on AgentCore, with synthetic data: [youtu.be/gor2Ay986ns](https://youtu.be/gor2Ay986ns)
+Here it is running on AgentCore, with synthetic data:
 
 [![Demo video](demo.gif)](https://youtu.be/gor2Ay986ns)
 
@@ -127,7 +127,7 @@ The answer is two records with two jobs.
 | Record | Holds | Lives in |
 | --- | --- | --- |
 | Trace | Case ID, step, model ID, token counts, latency, stop reason, content hashes | AgentCore Observability, exported over OpenTelemetry |
-| Evidence record | The packet, the recommendation, citations, policy version, the reviewer's identity as the clinician app reports it, decision, timestamps | Encrypted, write-once storage under customer-managed keys |
+| Evidence record | The recommendation (with the packet's hash and citations), policy version, the reviewer's identity as the clinician app reports it, decision, timestamps | Encrypted, write-once storage under customer-managed keys |
 
 The trace answers "what happened" without holding a word of the chart. The hash in the trace proves the evidence record was not changed after the fact. The timestamps answer the CMS clock.
 
@@ -152,7 +152,7 @@ I used the same one-change method in [Two AI Models, One Word, Two Different Rea
 
 A few rules keep the comparison honest. Run each case several times and show every trial. Count a response cut off at the token limit as a failure, not a skip. Record the sampling settings each model was given, because model families accept different ones. Here, one candidate rejected temperature and top-p set together. Label the cases as synthetic and author-labeled, never as clinical ground truth.
 
-On six synthetic cases, three trials each, Nova Pro and Sonnet 4.6 each made zero false approvals in twelve trials that needed review. That's a small sample: the 95% upper bound is still 25%. Sonnet cleared one more approvable case, at about five times the cost.
+On six synthetic cases, three trials each, Nova Pro and Sonnet 4.6 each made zero false approvals in twelve trials that needed review. That's a small sample: the 95% upper bound is still 25%. Sonnet cleared one more approvable trial, at about five times the cost.
 
 Make one real call to every candidate before you build. You want that surprise on day one.
 
@@ -167,7 +167,7 @@ Each concern above lands on a specific AgentCore service. None of them depends o
 | Concern | AgentCore service | How it is used |
 | --- | --- | --- |
 | Run the agent, one case at a time | Runtime | An isolated session per prior authorization request |
-| Expose only safe tools | Gateway | Two gateways. The agent's holds the five case-building tools. The reviewer's holds the denial tool, for clinicians only |
+| Expose only safe tools | Gateway | Two gateways. The agent's holds five tools, none of them a denial. The reviewer's holds the denial tool, for clinicians only |
 | Make denial impossible for the agent | Policy | Cedar rules evaluated on every tool call, with a `forbid` on adverse determinations |
 | Reach payer systems without shared secrets | Identity | Clinicians and the agent sign in as separate identities. The agent's gateway token comes from AgentCore Identity, which keeps the client secret in its vault, and tools run under the gateway's role. No secret is in the agent's code or configuration |
 | Keep context inside the case | Memory | Not used for patient data. Context lives only in the case's Runtime session |
@@ -180,5 +180,7 @@ Model choice becomes configuration. One allow-list names the models the agent ma
 An agent can shorten the wait for a decision. It can clear the obvious approvals in minutes and hand a clinician a finished case for the rest. It should never be the one who says no.
 
 The design follows from that one rule. Take the denial tool away and enforce it outside the prompt. Ground every claim in a cited source. Send every failure to a person. Keep a record an auditor can follow, with no chart text in the logs. Choose models by how rarely they approve what they should not.
+
+It does not solve everything yet. The record names the reviewer as the clinician app reports it; nothing verifies that identity. The build is single-tenant. And the evidence rules cover the demo cases, not a payer's full policy library.
 
 The reference implementation is on GitHub at [andrewwint/claims-processing-prior-auth](https://github.com/andrewwint/claims-processing-prior-auth). Every claim about how the system behaves maps to a test or a recorded artifact there, and every regulatory claim cites its source.
