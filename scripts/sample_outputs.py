@@ -150,15 +150,46 @@ def beat6() -> list[str]:
             _src("control") + " · " + _src("clean"), ""]
 
 
+MODEL_SHORT = {"amazon.nova-pro-v1:0": "Nova", "us.anthropic.claude-sonnet-4-6": "Sonnet"}
+
+
+def _trial_grid(trials: list[dict], models: list[str]) -> list[str]:
+    """One row per case, one column per model trial; footnote approvable trials that were routed."""
+    by = {(t["case_id"], t["model_id"], t["trial"]): t for t in trials}
+    runs = sorted({t["trial"] for t in trials})
+    cols = [(m, n) for m in models for n in runs]
+    labels = {t["case_id"]: t["label"] for t in trials}
+    rows, noted = [], False
+    for case, label in labels.items():
+        cells = []
+        for m, n in cols:
+            t = by[(case, m, n)]
+            cell = "✅ approved" if t["outcome"] == "approved" else "➡️ routed"
+            if label == "approve" and t["outcome"] != "approved":
+                cell, noted = cell + "¹", True
+            cells.append(cell)
+        rows.append(f"| `{case}` ({'approvable' if label == 'approve' else label}) | " + " | ".join(cells) + " |")
+    head = "| Case | " + " | ".join(f"{MODEL_SHORT[m]} T{n}" for m, n in cols) + " |"
+    out = [head, "|---|" + "---|" * len(cols), *rows]
+    return out + (["", "¹ Cited pages that don't exist; source match refused it."] if noted else [])
+
+
 def harness() -> list[str]:
     from evaluation.report import load, pct, summarize
     trials = load(ROOT / SOURCES["trials"])
     approvable = len({t["case_id"] for t in trials if t["label"] == "approve"})
     cases = len({t["case_id"] for t in trials})
-    lines = ["## 7. The harness", "",
+    models = list(dict.fromkeys(t["model_id"] for t in trials))
+    lines = ["## 7. Model bake-off: Nova Pro vs. Sonnet 4.6, same gate", "",
              "Pre-registered ([evaluation/PREREGISTRATION.md](evaluation/PREREGISTRATION.md)); six synthetic cases, "
-             "three trials per model, on the deployed system. Computed here from the raw trials.", ""]
-    for model in dict.fromkeys(t["model_id"] for t in trials):
+             "three trials per model, on the deployed system. Computed here from the raw trials.", "",
+             *_trial_grid(trials, models), "",
+             "**What it shows.** Safety tied: neither model auto-approved a case that needed review (0 of 12 each; 95% "
+             "upper bound 25%). Throughput differed by one trial, which is not a significant difference at this "
+             "sample size. Nova Pro cost about one-fifth as much per trial and was slightly faster. With the gate in "
+             "code, model choice becomes a cost and throughput decision, not a safety one. No ranking is claimed at "
+             "this N.", ""]
+    for model in models:
         s = summarize([t for t in trials if t["model_id"] == model])
         lines += [f"**`{model}`**", "", "| Measure | Result |", "|---|---|",
                   f"| False auto-approvals | {s['false_auto']} of {s['n_review']} trials on needs-review cases "
@@ -192,7 +223,7 @@ def render() -> str:
              "5. [Audit trail: a clinician decides, and the record chains back to the agent]"
              "(#5-audit-trail-a-clinician-decides-and-the-record-chains-back-to-the-agent)",
              "6. [Observability: traces and logs with no chart text](#6-observability-traces-and-logs-with-no-chart-text)",
-             "7. [The harness](#7-the-harness)", ""]
+             "7. [Model bake-off: Nova Pro vs. Sonnet 4.6, same gate](#7-model-bake-off-nova-pro-vs-sonnet-46-same-gate)", ""]
     for section in (beat1, beat2, beat3, beat4, beat5, beat6, harness):
         lines += section()
     return redact("\n".join(lines).rstrip() + "\n")
