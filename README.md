@@ -52,6 +52,12 @@ If you have ten minutes, read in this order:
 - **Chained, write-once evidence records.** A decision record chains to its recommendation by a hash recomputed from the stored bytes.
 - **A pre-registered evaluation** that reports the false auto-approval rate on counterfactual cases, with every trial shown.
 
+## Architecture
+
+![The AWS architecture: an intake client starts a case on AgentCore Runtime, which gets its gateway token from AgentCore Identity and calls its tools through the agent gateway (case tools and the approval service, no denial tool), with Amazon Bedrock Nova Pro returning citations only and a Cedar policy engine checking every tool call. Clinicians sign in through Amazon Cognito and reach the reviewer gateway, the only path to a denial; the agent is refused there. Records go to an S3 evidence bucket under a customer-managed KMS key, and telemetry carries no chart text.](docs/architecture.png)
+
+*Numbers follow a case from intake to decision. The upper box is the agent's side; the lower box is the clinician's, the only path to a denial.*
+
 ## Where this sits in claims processing
 
 ![The X12 transaction sequence across pre-service (in scope: eligibility 270/271, prior authorization 278 request and determination) and post-service (out of scope: claim submission 837, acknowledgment 277CA, status 276/277, adjudication with its clinical-review pend, remittance 835).](docs/transaction-code-sequence-system-boundaries.png)
