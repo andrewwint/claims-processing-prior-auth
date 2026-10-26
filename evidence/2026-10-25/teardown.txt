@@ -1,0 +1,17 @@
+AI agent detected
+PriorAuthRuntime: destroying... [1/1]
+✅  PriorAuthRuntime: destroyed
+AI agent detected
+PriorAuthPolicy: destroying... [1/1]
+✅  PriorAuthPolicy: destroyed
+AI agent detected
+PriorAuthGateways: destroying... [1/1]
+✅  PriorAuthGateways: destroyed
+AI agent detected
+PriorAuthEvidence: destroying... [1/1]
+✅  PriorAuthEvidence: destroyed
+evidence bucket: deleted 172 object versions
+transaction search recorded: {'destination': 'CloudWatchLogs', 'indexing_percentage': {'Default': 100.0}}
+transaction search now:      {'destination': 'CloudWatchLogs', 'indexing_percentage': {'Default': 100.0}}
+budgets present: ['prior-auth-agentcore-account', 'prior-auth-agentcore-project']
+VERIFY: PASS
